@@ -1,0 +1,69 @@
+# @Author: guiguan
+# @Date:   2017-01-30T10:14:58+11:00
+# @Last modified by:   guiguan
+# @Last modified time: 2017-06-21T09:23:04+10:00
+
+
+
+pipeline:
+  cienvy_prepare:
+    image: southbanksoftware/cienvy:node-nm-mongo
+    pull: true
+    volumes:
+      - /home/core/cienvy-client:/cienvy-client
+      - cienvy-volumes:/volumes
+    commands:
+      - bash /cienvy-client/bin/cienvy.bash --url=http://172.16.0.1:9090 prepare
+  cienvy_core_mongodb-3.4:
+    image: southbanksoftware/cienvy:node-nm-mongo
+    pull: true
+    volumes:
+      - /home/core/cienvy-client:/cienvy-client
+      - cienvy-volumes:/volumes
+    commands:
+      - bash /cienvy-client/bin/cienvy.bash --url=http://172.16.0.1:9090 core
+  cienvy_core_mongodb-3.2:
+    image: southbanksoftware/cienvy:node-nm-mongo-3.2
+    pull: true
+    volumes:
+      - /home/core/cienvy-client:/cienvy-client
+      - cienvy-volumes:/volumes
+    commands:
+      - bash /cienvy-client/bin/cienvy.bash --url=http://172.16.0.1:9090 core
+    when:
+      status: [success, failure]
+  cienvy_core_mongodb-3.0:
+    image: southbanksoftware/cienvy:node-nm-mongo-3.0
+    pull: true
+    volumes:
+      - /home/core/cienvy-client:/cienvy-client
+      - cienvy-volumes:/volumes
+    commands:
+      - bash /cienvy-client/bin/cienvy.bash --url=http://172.16.0.1:9090 core
+    when:
+      status: [success, failure]
+  cienvy_cleanup:
+    image: southbanksoftware/cienvy:node-nm-mongo
+    pull: true
+    volumes:
+      - /home/core/cienvy-client:/cienvy-client
+      - cienvy-volumes:/volumes
+    commands:
+      - rm -rf coverage data docs lib node_modules controller-dev.log
+    when:
+      status: [success, failure]
+  slack_legacy:
+    image: plugins/slack
+    pull: true
+    volumes:
+      - cienvy-volumes:/volumes
+    secrets: [SLACK_WEBHOOK]
+    webhook: ${SLACK_WEBHOOK}
+    channel: ci
+    template: >
+      Build <{{build.link}}|{{build.number}}> (<https://github.com/{{repo.owner}}/{{repo.name}}/commit/{{build.commit}}|{{truncate build.commit 8}}>) of <https://github.com/{{repo.owner}}/{{repo.name}}|{{repo.owner}}/{{repo.name}}> has {{#success build.status}}succeeded{{else}}failed{{/success}} in {{since job.started}}
+      <@{{build.author}}>: {{{build.message}}}
+    when:
+      status: [success, failure]
+
+branches: master

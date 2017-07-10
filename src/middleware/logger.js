@@ -1,0 +1,46 @@
+/*
+ * dbKoda - a modern, open source code editor, for MongoDB.
+ * Copyright (C) 2017-2018 Southbank Software
+ *
+ * This file is part of dbKoda.
+ *
+ * dbKoda is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * dbKoda is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-06-08T18:00:20+10:00
+ */
+
+module.exports = function(app) {
+  // Add a logger to our app object for convenience
+  app.logger = l;
+
+  return function(error, req, res, next) {
+    if (error) {
+      const message = `${error.code
+        ? `(${error.code}) `
+        : ''}Route: ${req.url} - ${error.message}`;
+
+      if (error.code === 404) {
+        l.info(message);
+      } else {
+        l.error(message);
+        l.info(error.stack);
+      }
+    }
+
+    next(error);
+  };
+};

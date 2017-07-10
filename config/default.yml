@@ -1,0 +1,16 @@
+# @Author: guiguan
+# @Date:   2017-04-18T09:26:48+10:00
+# @Last modified by:   guiguan
+# @Last modified time: 2017-06-08T17:39:24+10:00
+
+host: localhost
+port: 3030
+loggerLevel: debug
+public: ../public/
+mongoScripts: '../lib/'
+mongoCommand: 'mongo'
+auth:
+  idField: id
+  token:
+    secrete:
+  local: {}
