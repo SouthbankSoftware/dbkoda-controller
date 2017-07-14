@@ -25,6 +25,11 @@
 const prom = require('prom-client');
 const hooks = require('./hooks');
 
+const collectDefaultMetrics = prom.collectDefaultMetrics;
+const Registry = prom.Registry;
+const register = new Registry();
+
+collectDefaultMetrics({ register });
 class Monitor {
 
   find(_) {
