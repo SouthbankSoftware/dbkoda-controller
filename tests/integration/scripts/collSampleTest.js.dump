@@ -1,0 +1,131 @@
+use test
+
+db.collSampleTest.drop();
+db.collSampleTest.insertOne({
+  x: 1,
+  y: 2,
+  z: {
+    a: 1,
+    b: 2
+  },
+  zz: [{
+    zza: 1
+  }, {
+    zzb: 1
+  }]
+});
+db.collSampleTest.insertOne({
+  x: 1,
+  y: 2,
+  z: {
+    a: 1,
+    b: 2,c:3
+  },
+  zz: [{
+    zza: 1
+  }, {
+    zza: 2
+  }]
+});
+
+var collSample = function (collectionName, sampleSize) {
+  "use strict";
+  let collectionAttributes = {};
+  let prefix = '';
+  let sampleData = db[collectionName].aggregate([{
+    $sample: {
+      size: sampleSize
+    }
+  }]);
+
+  function internalSingleObjectAttributes(key, value, AttributeObject) {
+    if (Object.keys(value).length > 0) {
+      print('about to add nested element if necc');
+      print(JSON.stringify(AttributeObject));
+      print('nestedElements' in AttributeObject[key]);
+      if (!('nestedElements' in AttributeObject[key])) {
+        print('adding nested element');
+        AttributeObject[key].nestedElements = [];
+      }
+      print('assigning nested elem')
+      let nestedElements = AttributeObject[key].nestedElements;
+      print('nestedElements=' + nestedElements);
+      let arrayInx = nestedElements.length;
+      print('arrayInx=' + arrayInx);
+      Object.keys(value).forEach(nestedkey => {
+        print("nestedkey=" + nestedkey);
+        let elementFound = false;
+        let elementInx = 0;
+        // See if the nested element is already there 
+        for (let nei = 0; nei < nestedElements.length; nei++) {
+          if (nestedkey in nestedElements[nei]) {
+            print('found existing element');
+            elementFound = true;
+            elementInx = nei;
+            break;
+          }
+        }
+        if (!elementFound) {
+          print('Adding new element');
+          AttributeObject[key].nestedElements.push({});
+          arrayInx = AttributeObject[key].nestedElements.length - 1;
+
+        } else {
+          arrayInx = elementInx;
+        }
+        print('arrayInx=' + arrayInx);
+        print(AttributeObject[key].nestedElements);
+        internalObjectAttributes(nestedkey, value[nestedkey], AttributeObject[key].nestedElements[arrayInx]);
+      });
+
+    }
+  }
+
+  function internalObjectAttributes(key, value, AttributeObject,arrayElem) {
+    print("Key: " + key);
+    print("Attribute Object: " + JSON.stringify(AttributeObject));
+
+    if (key in AttributeObject) {
+      print("key in attribute");
+      if (!arrayElem) AttributeObject[key].count++;
+    } else {
+      AttributeObject[key] = {};
+      AttributeObject[key].count = 1;
+      AttributeObject[key].type = typeof value;
+    }
+    if (typeof value === 'object') {
+      if (value.constructor === Array) {
+        print('array')
+         
+        value.forEach(arrayElem=>{
+         // print(JSON.stringify(arrayElem));
+          Object.keys(arrayElem).forEach(ikey => {
+            let okey=key;
+            let ovalue=arrayElem;
+          
+            
+            print (' array call '+okey+" "+JSON.stringify(ovalue)+" "+JSON.stringify(AttributeObject)); 
+            internalObjectAttributes(okey, ovalue, AttributeObject,true);
+          });
+        });
+
+      } else {
+        print ('Not array call '+key+" "+JSON.stringify(value)+" "+JSON.stringify(AttributeObject)); 
+        internalSingleObjectAttributes(key, value, AttributeObject); 
+
+      }
+    }
+  }
+  sampleData.forEach(doc => {
+    Object.keys(doc).forEach(key => {
+      internalObjectAttributes(key, doc[key], collectionAttributes,false);
+    });
+  });
+  return (collectionAttributes);
+};
+
+collSample("collSampleTest", 10);
+db.collSampleTest.find();
+use enron
+collSample('messages',100); 
+

@@ -1,0 +1,121 @@
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-04-18T11:21:30+10:00
+ */
+
+const assert = require('assert');
+const {launchSingleInstance, killMongoInstance} = require('test-utils');
+const {
+  connection,
+  shell,
+  TIMEOUT,
+  getRandomPort,
+} = require('../commons');
+
+describe('test run shell command', () => {
+  const port = getRandomPort();
+  before(function () {
+    this.timeout(TIMEOUT * 3);
+    launchSingleInstance(port, '--auth --username admin --password 123456 --auth-db admin');
+  });
+
+  after(function () {
+    this.timeout(TIMEOUT * 3);
+    killMongoInstance(port);
+  });
+
+  it('test authorization connection with wrong credential disable test', () => {
+    return connection
+      .create(
+        {},
+        {
+          query: {
+            url: 'mongodb://localhost:' + port,
+            authorization: true,
+            test: false,
+          },
+        },
+      )
+      .then((v) => {
+        assert.equal(true, false);
+        connection.remove(v.id);
+      })
+      .catch((err) => {
+        assert.equal(err.code, 401);
+      });
+  });
+
+  it('test authorization connection with wrong credential enable test', () => {
+    return connection
+      .create(
+        {},
+        {
+          query: {
+            url: 'mongodb://localhost:' + port,
+            authorization: true,
+            test: true,
+          },
+        },
+      )
+      .then(() => {
+        assert.fail();
+      })
+      .catch((err) => {
+        assert.equal(err.code, 401);
+      });
+  });
+
+  it('test authorization connection with correct credential', () => {
+    return connection
+      .create(
+        {},
+        {
+          query: {
+            url: 'mongodb://admin:123456@localhost:' + port + '/admin',
+            authorization: true,
+            test: false,
+          },
+        },
+      )
+      .then((response) => {
+        console.log('get response ', Object.keys(response));
+        assert.equal(true, Object.keys(response).includes('id'));
+      })
+      .catch((err) => {
+        assert.fail(err);
+      });
+  });
+
+  it('test connect multiple shell connection for one instance', () => {
+    return connection
+      .create(
+        {},
+        {
+          query: {
+            url: 'mongodb://admin:123456@localhost:' + port + '/test',
+            authorization: true,
+            test: false,
+            database: 'admin',
+          },
+        },
+      )
+      .then((response) => {
+        console.log('get response ', Object.keys(response));
+        assert.equal(true, Object.keys(response).includes('id'));
+        return response;
+      })
+      .then((value) => {
+        shell
+          .create({id: value.id}, {})
+          .then((value) => {
+            assert.equal(Object.keys(value).includes('shellId'), true);
+          })
+          .catch((err) => {
+            assert.fail(err);
+          });
+      })
+      .catch((err) => {
+        assert.fail(err);
+      });
+  });
+});
