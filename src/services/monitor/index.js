@@ -34,7 +34,6 @@ class Monitor {
 
   find(_) {
     const metrics = prom.register.metrics();
-    log.info(metrics);
     return new Promise((resolve) => {
       resolve({text: metrics});
     });
@@ -49,7 +48,6 @@ module.exports = function () {
   app.use('/metrics', service, (req, res) => {
     res.format({
       'text/plain': function() {
-        log.info('xxxx:', res.data.text);
         res.end(`${res.data.text}`);
       }
     });
