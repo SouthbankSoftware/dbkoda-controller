@@ -89,7 +89,6 @@
     "openport": "0.0.4",
     "passport": "^0.3.2",
     "prom-client": "^9.1.1",
-    "prometheus-gc-stats": "^0.4.0",
     "queue": "^4.2.1",
     "request-promise": "^4.2.1",
     "rss-parser": "^2.7.0",
