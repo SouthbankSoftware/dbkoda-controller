@@ -82,7 +82,7 @@ global.UAT = process.env.UAT === 'true';
   }
 
   global.l = new winston.Logger({
-    level: app.get('loggerLevel'),
+    level: global.IS_PROD ? 'info' : 'debug',
     padLevels: true,
     levels: {
       error: 0,
@@ -103,11 +103,11 @@ global.UAT = process.env.UAT === 'true';
   global.log = global.l;
 
   process.on('unhandledRejection', (reason) => {
-    l.error(reason);
+    log.error(reason);
   });
 
   process.on('uncaughtException', (err) => {
-    l.error(err.stack);
+    log.error(err.stack);
   });
 })();
 
