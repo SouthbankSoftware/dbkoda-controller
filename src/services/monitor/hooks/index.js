@@ -18,21 +18,13 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// const globalHooks = require('../../../hooks');
-// const hooks = require('feathers-hooks');
 
 
 exports.before = {
   all: [],
   find: [],
   get: [],
-  create: [() => {
-    if (process.env.NODE_ENV !== 'production') {
-      log.info('increase connection counter');
-      const {newConnection} = require('../../monitor/monitor').Monitor;
-      newConnection.inc();
-    }
-  }],
+  create: [],
   update: [],
   patch: [],
   remove: []

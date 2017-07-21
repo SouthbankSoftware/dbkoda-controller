@@ -17,33 +17,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+ * Created by joey on 29/6/17.
+ */
 
-// const globalHooks = require('../../../hooks');
-// const hooks = require('feathers-hooks');
+const express = require('express');
+const app = express();
+const prom = require('prom-client');
 
+app.get('/metrics', (req, res) => {
+  const m = prom.register.metrics();
+  console.log(m);
+  res.end(m);
+});
 
-exports.before = {
-  all: [],
-  find: [],
-  get: [],
-  create: [() => {
-    if (process.env.NODE_ENV !== 'production') {
-      log.info('increase connection counter');
-      const {newConnection} = require('../../monitor/monitor').Monitor;
-      newConnection.inc();
-    }
-  }],
-  update: [],
-  patch: [],
-  remove: []
-};
-
-exports.after = {
-  all: [],
-  find: [],
-  get: [],
-  create: [],
-  update: [],
-  patch: [],
-  remove: []
-};
+export const App = {app};
