@@ -39,6 +39,7 @@ import syncExecution from './mongo-sync-execution';
 import file from './file';
 import blog from './blog';
 import treeAction from './tree-actions';
+import osCommandsService from './os-commands';
 
 module.exports = function() {
   const app = this;
@@ -60,6 +61,7 @@ module.exports = function() {
   app.configure(file);
   app.configure(blog);
   app.configure(treeAction);
+  app.configure(osCommandsService);
 
   if (process.env.NODE_ENV !== 'production') {
     log.info('start monitoring');
