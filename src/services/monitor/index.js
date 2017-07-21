@@ -21,6 +21,8 @@
  * Created by joey on 29/6/17.
  */
 
+/* eslint-disable class-methods-use-this */
+
 
 const prom = require('prom-client');
 const hooks = require('./hooks');

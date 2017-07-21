@@ -27,11 +27,11 @@ exports.before = {
   find: [],
   get: [],
   create: [() => {
-    if (process.env.NODE_ENV !== 'production') {
-      log.info('increase connection counter');
-      const {newConnection} = require('../../monitor/monitor').Monitor;
-      newConnection.inc();
-    }
+    // if (process.env.NODE_ENV !== 'production') {
+    //   log.info('increase connection counter');
+    //   const {newConnection} = require('../../monitor/monitor').Monitor;
+    //   newConnection.inc();
+    // }
   }],
   update: [],
   patch: [],
