@@ -149,7 +149,7 @@ class ShellService {
    * close a shell by its ID
    */
   remove(id, data) {
-    l.info('remove shell connection ', id, data.query);
+    log.info('remove shell connection ', id, data.query);
     return this.controller.removeShellConnection(id, data.query.shellId);
   }
 

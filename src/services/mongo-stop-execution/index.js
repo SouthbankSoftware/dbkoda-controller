@@ -55,7 +55,7 @@ class StopService {
     this.controller = app.service('mongo/connection/controller');
   }
 
-  get(id, params) {
+  remove(id, params) {
     l.info('Stopping execution of ' + id + ' / ' + params.query.shellId);
     const shell = this.controller.getMongoShell(id, params.query.shellId);
     let result;

@@ -67,9 +67,14 @@ class OSCommandsService {
    * @param data  {shellId, commands, responseType} shellId is the shell id to execute the commands
    */
   update(id, data) {
-    log.info('run commands ', id, data.commands);
+    log.debug('run commands ', id, data.commands);
     const connt = this.connectCtr.connections[id];
     return this.controller.runCommand(connt, data.commands, data.shellId);
+  }
+
+  remove(id, data) {
+    log.debug('remove shell connection ', id, data);
+    return this.controller.killCurrentProcess(id, data.query.shellId);
   }
 }
 

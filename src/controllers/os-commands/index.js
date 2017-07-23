@@ -60,7 +60,7 @@ class OSCommandsController extends EventEmitter {
     let params = cmd.split(' ');
     const mongoCmd = params[0];
     params.splice(0, 1);
-    params = _.filter(params, (o) => o !== '');
+    params = _.filter(params, o => o !== '');
     log.debug('spawn mongo command ', mongoCmd, params);
     const p = spawn(mongoCmd, params);
     this.currentProcess = {process: p, cmd};
@@ -76,15 +76,24 @@ class OSCommandsController extends EventEmitter {
 
     p.on('close', (code) => {
       log.debug(`child process exited with code ${code}`);
-      this.emit(OSCommandsController.COMMAND_FINISH_EVENT, {id, shellId, output: `child process exited with code ${code}`, cmd});
+      if (this.requestQueue.length <= 0) {
+        this.emit(OSCommandsController.COMMAND_FINISH_EVENT, {
+          id,
+          shellId,
+          output: `child process exited with code ${code}`,
+          cmd
+        });
+      }
       this.runCommandFromQueue();
     });
   }
 
   killCurrentProcess() {
+    this.requestQueue = [];
     if (this.currentProcess) {
-      this.currentProcess.destroy();
+      this.currentProcess.process.kill();
     }
+    return Promise.resolve();
   }
 }
 
