@@ -3,7 +3,7 @@
   "gitName": "dbkoda-controller",
   "fullName": "dbKoda Controller",
   "description": "dbKoda Controller built with state of the art Feathers stack",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "author": {
     "name": "Southbank Software",
     "email": "developer@southbanksoftware.com",
@@ -21,15 +21,16 @@
   },
   "scripts": {
     "postinstall": "yarn run clean && yarn run build",
-    "dev": "yarn run clean && yarn run dev:build && yarn start --",
+    "dev": "yarn run dev:cbuild && yarn start --",
     "dev:install": "yarn install --ignore-scripts",
     "dev:build": "yarn run build -- --source-maps",
+    "dev:cbuild": "yarn run clean && yarn run dev:build",
+    "dev:watch": "nodemon --watch src --exec \"yarn dev:cbuild\"",
     "start": "node lib/",
     "debug": "node --nolazy --debug-brk=5858 lib",
     "clean": "rimraf lib controller-dev.log",
-    "build": "babel --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
+    "build": "babel --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js && uglifyjs lib/all-in-one.js -b --output lib/all-in-one.js",
     "build:sourcemaps": "babel --ignore mongoScripts --source-maps -d lib/ src/",
-    "combine-mongo-scripts": "",
     "test": "yarn run eslint && yarn run istanbul",
     "test:dev": "yarn run istanbul && yarn run eslint",
     "rtest": "yarn run istanbul",
@@ -44,6 +45,7 @@
     "istanbul": "rimraf coverage data && NODE_PATH=./src/ NODE_ENV=test istanbul cover _mocha tests/unit tests/integration -- -t 20000 --opts mocha.opts",
     "docs": "yarn run esdoc && open -b com.google.chrome ./docs/index.html",
     "esdoc": "rimraf docs && esdoc -c .esdoc.json",
+    "cienvy:dev:watch": "nodemon --watch .cienvy/src --exec \"yarn cienvy:dev\"",
     "cienvy:dev": "yarn run cienvy:clean && yarn run cienvy:dev:build",
     "cienvy:dev:build": "yarn run cienvy:build -- --source-maps",
     "cienvy:clean": "rimraf .cienvy/lib",
@@ -117,9 +119,11 @@
     "eslint-plugin-react": "^6.6.0",
     "istanbul": "^1.1.0-alpha.1",
     "mocha": "^3.2.0",
+    "nodemon": "^1.11.0",
     "request": "^2.81.0",
     "rimraf": "^2.5.4",
     "source-map-support": "^0.4.11",
-    "test-utils": "^1.0.12"
+    "test-utils": "^1.0.12",
+    "uglify-js": "^3.0.26"
   }
 }

@@ -8,7 +8,6 @@ port: 3030
 loggerLevel: debug
 public: ../public/
 mongoScripts: '../lib/'
-mongoCommand: 'mongo'
 auth:
   idField: id
   token:
