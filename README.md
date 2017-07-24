@@ -18,6 +18,3 @@
 * Note: Currently for dev mode the UI and controller must be run seperately.
 * You can run `yarn dev` or `npm run dev` to start the controller.
 
-
-
-
