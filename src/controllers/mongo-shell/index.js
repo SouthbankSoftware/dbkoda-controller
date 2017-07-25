@@ -298,10 +298,19 @@ class MongoShell extends EventEmitter {
   }
 
   loadScriptsIntoShell() {
+    // TODO re-enable load mongo script via pty
+    // const scriptPath = path.join(this.mongoScriptPath + '/all-in-one.js');
+    // log.info('load pre defined scripts ' + scriptPath);
+    // const mongoScript = fs.readFileSync(scriptPath, 'utf8');
+    // this.write(`'${MongoShell.SUPPRESSED}'\n${mongoScript}\n'${MongoShell.UNSUPPRESSED}'`);
+
     const scriptPath = path.join(this.mongoScriptPath + '/all-in-one.js');
+    let command = `load("${scriptPath}");`;
+    if (os.platform() === 'win32') {
+      command = command.replace(/\\/g, '\\\\');
+    }
     log.info('load pre defined scripts ' + scriptPath);
-    const mongoScript = fs.readFileSync(scriptPath, 'utf8');
-    this.write(`'${MongoShell.SUPPRESSED}'\n${mongoScript}\n'${MongoShell.UNSUPPRESSED}'`);
+    this.write(command);
   }
 
   /**
