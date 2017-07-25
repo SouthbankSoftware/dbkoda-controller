@@ -39,9 +39,14 @@ if (process.env.CONFIG_PATH) {
 
 // check and figure out missing config
 if (!config.mongoCmd) {
-  if (os.platform() !== 'win32') {
-    config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
-  } else {
+  try {
+    if (os.platform() === 'win32') {
+      config.mongoCmd = execSync('where mongo /F', {encoding: 'utf8'}).trim();
+    } else {
+      config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
+    }
+  } catch (error) {
+    console.error(error);
     config.mongoCmd = 'mongo';
   }
 }

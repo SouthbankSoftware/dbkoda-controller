@@ -26,6 +26,7 @@
 
 // import fs from 'fs';
 import configObj from '~/config';
+import _ from 'lodash';
 
 const spawn = require('node-pty').spawn;
 const execSync = require('child_process').execSync;
@@ -118,17 +119,31 @@ class MongoShell extends EventEmitter {
   createShell() {
     l.debug(`Mongo Cmd: ${configObj.mongoCmd}`);
     const parameters = this.createMongoShellParameters();
-    const mongoCmdArray = configObj.mongoCmd.split(/\s+/);
+    const mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
+    mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/,'$1');
 
-    this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], {
+    const spawnOptions = {
       name: 'xterm-color',
       cols: 10000,
       rows: 10000,
       cwd: '.',
-      env: process.env,
-      uid: process.getuid(),
-      gid: process.getgid()
-    });
+      env: process.env
+    };
+
+    if (os.platform() !== 'win32') {
+      _.assign(spawnOptions, {
+        uid: process.getuid(),
+        gid: process.getgid()
+      });
+    }
+
+    try {
+      this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], spawnOptions);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+
     this.status = Status.OPEN;
     this.shell.on('exit', (exit) => {
       l.info('mongo shell exit ', exit, this.initialized);
