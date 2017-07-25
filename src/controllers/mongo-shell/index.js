@@ -18,18 +18,13 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-06-08T17:58:11+10:00
- */
-
 /* eslint-disable class-methods-use-this */
 
 /**
  * this class is used to create a wrapper on top of mongo shell and listen on its pty channels.
  */
 
-import fs from 'fs';
+// import fs from 'fs';
 import configObj from '~/config';
 
 const spawn = require('node-pty').spawn;

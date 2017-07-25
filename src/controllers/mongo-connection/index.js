@@ -134,7 +134,7 @@ class MongoConnectionController {
             return {...v, dbVersion};
           })
           .catch((_err) => {
-            throw new errors.GeneralError('Create shell connection failed. <br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda#config\')">this doc</a> for details)');
+            throw new errors.GeneralError('Create shell connection failed. <br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda/tree/hot-fix_DBKODA-2#config\')">this doc</a> for details)');
           });
       }).catch((err) => {
         l.error('got error ', err);
