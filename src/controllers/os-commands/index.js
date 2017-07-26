@@ -57,7 +57,7 @@ class OSCommandsController extends EventEmitter {
     if (username && password) {
       cmd = cmd.replace('-p ******', `-p ${password}`);
     }
-    let params = cmd.split(' ');
+    let params = cmd.trim().split(' ');
     const mongoCmd = params[0];
     params.splice(0, 1);
     params = _.filter(params, o => o !== '');
