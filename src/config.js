@@ -47,11 +47,11 @@ if (!config.mongoCmd) {
     }
   } catch (error) {
     l.error(error.stack);
-    config.mongoCmd = 'mongo';
+    config.mongoCmd = null;
   }
 }
 
-if (!config.mongoVersionCmd) {
+if (!config.mongoVersionCmd && config.mongoCmd) {
   config.mongoVersionCmd = config.mongoCmd + ' --version';
 }
 
