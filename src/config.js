@@ -46,7 +46,7 @@ if (!config.mongoCmd) {
       config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
     }
   } catch (error) {
-    console.error(error);
+    l.error(error.stack);
     config.mongoCmd = 'mongo';
   }
 }

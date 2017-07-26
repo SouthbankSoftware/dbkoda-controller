@@ -119,8 +119,9 @@ class MongoShell extends EventEmitter {
   createShell() {
     l.debug(`Mongo Cmd: ${configObj.mongoCmd}`);
     const parameters = this.createMongoShellParameters();
-    const mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
-    mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/,'$1');
+    // const mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
+    const mongoCmdArray = '/mongo'.match(/(?:[^\s"]+|"[^"]*")+/g);
+    mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/, '$1');
 
     const spawnOptions = {
       name: 'xterm-color',
