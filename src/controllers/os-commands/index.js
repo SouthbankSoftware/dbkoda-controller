@@ -81,7 +81,8 @@ class OSCommandsController extends EventEmitter {
           id,
           shellId,
           output: `child process exited with code ${code}`,
-          cmd
+          cmd,
+          code
         });
       }
       this.runCommandFromQueue();
