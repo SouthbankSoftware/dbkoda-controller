@@ -59,6 +59,11 @@ class MongoShell extends EventEmitter {
   getShellVersion() {
     try {
       l.debug(`Mongo Version Cmd: ${configObj.mongoVersionCmd}`);
+
+      if (!configObj.mongoVersionCmd) {
+        return 'UNKNOWN';
+      }
+
       const output = execSync(configObj.mongoVersionCmd, {encoding: 'utf8'});
       const mongoVStr = output.split('\n');
       if (mongoVStr && mongoVStr.length > 0) {
@@ -118,9 +123,13 @@ class MongoShell extends EventEmitter {
    */
   createShell() {
     l.debug(`Mongo Cmd: ${configObj.mongoCmd}`);
+
+    if (!configObj.mongoCmd) {
+      throw new Error('Mongo binary undetected');
+    }
+
     const parameters = this.createMongoShellParameters();
-    // const mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
-    const mongoCmdArray = '/mongo'.match(/(?:[^\s"]+|"[^"]*")+/g);
+    const mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
     mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/, '$1');
 
     const spawnOptions = {
