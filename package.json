@@ -29,7 +29,7 @@
     "start": "node lib/",
     "debug": "node --nolazy --debug-brk=5858 lib",
     "clean": "rimraf lib controller-dev.log",
-    "build": "babel --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js && uglifyjs lib/all-in-one.js -b --output lib/all-in-one.js",
+    "build": "babel --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
     "build:sourcemaps": "babel --ignore mongoScripts --source-maps -d lib/ src/",
     "test": "yarn run eslint && yarn run istanbul",
     "test:dev": "yarn run istanbul && yarn run eslint",
@@ -124,7 +124,7 @@
     "request": "^2.81.0",
     "rimraf": "^2.5.4",
     "source-map-support": "^0.4.11",
-    "test-utils": "^1.0.12",
-    "uglify-js": "2.8.29"
+    "strip-comments": "^0.4.4",
+    "test-utils": "^1.0.12"
   }
 }
