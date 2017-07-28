@@ -58,7 +58,6 @@ class MongoConnectionController {
   setup(app) {
     this.app = app;
     this.mongoShell = app.service('/mongo-shells');
-    this.mongoCommand = app.get('mongoCommand');
   }
 
   /**
@@ -135,7 +134,7 @@ class MongoConnectionController {
             return {...v, dbVersion};
           })
           .catch((_err) => {
-            throw new errors.GeneralError('Create shell connection failed.');
+            throw new errors.GeneralError('Create shell connection failed. <br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda/tree/hot-fix_DBKODA-2#config\')">this doc</a> for details)');
           });
       }).catch((err) => {
         l.error('got error ', err);
@@ -176,7 +175,7 @@ class MongoConnectionController {
         l.info(`shell ${key} is closed ${value.shell.status}`);
         value
           .shell
-          .destroy();
+          .kill();
       });
       driver.close();
 
@@ -201,7 +200,7 @@ class MongoConnectionController {
         if (shellId === key) {
           l.info('remove shell connection ', key);
           value.status = Status.CLOSING;
-          value.shell && value.shell.destroy();
+          value.shell && value.shell.kill();
         }
       });
       delete shells[shellId];
@@ -282,7 +281,7 @@ class MongoConnectionController {
         mongoScriptsPath = this.app.get('mongoScripts');
       }
       log.debug(mongoScriptsPath);
-      const shell = new MongoShell(this.mongoCommand, connection, mongoScriptsPath);
+      const shell = new MongoShell(connection, mongoScriptsPath);
       shell.createShell();
       const connectionMessage = [];
       shell.on(MongoShell.SHELL_EXIT, (exit) => {

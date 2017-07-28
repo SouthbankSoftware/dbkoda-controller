@@ -13,7 +13,7 @@ describe('mongo-shell service', () => {
   });
 
   it('test replace password from mongo url', () => {
-    const shell = new MongoShell('', {}, '.');
+    const shell = new MongoShell({}, '.');
 
     let output = shell.filterOutput('connecting to: mongodb://aaaa:bbbb@localhost');
     assert.equal(output.indexOf('bbbb') === -1, true);
@@ -37,7 +37,7 @@ describe('mongo-shell service', () => {
       shellId: '4f7e0f31-44cf-11e7-8744-f3f4a4c6e36a',
       hosts: 'xxxxxxxxxxx.ap-southeast-2.compute.amazonaws.com:27017',
       options: undefined };
-    const shell = new MongoShell('', connectionObject, '.');
+    const shell = new MongoShell(connectionObject, '.');
     const parameters = shell.createMongoShellParameters();
     assert.equal(parameters.length, 5);
     assert.equal(parameters[0], connectionObject.url);
@@ -58,7 +58,7 @@ describe('mongo-shell service', () => {
       shellId: '4f7e0f31-44cf-11e7-8744-f3f4a4c6e36a',
       hosts: 'xxxxxxxxxxx.ap-southeast-2.compute.amazonaws.com:27017',
       options: undefined };
-    const shell = new MongoShell('', connectionObject, '.');
+    const shell = new MongoShell(connectionObject, '.');
     const parameters = shell.createMongoShellParameters();
     assert.equal(parameters.length, 1);
     assert.equal(parameters[0], connectionObject.url);

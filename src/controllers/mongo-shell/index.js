@@ -18,16 +18,15 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-06-08T17:58:11+10:00
- */
-
 /* eslint-disable class-methods-use-this */
 
 /**
  * this class is used to create a wrapper on top of mongo shell and listen on its pty channels.
  */
+
+// import fs from 'fs';
+import configObj from '~/config';
+import _ from 'lodash';
 
 const spawn = require('node-pty').spawn;
 const execSync = require('child_process').execSync;
@@ -40,10 +39,9 @@ const Status = require('../mongo-connection/status');
 const LineStream = require('./../../../libs/byline').LineStream;
 
 class MongoShell extends EventEmitter {
-  constructor(command, connection, mongoScriptPath) {
+  constructor(connection, mongoScriptPath) {
     super();
-    this.command = command;
-    this.changePromptCmd = 'var prompt="' + MongoShell.prompt + '";';
+    this.changePromptCmd = 'var prompt="' + MongoShell.prompt + '";\n';
     this.emitter = new EventEmitter();
     this.connection = connection;
     this.initialized = false;
@@ -55,11 +53,13 @@ class MongoShell extends EventEmitter {
     this.status = Status.CREATED;
     this.mongoScriptPath = mongoScriptPath;
     this.shellVersion = this.getShellVersion();
+    l.debug(`Shell version: ${this.shellVersion}`);
   }
 
   getShellVersion() {
     try {
-      const output = execSync(this.command + ' --version').toString();
+      l.debug(`Mongo Version Cmd: ${configObj.mongoVersionCmd}`);
+      const output = execSync(configObj.mongoVersionCmd, {encoding: 'utf8'});
       const mongoVStr = output.split('\n');
       if (mongoVStr && mongoVStr.length > 0) {
         if (mongoVStr[0].indexOf('MongoDB shell version v') >= 0) {
@@ -117,17 +117,34 @@ class MongoShell extends EventEmitter {
    * create a shell with pty
    */
   createShell() {
-    const platform = os.platform() === 'win32' ? 'cmd.exe' : 'bash';
+    l.debug(`Mongo Cmd: ${configObj.mongoCmd}`);
     const parameters = this.createMongoShellParameters();
-    const shellParameters = this.command + ' ' + parameters.join(' ');
-    const shellArg = os.platform() === 'win32' ? '/C' : '-c';
-    this.shell = spawn(platform, [shellArg, shellParameters], {
+    // const mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
+    const mongoCmdArray = '/mongo'.match(/(?:[^\s"]+|"[^"]*")+/g);
+    mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/, '$1');
+
+    const spawnOptions = {
       name: 'xterm-color',
       cols: 10000,
       rows: 10000,
       cwd: '.',
-      env: process.env,
-    });
+      env: process.env
+    };
+
+    if (os.platform() !== 'win32') {
+      _.assign(spawnOptions, {
+        uid: process.getuid(),
+        gid: process.getgid()
+      });
+    }
+
+    try {
+      this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], spawnOptions);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+
     this.status = Status.OPEN;
     this.shell.on('exit', (exit) => {
       l.info('mongo shell exit ', exit, this.initialized);
@@ -157,10 +174,24 @@ class MongoShell extends EventEmitter {
         } catch (err) {
           continue;
         }
+
+        if (output.search(MongoShell.SUPPRESSED_REGEX) !== -1) {
+          if (output === MongoShell.SUPPRESSED) {
+            this.suppressOutput = true;
+          }
+          continue;
+        }
+
+        if (output === MongoShell.UNSUPPRESSED) {
+          this.suppressOutput = false;
+          continue;
+        }
+
         if (!this.initialized && (output.indexOf('load(') >= 0 || output === 'true')) {
           // handle loading script on connection
           continue;
         }
+
         if (this.autoComplete) {
           // handle auto complete case
           if (output.indexOf(MongoShell.prompt) < 0 && output.indexOf('Autocom') < 0) {
@@ -267,44 +298,30 @@ class MongoShell extends EventEmitter {
         }
       }
     });
-    this.loadScriptsIntoShell();
     if (this.connection.requireSlaveOk) {
       this.writeToShell('rs.slaveOk()' + MongoShell.enter);
     }
-    this.writeToShell(this.changePromptCmd + MongoShell.enter);
+    this.writeToShell(`${this.changePromptCmd}${MongoShell.enter}`);
+    this.loadScriptsIntoShell();
     this.on(MongoShell.AUTO_COMPLETE_END, () => {
       this.finishAutoComplete();
     });
   }
 
   loadScriptsIntoShell() {
-    // const pathDir = path.join(this.mongoScriptPath);
-    // l.info('Loading scripts from: ', pathDir);
-    // fs.readdir(pathDir, (err, files) => {
-    //   l.info('Current Dir: ', __dirname);
-    //   l.info('Script list: ', files);
-    //   l.info('Errors: ', err);
-    //   if (!err) {
-    //     files.sort();
-    //     files.forEach((file) => {
-    //       if (!file.match(/map/g) && file.match(/.js$/g)) {
-    //         let command = 'load("' + path.join(pathDir, file) + '");\n';
-    //         if (os.platform() === 'win32') {
-    //           command = command.replace(/\\/g, '\\\\');
-    //         }
-    //         l.info('load script:', command);
-    //         this.writeToShell(command);
-    //       }
-    //     });
-    //   }
-    // });
+    // TODO re-enable load mongo script via pty
+    // const scriptPath = path.join(this.mongoScriptPath + '/all-in-one.js');
+    // log.info('load pre defined scripts ' + scriptPath);
+    // const mongoScript = fs.readFileSync(scriptPath, 'utf8');
+    // this.write(`'${MongoShell.SUPPRESSED}'\n${mongoScript}\n'${MongoShell.UNSUPPRESSED}'`);
+
     const scriptPath = path.join(this.mongoScriptPath + '/all-in-one.js');
     let command = `load("${scriptPath}");`;
     if (os.platform() === 'win32') {
       command = command.replace(/\\/g, '\\\\');
     }
     log.info('load pre defined scripts ' + scriptPath);
-    this.writeToShell(command);
+    this.write(command);
   }
 
   /**
@@ -321,6 +338,11 @@ class MongoShell extends EventEmitter {
    * @param output
    */
   emitOutput(output) {
+    if (this.suppressOutput) {
+      // suppress output
+      return;
+    }
+
     if (!this.executing || !this.initialized) {
       this.outputQueue.push(output);
       this.emitBufferedOutput();
@@ -371,7 +393,7 @@ class MongoShell extends EventEmitter {
       return;
     }
     data = data.replace(/\t/g, '  ');
-    l.info('write to shell ', data);
+    l.debug('write to shell ', data);
     this.currentCommand = data;
     this.shell.write(data);
   }
@@ -471,5 +493,8 @@ MongoShell.AUTO_COMPLETE_END = 'mongo-auto-complete-end';
 MongoShell.INITIALIZED = 'mongo-shell-initialized';
 MongoShell.SHELL_EXIT = 'mongo-shell-process-exited';
 MongoShell.RECONNECTED = 'mongo-shell-reconnected';
+MongoShell.SUPPRESSED = '__SUPPRESSED__';
+MongoShell.SUPPRESSED_REGEX = new RegExp(MongoShell.SUPPRESSED + '\'?$');
+MongoShell.UNSUPPRESSED = '__UNSUPPRESSED__';
 
 module.exports.MongoShell = MongoShell;

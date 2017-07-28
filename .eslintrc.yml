@@ -44,7 +44,7 @@ rules:
   import/namespace: 0
   import/no-named-as-default: 2
   # this requires eslint-import-resolver-node@0.3.0 to be installed in order for import/resolver settings to work
-  import/no-unresolved: 2
+  import/no-unresolved: [2, {ignore: ["^[~]"]}]
   import/prefer-default-export: 0
   import/no-extraneous-dependencies: 0
   import/extensions: 0

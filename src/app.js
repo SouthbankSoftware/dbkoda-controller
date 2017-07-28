@@ -35,8 +35,6 @@ import rest from 'feathers-rest';
 import bodyParser from 'body-parser';
 import primus from 'feathers-primus';
 import swagger from 'feathers-swagger';
-import middleware from './middleware';
-import services from './services';
 
 const app = feathers();
 
@@ -110,6 +108,10 @@ global.UAT = process.env.UAT === 'true';
     log.error(err.stack);
   });
 })();
+
+// require here so code from this point can use winston logger
+const middleware = require('./middleware');
+const services = require('./services');
 
 app
   .use(compress())
