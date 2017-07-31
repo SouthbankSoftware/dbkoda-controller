@@ -34,7 +34,9 @@ if (process.env.CONFIG_PATH) {
   try {
     const userConfig = yaml.safeLoad(fs.readFileSync(process.env.CONFIG_PATH, 'utf8'));
     _.assign(config, _.pick(userConfig, _.keys(config)));
-  } catch (_e) {} // eslint-disable-line no-empty
+  } catch (_e) {
+    console.error(_e);
+  } // eslint-disable-line no-empty
 }
 
 // check and figure out missing config

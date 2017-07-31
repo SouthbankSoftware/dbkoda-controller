@@ -128,9 +128,27 @@ class MongoShell extends EventEmitter {
       throw new Error('Mongo binary undetected');
     }
 
+    const mongoCmd = configObj.mongoCmd;
+    if (os.platform() === 'win32') {
+      let verCmd = mongoCmd;
+      if (verCmd.indexOf(' ') >= 0 && verCmd.indexOf('"') !== 0) {
+        verCmd = verCmd.replace(/\ /g, '^ '); // eslint-disable-line 
+      }
+      try {
+        execSync(`${verCmd} --version`, {encoding: 'utf8'});
+      } catch (_) {
+        throw new Error('Mongo binary undetected');
+      }
+    }
+
     const parameters = this.createMongoShellParameters();
-    const mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
-    mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/, '$1');
+    let mongoCmdArray;
+    if (mongoCmd.indexOf('"') === 0) {
+      mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
+      mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/, '$1');
+    } else {
+      mongoCmdArray = [mongoCmd];
+    }
 
     const spawnOptions = {
       name: 'xterm-color',
