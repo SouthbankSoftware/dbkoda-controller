@@ -46,7 +46,7 @@ if (process.env.CONFIG_PATH) {
 if (!config.mongoCmd) {
   try {
     if (os.platform() === 'win32') {
-      config.mongoCmd = execSync('where mongo /F', {encoding: 'utf8'}).trim();
+      config.mongoCmd = 'mongo.exe'; // execSync('where mongo /F', {encoding: 'utf8'}).trim();
     } else {
       config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
       const tmp = config.mongoCmd.split('\n');
