@@ -46,6 +46,10 @@ if (!config.mongoCmd) {
       config.mongoCmd = execSync('where mongo /F', {encoding: 'utf8'}).trim();
     } else {
       config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
+      const tmp = config.mongoCmd.split('\n');
+      if (tmp.length > 0) {
+        config.mongoCmd = tmp[tmp.length - 1];
+      }
     }
   } catch (error) {
     l.error(error.stack);
