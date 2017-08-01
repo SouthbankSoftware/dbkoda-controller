@@ -166,7 +166,12 @@ class MongoShell extends EventEmitter {
     }
 
     try {
-      this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], spawnOptions);
+      if (os.platform() !== 'win32') {
+        this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], spawnOptions);
+      } else {
+        const params = ['/c', mongoCmdArray[0], ...parameters];
+        this.shell = spawn('cmd.exe', params, spawnOptions);
+      }
     } catch (error) {
       console.error(error);
       throw error;
