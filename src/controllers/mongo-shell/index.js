@@ -166,12 +166,12 @@ class MongoShell extends EventEmitter {
     }
 
     try {
-      if (os.platform() !== 'win32') {
-        this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], spawnOptions);
-      } else {
-        const params = ['/c', mongoCmdArray[0], ...parameters];
-        this.shell = spawn('cmd.exe', params, spawnOptions);
-      }
+      // if (os.platform() !== 'win32') {
+      this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], spawnOptions);
+      // } else {
+      //   const params = ['/c', mongoCmdArray[0], ...parameters];
+      //   this.shell = spawn('cmd.exe', params, spawnOptions);
+      // }
     } catch (error) {
       console.error(error);
       throw error;
@@ -246,7 +246,7 @@ class MongoShell extends EventEmitter {
             if (output.indexOf(MongoShell.prompt) === 0) {
               currentCommandWithPrompt = MongoShell.prompt + this.currentCommand.replace(/\r/, '');
             }
-            if (currentCommandWithPrompt.indexOf(output) === 0 && currentCommandWithPrompt.length > output.length
+            if (currentCommandWithPrompt.trim().indexOf(output) === 0 && currentCommandWithPrompt.trim().length > output.length
               && output !== MongoShell.prompt && output.indexOf('}') < 0 && output.indexOf('{') < 0) {
               continue;
             }
@@ -471,7 +471,7 @@ class MongoShell extends EventEmitter {
     this.outputQueue = [];
     this.prevExecutionTime = (new Date()).getTime();
     split.forEach((cmd) => {
-      if (cmd && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
+      if (cmd && cmd.trim() && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
         this.cmdQueue.push(cmd + MongoShell.enter);
       }
     });
