@@ -34,7 +34,7 @@ if (process.env.CONFIG_PATH) {
   try {
     const userConfig = yaml.safeLoad(fs.readFileSync(process.env.CONFIG_PATH, 'utf8'));
     _.assign(config, _.pick(userConfig, _.keys(config)));
-    if (!config.mongoCmd.endsWith('.exe') && !config.mongoCmd.endsWith('.EXE')) {
+    if (!config.mongoCmd.match(new RegExp('.exe$', 'i'))) {
       config.mongoCmd += '.exe';
     }
   } catch (_e) {
