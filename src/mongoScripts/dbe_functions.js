@@ -244,7 +244,7 @@ dbe.databaseStorage = function() {
     });
 
     dbData.forEach(function(dbd) {
-      if (dbd.hasOwnProperty("shards")) {
+      if (dbd.hasOwnProperty('shards')) {
         Object.keys(dbd.shards).forEach(function(s) {
           if (shardData.hasOwnProperty(s)) {
             shardData[s] += dbd.shards[s];
@@ -257,6 +257,49 @@ dbe.databaseStorage = function() {
     });
     output.storageByDb = dbData;
     output.shardData = shardData;
+  }
+  return output;
+};
+
+dbe.storageAnalysis = function() {
+  var mydb = db.getSiblingDB("admin"); // eslint-disable-line
+  var output = {};
+  var dbList = mydb.adminCommand({
+    listDatabases: 1
+  });
+  if (dbList.ok == 1) {
+    var dbData1 = dbList.databases.sort(function(a, b) {
+      return b.sizeOnDisk - a.sizeOnDisk;
+    });
+
+    output.name = 'total';
+    output.children = [];
+    dbData1.forEach(function(dbd) {
+      var dbData = {};
+      dbData.name = dbd.name;
+
+      var db1 = db.getSiblingDB(dbd.name); // eslint-disable-line
+      var collArr = [];
+      db1.getCollectionNames().forEach(function(cname) {
+        var stats = db1.getCollection(cname).stats();
+        var collData = {
+          name: cname,
+        };
+        collData.children = [];
+        var indexes = [];
+        Object.keys(stats.indexSizes).forEach(function(idx) {
+          indexes.push({ name: idx, size: stats.indexSizes[idx] });
+        });
+        collData.children.push({name:'data', size:stats.storageSize});
+        collData.children.push({name:'indexes', children:indexes});
+        collArr.push(collData);
+      });
+      collArr.sort(function(a, b) {
+        return b.storageSizeMB - a.storageSizeMB;
+      });
+      dbData.children = collArr;
+      output.children.push(dbData);
+    });
   }
   return output;
 };
