@@ -24,7 +24,7 @@
  * this class is used to create a wrapper on top of mongo shell and listen on its pty channels.
  */
 
-import fs from 'fs';
+// import fs from 'fs';
 import configObj from '~/config';
 import _ from 'lodash';
 
@@ -207,18 +207,6 @@ class MongoShell extends EventEmitter {
           continue;
         }
 
-        if (output.search(MongoShell.SUPPRESSED_REGEX) !== -1) {
-          if (output === MongoShell.SUPPRESSED) {
-            this.suppressOutput = true;
-          }
-          continue;
-        }
-
-        if (output === MongoShell.UNSUPPRESSED) {
-          this.suppressOutput = false;
-          continue;
-        }
-
         if (!this.initialized && (output.indexOf('load(') >= 0 || output === 'true')) {
           // handle loading script on connection
           continue;
@@ -330,11 +318,11 @@ class MongoShell extends EventEmitter {
         }
       }
     });
+    this.loadScriptsIntoShell();
     if (this.connection.requireSlaveOk) {
       this.writeToShell('rs.slaveOk()' + MongoShell.enter);
     }
     this.writeToShell(`${this.changePromptCmd}${MongoShell.enter}`);
-    this.loadScriptsIntoShell();
     this.on(MongoShell.AUTO_COMPLETE_END, () => {
       this.finishAutoComplete();
     });
@@ -342,9 +330,12 @@ class MongoShell extends EventEmitter {
 
   loadScriptsIntoShell() {
     const scriptPath = path.join(this.mongoScriptPath + '/all-in-one.js');
+    let command = `load("${scriptPath}");`;
+    if (os.platform() === 'win32') {
+      command = command.replace(/\\/g, '\\\\');
+    }
     log.info('load pre defined scripts ' + scriptPath);
-    const mongoScript = fs.readFileSync(scriptPath, 'utf8');
-    this.write(`'${MongoShell.SUPPRESSED}'\n${mongoScript}\n'${MongoShell.UNSUPPRESSED}'`);
+    this.writeToShell(command);
   }
 
   /**
@@ -361,11 +352,6 @@ class MongoShell extends EventEmitter {
    * @param output
    */
   emitOutput(output) {
-    if (this.suppressOutput) {
-      // suppress output
-      return;
-    }
-
     if (!this.executing || !this.initialized) {
       this.outputQueue.push(output);
       this.emitBufferedOutput();
@@ -516,8 +502,5 @@ MongoShell.AUTO_COMPLETE_END = 'mongo-auto-complete-end';
 MongoShell.INITIALIZED = 'mongo-shell-initialized';
 MongoShell.SHELL_EXIT = 'mongo-shell-process-exited';
 MongoShell.RECONNECTED = 'mongo-shell-reconnected';
-MongoShell.SUPPRESSED = '__SUPPRESSED__';
-MongoShell.SUPPRESSED_REGEX = new RegExp(MongoShell.SUPPRESSED + '\'?$');
-MongoShell.UNSUPPRESSED = '__UNSUPPRESSED__';
 
 module.exports.MongoShell = MongoShell;
