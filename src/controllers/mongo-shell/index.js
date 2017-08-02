@@ -128,9 +128,27 @@ class MongoShell extends EventEmitter {
       throw new Error('Mongo binary undetected');
     }
 
+    const mongoCmd = configObj.mongoCmd;
+    if (os.platform() === 'win32') {
+      let verCmd = mongoCmd;
+      if (verCmd.indexOf(' ') >= 0 && verCmd.indexOf('"') !== 0) {
+        verCmd = verCmd.replace(/\ /g, '^ '); // eslint-disable-line 
+      }
+      try {
+        execSync(`${verCmd} --version`, {encoding: 'utf8'});
+      } catch (_) {
+        throw new Error('Mongo binary undetected');
+      }
+    }
+
     const parameters = this.createMongoShellParameters();
-    const mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
-    mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/, '$1');
+    let mongoCmdArray;
+    if (mongoCmd.indexOf('"') === 0) {
+      mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
+      mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/, '$1');
+    } else {
+      mongoCmdArray = [mongoCmd];
+    }
 
     const spawnOptions = {
       name: 'xterm-color',
@@ -148,7 +166,12 @@ class MongoShell extends EventEmitter {
     }
 
     try {
+      // if (os.platform() !== 'win32') {
       this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], spawnOptions);
+      // } else {
+      //   const params = ['/c', mongoCmdArray[0], ...parameters];
+      //   this.shell = spawn('cmd.exe', params, spawnOptions);
+      // }
     } catch (error) {
       console.error(error);
       throw error;
@@ -223,7 +246,7 @@ class MongoShell extends EventEmitter {
             if (output.indexOf(MongoShell.prompt) === 0) {
               currentCommandWithPrompt = MongoShell.prompt + this.currentCommand.replace(/\r/, '');
             }
-            if (currentCommandWithPrompt.indexOf(output) === 0 && currentCommandWithPrompt.length > output.length
+            if (currentCommandWithPrompt.trim().indexOf(output) === 0 && currentCommandWithPrompt.trim().length > output.length
               && output !== MongoShell.prompt && output.indexOf('}') < 0 && output.indexOf('{') < 0) {
               continue;
             }
@@ -439,7 +462,7 @@ class MongoShell extends EventEmitter {
     this.outputQueue = [];
     this.prevExecutionTime = (new Date()).getTime();
     split.forEach((cmd) => {
-      if (cmd && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
+      if (cmd && cmd.trim() && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
         this.cmdQueue.push(cmd + MongoShell.enter);
       }
     });

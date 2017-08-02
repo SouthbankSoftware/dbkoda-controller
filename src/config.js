@@ -34,16 +34,27 @@ if (process.env.CONFIG_PATH) {
   try {
     const userConfig = yaml.safeLoad(fs.readFileSync(process.env.CONFIG_PATH, 'utf8'));
     _.assign(config, _.pick(userConfig, _.keys(config)));
-  } catch (_e) {} // eslint-disable-line no-empty
+    if (os.platform() === 'win32') {
+      if (!config.mongoCmd.match(new RegExp('.exe$', 'i'))) {
+        config.mongoCmd += '.exe';
+      }
+    }
+  } catch (_e) {
+    // console.error(_e);
+  } // eslint-disable-line no-empty
 }
 
 // check and figure out missing config
 if (!config.mongoCmd) {
   try {
     if (os.platform() === 'win32') {
-      config.mongoCmd = execSync('where mongo /F', {encoding: 'utf8'}).trim();
+      config.mongoCmd = 'mongo.exe'; // execSync('where mongo /F', {encoding: 'utf8'}).trim();
     } else {
       config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
+      const tmp = config.mongoCmd.split('\n');
+      if (tmp.length > 0) {
+        config.mongoCmd = tmp[tmp.length - 1];
+      }
     }
   } catch (error) {
     l.error(error.stack);
