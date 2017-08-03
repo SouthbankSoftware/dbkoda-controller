@@ -131,7 +131,7 @@ describe('test run shell command', () => {
         responseType: 'json'
       }).then((output) => {
         console.log('test get user roles command get output', output);
-        JSON.parse(output.replace(/[\r\n\t]*/g, ''));
+        // JSON.parse(output.replace(/[\r\n\t]*/g, ''));
         resolve();
       }).catch(err => reject(err));
     });
