@@ -63,6 +63,7 @@
   "homepage": "https://github.com/SouthbankSoftware/dbkoda-controller#readme",
   "dependencies": {
     "ajv": "^5.0.0",
+    "ansi-regex": "^3.0.0",
     "body-parser": "^1.15.2",
     "chokidar": "^1.7.0",
     "compression": "^1.6.2",
