@@ -57,6 +57,7 @@ class SyncExecutionController {
       .mongoController
       .getMongoShell(id, shellId);
     if (shell.isShellBusy()) {
+      log.info('shell is busy, queue the command');
       return new Promise((resolve, reject) => {
         this
           .requestQueue
@@ -130,6 +131,7 @@ class SyncExecutionController {
         output = output.replace(/NumberLong\(([a-zA-Z0-9]*)\)/g, '"NumberLong(\'$1\')"');
         output = output.replace(/NumberLong\("([a-zA-Z0-9]*)"\)/g, '"NumberLong(\'$1\')"');
         output = output.replace(/Timestamp\(([a-zA-Z0-9.:-_, ]*)\)/g, '"ObjectId(\'$1\')"');
+        output = output.replace(/dbKoda>/g, '');
         // output = output.replace(/:(\/[^\/]*\/)/g, ':"$1"'); // eslint-disable-line
         try {
           JSON.parse(output);

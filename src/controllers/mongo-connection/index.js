@@ -200,7 +200,7 @@ class MongoConnectionController {
         if (shellId === key) {
           l.info('remove shell connection ', key);
           value.status = Status.CLOSING;
-          value.shell && value.shell.kill();
+          value.shell && value.shell.destroy();
         }
       });
       delete shells[shellId];

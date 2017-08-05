@@ -17,19 +17,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 /* eslint-disable class-methods-use-this */
-
 /**
  * this class is used to create a wrapper on top of mongo shell and listen on its pty channels.
  */
-
 // import fs from 'fs';
 import configObj from '~/config';
 import _ from 'lodash';
 
 const spawn = require('node-pty').spawn;
-const { StringDecoder } = require('string_decoder');
+// const {StringDecoder} = require('string_decoder');
 const ansiRegex = require('ansi-regex');
 const execSync = require('child_process').execSync;
 const EventEmitter = require('events').EventEmitter;
@@ -38,9 +35,9 @@ const os = require('os');
 const path = require('path');
 const Status = require('../mongo-connection/status');
 
-const decoder = new StringDecoder('utf8');
+// const decoder = new StringDecoder('utf8');
 
-const LineStream = require('./../../../libs/byline').LineStream;
+// const LineStream = require('./../../../libs/byline').LineStream;
 
 class MongoShell extends EventEmitter {
   constructor(connection, mongoScriptPath) {
@@ -112,7 +109,7 @@ class MongoShell extends EventEmitter {
         params.push('--ssl');
       }
     }
-    const { username, password } = connection;
+    const {username, password} = connection;
     if (username) {
       params = params.concat(['--username', username]);
       if (password) {
@@ -199,116 +196,116 @@ class MongoShell extends EventEmitter {
     // handle shell output
     this.shell.on('data', this.onPtyData.bind(this));
     this.shell.on('xxx', (line) => {
-        if (!this.executing && this.initialized && !this.autoComplete) {
-          return;
-        }
-        let output = '';
-        try {
-          output = stripAnsi(line);
-        } catch (err) {
-          return;
-        }
-        log.info('get output ', output);
+      if (!this.executing && this.initialized && !this.autoComplete) {
+        return;
+      }
+      let output = '';
+      try {
+        output = stripAnsi(line);
+      } catch (err) {
+        return;
+      }
+      log.info('get output ', output);
 
 
-        if (!this.initialized && output.indexOf(MongoShell.prompt) >= 0) {
-          // handle loading script on connection
-          this.initialized = true;
-          this.emit(MongoShell.INITIALIZED);
-          return;
-        }
+      if (!this.initialized && output.indexOf(MongoShell.prompt) >= 0) {
+        // handle loading script on connection
+        this.initialized = true;
+        this.emit(MongoShell.INITIALIZED);
+        return;
+      }
 
-        if (ansiRegex().test(line) && this.currentCommand === output) {
-          this.shell.write(MongoShell.enter);
-          this.runNextCommand();
-          return;
-        }
+      if (ansiRegex().test(line) && this.currentCommand === output) {
+        this.shell.write(MongoShell.enter);
+        this.runNextCommand();
+        return;
+      }
 
-        if (output === MongoShell.prompt) {
-          that.emit(MongoShell.EXECUTE_END);
-        }
+      if (output === MongoShell.prompt) {
+        that.emit(MongoShell.EXECUTE_END);
+      }
 
-        this.emit(MongoShell.OUTPUT_EVENT, output + MongoShell.enter);
+      this.emit(MongoShell.OUTPUT_EVENT, output + MongoShell.enter);
 
-        // if (this.autoComplete) {
-        //   // handle auto complete case
-        //   if (output.indexOf(MongoShell.prompt) < 0 && output.indexOf('Autocom') < 0) {
-        //     this.autoCompleteOutput += output.trim();
-        //   }
-        //   if (output === MongoShell.prompt) {
-        //     // command is about finish
-        //     // if there is no output, let the final timeout emit the event
-        //     this.autoComplete = false;
-        //     this.emit(MongoShell.AUTO_COMPLETE_END, this.autoCompleteOutput.slice(0));
-        //   }
-        // } else if (this.currentCommand) {
-        //   if (os.platform() === 'win32') {
-        //     // pty generate incomplete command on windows
-        //     let currentCommandWithPrompt = this.currentCommand.replace(/\r/, '');
-        //     if (currentCommandWithPrompt.indexOf(output) > 0 && currentCommandWithPrompt.length > output.length * 2
-        //       && output.indexOf('{') && output.indexOf('}') < 0) {
-        //       return;
-        //     }
-        //     if (output.indexOf(MongoShell.prompt) === 0) {
-        //       currentCommandWithPrompt = MongoShell.prompt + this.currentCommand.replace(/\r/, '');
-        //     }
-        //     if (currentCommandWithPrompt.trim().indexOf(output) === 0 && currentCommandWithPrompt.trim().length > output.length
-        //       && output !== MongoShell.prompt && output.indexOf('}') < 0 && output.indexOf('{') < 0) {
-        //       return;
-        //     }
-        //   }
-        //   if (output.indexOf(this.currentCommand.replace(/\r*$/, '') + this.currentCommand.replace(/\r*$/, '')) >= 0 && !this.syncExecution) {
-        //     if (output.indexOf(MongoShell.prompt) >= 0) {
-        //       // check whether it is the initial prompt
-        //       if (output.indexOf(`var prompt="${MongoShell.prompt}";`) < 0) {
-        //         // show command with prompt
-        //         this.emitOutput(MongoShell.prompt + this.currentCommand);
-        //       }
-        //     } else {
-        //       // for ... output
-        //       this.emitOutput(this.currentCommand);
-        //     }
-        //   } else if (output.indexOf(`var prompt="${MongoShell.prompt}";`) >= 0) {
-        //     // this is initial change prompt command, ignore it
-        //   } else if (output === '... ' || output === '...') {
-        //     // found in complete command
-        //     if (!this.syncExecution) {
-        //       this.emitOutput(output);
-        //     }
-        //     this.currentCommand = this.runNextCommand();
-        //     if (!this.currentCommand) {
-        //       // the command is not complete, clear the incomplete context
-        //       this.shell.write('\r\r');
-        //     }
-        //   } else if (this.syncExecution && output.indexOf(MongoShell.prompt) < 0
-        //     && output.indexOf(this.currentCommand.trim()) < 0) {
-        //     // emit sync execution command output
-        //     this.emit(MongoShell.SYNC_OUTPUT_EVENT, output + MongoShell.enter);
-        //   } else if (!this.syncExecution) {
-        //     // emit general command output
-        //     if (os.platform() === 'win32') {
-        //       // sometimes windows doesnt show prompt
-        //       if (this.currentCommand.replace(/\r/, '') === output) {
-        //         this.emitOutput(MongoShell.prompt + output + MongoShell.enter);
-        //         return;
-        //       }
-        //       // for in complete output
-        //       if (output.indexOf('... ') == 0) {
-        //         if (output.replace('... ', '') !== this.currentCommand.replace(/\r/, '')) {
-        //           return;
-        //         }
-        //         this.emitOutput(output.replace('... ', '') + MongoShell.enter);
-        //         return;
-        //       }
-        //     }
-        //     console.log('emit output ', output);
-        //     this.emit(MongoShell.OUTPUT_EVENT, output + MongoShell.enter);
-        //     // this.emitOutput(output + MongoShell.enter);
-        //   }
-        // } else if (output.indexOf(`var prompt="${MongoShell.prompt}"`) < 0) {
-        //   // initializing connection messages
-        //   this.emitOutput(output + MongoShell.enter);
-        // }
+      // if (this.autoComplete) {
+      //   // handle auto complete case
+      //   if (output.indexOf(MongoShell.prompt) < 0 && output.indexOf('Autocom') < 0) {
+      //     this.autoCompleteOutput += output.trim();
+      //   }
+      //   if (output === MongoShell.prompt) {
+      //     // command is about finish
+      //     // if there is no output, let the final timeout emit the event
+      //     this.autoComplete = false;
+      //     this.emit(MongoShell.AUTO_COMPLETE_END, this.autoCompleteOutput.slice(0));
+      //   }
+      // } else if (this.currentCommand) {
+      //   if (os.platform() === 'win32') {
+      //     // pty generate incomplete command on windows
+      //     let currentCommandWithPrompt = this.currentCommand.replace(/\r/, '');
+      //     if (currentCommandWithPrompt.indexOf(output) > 0 && currentCommandWithPrompt.length > output.length * 2
+      //       && output.indexOf('{') && output.indexOf('}') < 0) {
+      //       return;
+      //     }
+      //     if (output.indexOf(MongoShell.prompt) === 0) {
+      //       currentCommandWithPrompt = MongoShell.prompt + this.currentCommand.replace(/\r/, '');
+      //     }
+      //     if (currentCommandWithPrompt.trim().indexOf(output) === 0 && currentCommandWithPrompt.trim().length > output.length
+      //       && output !== MongoShell.prompt && output.indexOf('}') < 0 && output.indexOf('{') < 0) {
+      //       return;
+      //     }
+      //   }
+      //   if (output.indexOf(this.currentCommand.replace(/\r*$/, '') + this.currentCommand.replace(/\r*$/, '')) >= 0 && !this.syncExecution) {
+      //     if (output.indexOf(MongoShell.prompt) >= 0) {
+      //       // check whether it is the initial prompt
+      //       if (output.indexOf(`var prompt="${MongoShell.prompt}";`) < 0) {
+      //         // show command with prompt
+      //         this.emitOutput(MongoShell.prompt + this.currentCommand);
+      //       }
+      //     } else {
+      //       // for ... output
+      //       this.emitOutput(this.currentCommand);
+      //     }
+      //   } else if (output.indexOf(`var prompt="${MongoShell.prompt}";`) >= 0) {
+      //     // this is initial change prompt command, ignore it
+      //   } else if (output === '... ' || output === '...') {
+      //     // found in complete command
+      //     if (!this.syncExecution) {
+      //       this.emitOutput(output);
+      //     }
+      //     this.currentCommand = this.runNextCommand();
+      //     if (!this.currentCommand) {
+      //       // the command is not complete, clear the incomplete context
+      //       this.shell.write('\r\r');
+      //     }
+      //   } else if (this.syncExecution && output.indexOf(MongoShell.prompt) < 0
+      //     && output.indexOf(this.currentCommand.trim()) < 0) {
+      //     // emit sync execution command output
+      //     this.emit(MongoShell.SYNC_OUTPUT_EVENT, output + MongoShell.enter);
+      //   } else if (!this.syncExecution) {
+      //     // emit general command output
+      //     if (os.platform() === 'win32') {
+      //       // sometimes windows doesnt show prompt
+      //       if (this.currentCommand.replace(/\r/, '') === output) {
+      //         this.emitOutput(MongoShell.prompt + output + MongoShell.enter);
+      //         return;
+      //       }
+      //       // for in complete output
+      //       if (output.indexOf('... ') == 0) {
+      //         if (output.replace('... ', '') !== this.currentCommand.replace(/\r/, '')) {
+      //           return;
+      //         }
+      //         this.emitOutput(output.replace('... ', '') + MongoShell.enter);
+      //         return;
+      //       }
+      //     }
+      //     console.log('emit output ', output);
+      //     this.emit(MongoShell.OUTPUT_EVENT, output + MongoShell.enter);
+      //     // this.emitOutput(output + MongoShell.enter);
+      //   }
+      // } else if (output.indexOf(`var prompt="${MongoShell.prompt}"`) < 0) {
+      //   // initializing connection messages
+      //   this.emitOutput(output + MongoShell.enter);
+      // }
     });
     // this.lineStream.on(MongoShell.EXECUTE_END, (data) => {
     //   // one command finish execution
@@ -353,22 +350,26 @@ class MongoShell extends EventEmitter {
     } catch (err) {
       return;
     }
-    log.info('get output ', output);
+    log.debug('get output ', output);
 
 
     if (!this.initialized && output.indexOf(MongoShell.prompt) >= 0) {
-      // handle loading script on connection
       this.initialized = true;
       this.emit(MongoShell.INITIALIZED);
       return;
     }
 
-    if (!ansiRegex().test(line) && (this.currentCommand === output || '... ' + this.currentCommand === output)) {
-      if ('... ' + this.currentCommand === output) {
-        this.emit(MongoShell.OUTPUT_EVENT, '... ');
-      } else {
-        // this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt);
-      }
+    if (!this.inputOutputFlag) {
+      this.commandBuffer += output;
+    }
+
+    if (!this.inputOutputFlag && !ansiRegex().test(line) && (this.currentCommand === this.commandBuffer)) {
+      // if ('... ' + this.currentCommand === output) {
+      // this.emit(MongoShell.OUTPUT_EVENT, '... ');
+      // } else {
+      // this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt);
+      // }
+      this.inputOutputFlag = true;
       this.shell.write(MongoShell.enter);
       return;
     }
@@ -376,7 +377,17 @@ class MongoShell extends EventEmitter {
     if (output === MongoShell.prompt) {
       const nextCmd = this.runNextCommand();
       if (!nextCmd) {
-        this.emit(MongoShell.EXECUTE_END);
+        this.executing = false;
+        log.info('finish execution');
+        if (!this.syncExecution) {
+          this.emit(MongoShell.EXECUTE_END);
+          this.emitOutput(output);
+          this.prevExecutionTime = 0;
+        } else {
+          this.syncExecution = false;
+          this.emit(MongoShell.SYNC_EXECUTE_END, '');
+        }
+        return;
       }
     }
     if (output === '... ') {
@@ -385,11 +396,18 @@ class MongoShell extends EventEmitter {
         this.shell.write(MongoShell.enter);
         this.shell.write(MongoShell.enter);
       }
-      this.emit(MongoShell.OUTPUT_EVENT, output);
+      if (!this.syncExecution) {
+        this.emit(MongoShell.OUTPUT_EVENT, output);
+        // this.emitOutput(output);
+      }
       return;
     }
-
-    this.emit(MongoShell.OUTPUT_EVENT, output);
+    if (!this.syncExecution) {
+      this.emit(MongoShell.OUTPUT_EVENT, output);
+      // this.emitOutput(output);
+    } else if (!ansiRegex().test(line)) {
+      this.emit(MongoShell.SYNC_OUTPUT_EVENT, output);
+    }
   }
 
   loadScriptsIntoShell() {
@@ -469,6 +487,7 @@ class MongoShell extends EventEmitter {
     l.debug('write to shell ', data);
     this.currentCommand = data;
     this.commandBuffer = '';
+    this.inputOutputFlag = false; // whether get input command from output
     this.shell.write(data);
   }
 
