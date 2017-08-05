@@ -353,9 +353,14 @@ class MongoShell extends EventEmitter {
     log.debug('get output ', output);
 
 
-    if (!this.initialized && output.indexOf(MongoShell.prompt) >= 0) {
-      this.initialized = true;
-      this.emit(MongoShell.INITIALIZED);
+    if (!this.initialized) {
+      if (output.indexOf('all-in-one') < 0) {
+        this.emit(MongoShell.OUTPUT_EVENT, output);
+      }
+      if (output.indexOf(MongoShell.prompt) === 0) {
+        this.initialized = true;
+        this.emit(MongoShell.INITIALIZED);
+      }
       return;
     }
 
