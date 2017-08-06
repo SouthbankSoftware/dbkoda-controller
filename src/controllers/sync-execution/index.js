@@ -95,15 +95,17 @@ class SyncExecutionController {
       let output = ctr.output + data;
       if (responseType === 'json' || responseType === 'explain') {
         if (os.platform() === 'win32') {
-          output = output.split('\n').map((o) => {
-            // replace duplicate key string
-            if (o.indexOf(':') >= 0 && o.split(':').length >= 2) {
-              const newStr = o.replace(/(\b\w+\b)(?=.*\b\1\b)/, '').replace('"":', '');
-              return newStr;
-            }
-            return o;
-          });
-          output = output.join('\n', '');
+          // output = output.split('\n').map((o) => {
+          //   // replace duplicate key string
+          //   if (o.indexOf(':') >= 0 && o.split(':').length >= 2) {
+          //     const newStr = o.replace(/(\b\w+\b)(?=.*\b\1\b)/, '').replace('"":', '');
+          //     console.log('old str:', o);
+          //     console.log('new str:', newStr);
+          //     return newStr;
+          //   }
+          //   return o;
+          // });
+          // output = output.join('\n', '');
         }
         output = output.replace(/\n/g, '').replace(/\r/g, '');
         if (os.platform() === 'win32') {
