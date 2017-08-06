@@ -175,7 +175,7 @@ class MongoConnectionController {
         l.info(`shell ${key} is closed ${value.shell.status}`);
         value
           .shell
-          .kill();
+          .destroy();
       });
       driver.close();
 
