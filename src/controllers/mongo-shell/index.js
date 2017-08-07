@@ -352,12 +352,17 @@ class MongoShell extends EventEmitter {
     }
     log.debug('get output ', output);
 
-
+    
+    let last = output;
+    const bylines = output.split('\n');
+    if(bylines && bylines.length > 0){
+      last = bylines[bylines.length - 1].trim();
+    }
     if (!this.initialized) {
       if (output.indexOf('all-in-one') < 0) {
         this.emit(MongoShell.OUTPUT_EVENT, output);
       }
-      if (output.indexOf(MongoShell.prompt) === 0) {
+      if (last === MongoShell.prompt) {
         this.initialized = true;
         this.emit(MongoShell.INITIALIZED);
       }
@@ -368,18 +373,22 @@ class MongoShell extends EventEmitter {
       this.commandBuffer += output;
     }
 
-    if (!this.inputOutputFlag && !ansiRegex().test(line) && (this.currentCommand === this.commandBuffer)) {
-      // if ('... ' + this.currentCommand === output) {
-      // this.emit(MongoShell.OUTPUT_EVENT, '... ');
-      // } else {
-      // this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt);
-      // }
-      this.inputOutputFlag = true;
-      this.shell.write(MongoShell.enter);
+    if (!this.inputOutputFlag) {
+      if (os.platform() === 'win32') {
+        if(ansiRegex().test(line) && (this.currentCommand === this.commandBuffer)){
+          this.inputOutputFlag = true;
+          this.shell.write(MongoShell.enter);
+        }
+      } else {
+        if(!ansiRegex().test(line) && (this.currentCommand === this.commandBuffer)){
+          this.inputOutputFlag = true;
+          this.shell.write(MongoShell.enter);
+        }
+      }
+      
       return;
     }
-
-    if (output === MongoShell.prompt) {
+    if (last === MongoShell.prompt) {
       const nextCmd = this.runNextCommand();
       if (!nextCmd) {
         this.executing = false;
