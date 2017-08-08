@@ -8,7 +8,7 @@ const winston = require('winston');
 const {
   launchSingleInstance,
   killMongoInstance,
-} = require('test-utils');
+} = require('../../../../src/index');
 
 const {
   connection,
