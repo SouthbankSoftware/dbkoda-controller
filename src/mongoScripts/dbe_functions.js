@@ -31,22 +31,22 @@
 
 var dbe = {};
 
-dbe.version = function() {
+dbe.version = function () {
   // Get the vers
   return (db.version().split('.')); // eslint-disable-line
 };
 
-dbe.round = function(num) {
+dbe.round = function (num) {
   return Math.round(num * 100) / 100;
 };
 
-dbe.majorVersion = function() {
+dbe.majorVersion = function () {
   var version = dbe.version();
   var intversion = Number(version[0] + '.' + version[1]);
   return (intversion);
 };
 
-dbe.sampleCollection = function(dbName, collectionName) {
+dbe.sampleCollection = function (dbName, collectionName) {
   //
   // Quick sampling of a collection to return attribute names
   // Just samples 20 documents and only returns to two levels (eg xx.yy NOT xx.yy.zz)
@@ -71,8 +71,8 @@ dbe.sampleCollection = function(dbName, collectionName) {
       }).limit(20).toArray();
   }
 
-  data.forEach(function(doc) {
-    Object.keys(doc).forEach(function(key) {
+  data.forEach(function (doc) {
+    Object.keys(doc).forEach(function (key) {
       var keytype = typeof doc[key];
       // print(keytype);
       // print(doc[key]);
@@ -85,16 +85,16 @@ dbe.sampleCollection = function(dbName, collectionName) {
       if (keytype == 'object') {
         obj = doc[key];
         if (obj) {
-          Object.keys(obj).forEach(function(nestedKey) {
+          Object.keys(obj).forEach(function (nestedKey) {
             attributes[key + '.' + nestedKey] = typeof obj[nestedKey];
           });
         }
       } else
       if (keytype === 'array') {
         docarray = doc[key];
-        docarray.forEach(function(nestedDoc) {
+        docarray.forEach(function (nestedDoc) {
           var obj = nestedDoc;
-          Object.keys(obj).forEach(function(nestedKey) {
+          Object.keys(obj).forEach(function (nestedKey) {
             attributes[key + '.' + nestedKey] = typeof obj[nestedKey];
           });
         });
@@ -107,7 +107,7 @@ dbe.sampleCollection = function(dbName, collectionName) {
   return results.sort();
 };
 
-dbe.profileLevels = function(dbName) {
+dbe.profileLevels = function (dbName) {
   var mydb = db.getSiblingDB(dbName); // eslint-disable-line 
   var dbeSpl = {};
   if (mydb.serverStatus().process !== 'mongos') {
@@ -119,7 +119,7 @@ dbe.profileLevels = function(dbName) {
   return (dbeSpl);
 };
 
-dbe.aggregationArgs = function() {
+dbe.aggregationArgs = function () {
   var out = [];
   out.push({
     'StepName': '$sample',
@@ -152,7 +152,7 @@ dbe.aggregationArgs = function() {
   return out;
 };
 
-dbe.aggregationPreFill = function(dbName, collectionName) {
+dbe.aggregationPreFill = function (dbName, collectionName) {
   var ddOut = {};
   ddOut.Database = dbName;
   ddOut.CollectionName = collectionName;
@@ -160,7 +160,7 @@ dbe.aggregationPreFill = function(dbName, collectionName) {
   return (ddOut);
 };
 
-dbe.Top = function() {
+dbe.Top = function () {
   var mydb = db // eslint-disable-line
   var result = {};
   var topData;
@@ -179,7 +179,7 @@ dbe.Top = function() {
     topData = mydb.getSiblingDB('admin').runCommand({
       'top': 1
     });
-    Object.keys(topData.totals).forEach(function(col) {
+    Object.keys(topData.totals).forEach(function (col) {
       // printjson(topData.totals[col]);
       if (topData.totals[col].hasOwnProperty('total')) { // eslint-disable-line
         colData = topData.totals[col];
@@ -199,7 +199,7 @@ dbe.Top = function() {
         result.top.push(colrow);
       }
     });
-    result.top.sort(function(a, b) {
+    result.top.sort(function (a, b) {
       return (b.sortTime - a.sortTime);
     });
     for (i = 0; i < result.top.length; i += 1) {
@@ -209,7 +209,7 @@ dbe.Top = function() {
   return (result);
 };
 
-dbe.lpad = function(str, padString, length) {
+dbe.lpad = function (str, padString, length) {
   while (str.length < length) {
     str = padString + str;
   }
@@ -231,7 +231,7 @@ dbe.printNumber = function (num) {
   return (dbe.lpad(dbe.formatNumber(dbe.round(num)), ' ', 20));
 };
 
-dbe.databaseStorage = function() {
+dbe.databaseStorage = function () {
   var mydb = db.getSiblingDB("admin"); // eslint-disable-line
   var shardData = {};
   var output = {};
@@ -239,13 +239,13 @@ dbe.databaseStorage = function() {
     listDatabases: 1
   });
   if (dbList.ok == 1) {
-    var dbData = dbList.databases.sort(function(a, b) {
+    var dbData = dbList.databases.sort(function (a, b) {
       return b.sizeOnDisk - a.sizeOnDisk;
     });
 
-    dbData.forEach(function(dbd) {
+    dbData.forEach(function (dbd) {
       if (dbd.hasOwnProperty('shards')) {
-        Object.keys(dbd.shards).forEach(function(s) {
+        Object.keys(dbd.shards).forEach(function (s) {
           if (shardData.hasOwnProperty(s)) {
             shardData[s] += dbd.shards[s];
           } else {
@@ -261,40 +261,49 @@ dbe.databaseStorage = function() {
   return output;
 };
 
-dbe.storageAnalysis = function() {
+dbe.storageAnalysis = function () {
   var mydb = db.getSiblingDB("admin"); // eslint-disable-line
   var output = {};
   var dbList = mydb.adminCommand({
     listDatabases: 1
   });
   if (dbList.ok == 1) {
-    var dbData1 = dbList.databases.sort(function(a, b) {
+    var dbData1 = dbList.databases.sort(function (a, b) {
       return b.sizeOnDisk - a.sizeOnDisk;
     });
 
     output.name = 'total';
     output.children = [];
-    dbData1.forEach(function(dbd) {
+    dbData1.forEach(function (dbd) {
       var dbData = {};
       dbData.name = dbd.name;
 
       var db1 = db.getSiblingDB(dbd.name); // eslint-disable-line
       var collArr = [];
-      db1.getCollectionNames().forEach(function(cname) {
+      db1.getCollectionNames().forEach(function (cname) {
         var stats = db1.getCollection(cname).stats();
         var collData = {
           name: cname,
         };
         collData.children = [];
         var indexes = [];
-        Object.keys(stats.indexSizes).forEach(function(idx) {
-          indexes.push({ name: idx, size: stats.indexSizes[idx] });
+        Object.keys(stats.indexSizes).forEach(function (idx) {
+          indexes.push({
+            name: idx,
+            size: stats.indexSizes[idx]
+          });
         });
-        collData.children.push({name:'data', size:stats.storageSize});
-        collData.children.push({name:'indexes', children:indexes});
+        collData.children.push({
+          name: 'data',
+          size: stats.storageSize
+        });
+        collData.children.push({
+          name: 'indexes',
+          children: indexes
+        });
         collArr.push(collData);
       });
-      collArr.sort(function(a, b) {
+      collArr.sort(function (a, b) {
         return b.storageSizeMB - a.storageSizeMB;
       });
       dbData.children = collArr;
@@ -302,4 +311,83 @@ dbe.storageAnalysis = function() {
     });
   }
   return output;
+};
+
+dbe.collectionStorageAnalysis = function (dbName, collectionName, sampleSize) {
+  //
+  // Takes a collection and a sample size.  Returns an array of
+  // Sizes for top level elements (eg, not for nested elements )
+  //
+  var myDb = db.getSiblingDB(dbName); // eslint-disable-line
+  var collection = myDb.getCollection(collectionName);
+  var documentCount = collection.stats().count;
+  var diskSize = collection.stats().storageSize;
+  var sampleClause = {$sample: { size: sampleSize } };
+  if (dbe.majorVersion() < 3.2) {
+    sampleClause = {$limit:sampleSize};
+  }
+  var sample = collection
+    .aggregate([sampleClause])
+    .toArray();
+  var totalBsonSize = 0;
+  sample.forEach(function (d) {
+    totalBsonSize += Object.bsonsize(d);
+  });
+
+  // Adjust for wiredtiger compression and our sampling
+  var adjustmentRatio = diskSize / totalBsonSize;
+
+  return dbe.sizeEstimateArray(sample, sampleSize, documentCount, adjustmentRatio);
+};
+
+//
+// Provide a breakdown of storage for a sample of data
+//
+dbe.sizeEstimateArray = function (sample, sampleSize, collectionDocCount, adjustmentRatio) {
+  var sizes = {};
+
+  //
+  // Add up data for each element in the sample data
+  //
+  sample.forEach(function (d) {
+     if (typeof sizes.total == 'undefined') {
+      sizes.total = Object.bsonsize(d);
+    } else {
+      sizes.total += Object.bsonsize(d);
+    }
+
+    Object.keys(d).forEach(function (e) {
+      var typeofE = typeof d[e];
+      if (typeofE === 'object') {
+        var elemSize = Object.bsonsize(d[e]);
+        if (typeof sizes[e] == 'undefined') {
+          sizes[e] = elemSize;
+        } else {
+          sizes[e] += elemSize;
+        }
+      }
+    });
+  });
+  // Work out unallocated size and adjust for compression
+  // and sampling
+  var adjustedSizes = {};
+  var accounted = 0;
+  Object.keys(sizes).forEach(function (e) {
+    // print (e+" "+sizes[e]);
+    if (e !== 'total') {
+      accounted += sizes[e];
+      adjustedSizes[e] = sizes[e] * adjustmentRatio;
+      // print ('adjusted '+e+' '+adjustedSizes[e]);
+    }
+  });
+  adjustedSizes.other = (sizes.total - accounted) * adjustmentRatio;
+  var children = [];
+  // Reformat into the structure expected by the starburst chart
+  Object.keys(adjustedSizes).forEach(function (f) {
+    children.push({
+      name: f,
+      size: adjustedSizes[f]
+    });
+  });
+  return children;
 };
