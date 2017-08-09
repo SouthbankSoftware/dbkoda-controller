@@ -73,12 +73,74 @@ dbk_Cs.collectionSize = function(dbName,collectionName,sampleSize) {
     sampleClause = {$limit:sampleSize};
   }
   var sample=collection.aggregate([sampleClause]); 
-  dbk_Cs.sizeSample(sample.toArray(),[collectionName]); 
+
+  dbk_Cs.sizeSample(sample.toArray(),['total']); 
+  
   output=dbk_Cs.sizes;
   var sampleTotal=output[collectionName]; 
   var multiplier=totalSize/sampleTotal;
   Object.keys(output).forEach(function(key) {
     output[key]*=multiplier;
   });
-  return(output); 
+  return(dbk_Cs.convertJsonToHierarchy(output)[0].children); 
 }
+
+dbk_Cs.convertJsonToHierarchy= function (jsObj) {
+ 
+  var res = [];
+  var resObj = {};
+  var obj;
+  for (var key in jsObj) {
+    var keyArr = key.split(',');
+    if (keyArr.length == 1) {
+      obj = {'name':key, 'size':jsObj[key]};
+      res.push(obj);
+      resObj[key] = obj;
+    } else {
+      var parentKArr = keyArr;
+      var objKey = parentKArr.pop();  //get Object key
+    
+      obj = {'name':objKey, 'size':jsObj[key]};
+      resObj[key] = obj;
+    
+      var parentKey = parentKArr.join(',');
+
+      var parentObj = resObj[parentKey];
+      if (parentObj) {
+        if (parentObj.children) {
+          parentObj.children.push(obj);
+        } else {
+          parentObj.children = [obj];
+        }
+      }
+    }
+  }
+  
+  dbk_Cs.addOtherChildSum(res);
+  return res;
+}
+
+dbk_Cs.addOtherSum=function(obj) {
+  if (obj.children) {
+    var childSum = 0;
+    for (var i=0; i<obj.children.length; i++){
+      var childOb = obj.children[i];
+      childSum += childOb.size;
+      if (childOb.children){
+        dbk_Cs.addOtherSum(childOb);
+      }
+    }
+    if obj.name===
+    //obj.children.push({'name': 'Other', 'size': (obj.size - childSum)});
+    obj.size=obj.size-childSum;
+  } 
+}
+
+ dbk_Cs.addOtherChildSum=function (objH) {
+  for (var i=0; i<objH.length; i++) {
+    dbk_Cs.addOtherSum(objH[i]);
+  }
+}
+
+
+
