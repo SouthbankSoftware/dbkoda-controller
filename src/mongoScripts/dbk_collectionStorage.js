@@ -19,7 +19,7 @@
  */
 
 //
-// Drilldown into a collection to get sizings 
+// Drilldown into a collection to get sizings
 //
 /* eslint no-var: 0 */
 /* eslint no-prototype-builtins: 0 */
@@ -30,8 +30,8 @@
 
 dbk_Cs = {};
 
+// Increment the totals for a specific element 
 dbk_Cs.incSize = function(index, size) {
-
   if (typeof dbk_Cs.sizes[index] === "undefined") {
     dbk_Cs.sizes[index] = size;
   } else {
@@ -39,6 +39,8 @@ dbk_Cs.incSize = function(index, size) {
   }
 };
 
+// This is the recursive function to size a given 
+// subset of the sample 
 dbk_Cs.sizeSample = function(sample, parentId) {
   //print("parentId=" + parentId+ " "+typeof parentId);
   //print (sample);
@@ -51,6 +53,7 @@ dbk_Cs.sizeSample = function(sample, parentId) {
   }
 };
 
+// Size a single element 
 dbk_Cs.sizeElem = function(doc, parentId) {
   if (typeof doc === "object" && doc !== null) {
     dbk_Cs.incSize(parentId, Object.bsonsize(doc));
@@ -64,21 +67,88 @@ dbk_Cs.sizeElem = function(doc, parentId) {
   }
 };
 
-dbk_Cs.collectionSize = function(dbName,collectionName,sampleSize) {
-  dbk_Cs.sizes={};
-  var collection=db.getSiblingDB(dbName).getCollection(collectionName); // eslint-disable-line
-  var totalSize=collection.stats().storageSize;
-  var sampleClause = {$sample: { size: sampleSize } };
+// Take a sample of the collection and work out the sizes for each sub
+// element 
+dbk_Cs.collectionSize = function(dbName, collectionName, sampleSize) {
+  dbk_Cs.sizes = {};
+  var collection = db.getSiblingDB(dbName).getCollection(collectionName); // eslint-disable-line
+  var totalSize = collection.stats().storageSize;
+  var sampleClause = { $sample: { size: sampleSize } };
   if (dbe.majorVersion() < 3.2) {
-    sampleClause = {$limit:sampleSize};
+    sampleClause = { $limit: sampleSize };
   }
-  var sample=collection.aggregate([sampleClause]); 
-  dbk_Cs.sizeSample(sample.toArray(),[collectionName]); 
-  output=dbk_Cs.sizes;
-  var sampleTotal=output[collectionName]; 
-  var multiplier=totalSize/sampleTotal;
+  var sample = collection.aggregate([sampleClause]);
+
+  dbk_Cs.sizeSample(sample.toArray(), ["total"]);
+
+  output = dbk_Cs.sizes;
+  var sampleTotal = output["total"];
+  var multiplier = totalSize / sampleTotal;
   Object.keys(output).forEach(function(key) {
-    output[key]*=multiplier;
+    output[key] *= multiplier;
   });
-  return(output); 
-}
+  return dbk_Cs.convertJsonToHierarchy(output)[0].children;
+};
+
+// Next 3 functions convert to format wanted by the D3 starburst control 
+dbk_Cs.convertJsonToHierarchy = function(jsObj) {
+  var res = [];
+  var resObj = {};
+  var obj;
+  for (var key in jsObj) {
+    var keyArr = key.split(",");
+    if (keyArr.length == 1) {
+      obj = { name: key, size: jsObj[key] };
+      res.push(obj);
+      resObj[key] = obj;
+    } else {
+      var parentKArr = keyArr;
+      var objKey = parentKArr.pop(); //get Object key
+
+      obj = { name: objKey, size: jsObj[key] };
+      resObj[key] = obj;
+
+      var parentKey = parentKArr.join(",");
+
+      var parentObj = resObj[parentKey];
+      if (parentObj) {
+        if (parentObj.children) {
+          parentObj.children.push(obj);
+        } else {
+          parentObj.children = [obj];
+        }
+      }
+    }
+  }
+
+  dbk_Cs.addOtherChildSum(res);
+  return res;
+};
+
+dbk_Cs.addOtherSum = function(obj) {
+  if (obj.children) {
+    var childSum = 0;
+    for (var i = 0; i < obj.children.length; i++) {
+      var childOb = obj.children[i];
+      childSum += childOb.size;
+      if (childOb.children) {
+        dbk_Cs.addOtherSum(childOb);
+      }
+    }
+
+    if (obj.name === "total") {
+      // We need "other" at the top level to make sure the chart doesn't 
+      // show the wrong size for the total data segment 
+      obj.children.push({ name: "Other", size: obj.size - childSum });
+      obj.size = 0;
+    } else {
+      obj.size = obj.size - childSum;
+    }
+  }
+};
+
+dbk_Cs.addOtherChildSum = function(objH) {
+  for (var i = 0; i < objH.length; i++) {
+    dbk_Cs.addOtherSum(objH[i]);
+  }
+};

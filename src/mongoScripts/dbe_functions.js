@@ -313,7 +313,11 @@ dbe.storageAnalysis = function () {
   return output;
 };
 
-dbe.collectionStorageAnalysis = function (dbName, collectionName, sampleSize) {
+dbe.collectionStorageAnalysis= function (dbName, collectionName, sampleSize) {
+  return(dbk_Cs.collectionSize(dbName, collectionName, sampleSize));
+}
+
+dbe.collectionStorageAnalysisObsolete = function (dbName, collectionName, sampleSize) {
   //
   // Takes a collection and a sample size.  Returns an array of
   // Sizes for top level elements (eg, not for nested elements )
