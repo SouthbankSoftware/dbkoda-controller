@@ -25,8 +25,8 @@
  */
 
 // import fs from 'fs';
-import configObj from '~/config';
 import _ from 'lodash';
+import configObj from '../../config';
 
 const spawn = require('node-pty').spawn;
 const execSync = require('child_process').execSync;

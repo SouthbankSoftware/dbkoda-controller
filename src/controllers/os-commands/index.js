@@ -20,11 +20,12 @@
 /**
  * Created by joey on 21/7/17.
  */
+import configObj from '../../config';
 
 const spawn = require('child_process').spawn;
 const _ = require('lodash');
-const EventEmitter = require('events')
-  .EventEmitter;
+const EventEmitter = require('events').EventEmitter;
+
 
 class OSCommandsController extends EventEmitter {
 
@@ -58,7 +59,7 @@ class OSCommandsController extends EventEmitter {
       cmd = cmd.replace('-p ******', `-p ${password}`);
     }
     let params = cmd.trim().split(' ');
-    const mongoCmd = params[0];
+    const mongoCmd = configObj[params[0] + 'Cmd'] ? configObj[params[0] + 'Cmd'] : params[0];
     params.splice(0, 1);
     params = _.filter(params, o => o !== '');
     log.debug('spawn mongo command ', mongoCmd, params);

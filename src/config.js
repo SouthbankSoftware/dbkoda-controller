@@ -21,49 +21,76 @@
 import _ from 'lodash';
 import yaml from 'js-yaml';
 import fs from 'fs';
-import { execSync } from 'child_process';
+import {execSync} from 'child_process';
 import os from 'os';
 
-const config = {
-  mongoCmd: null,
-  mongoVersionCmd: null,
-};
+export const loadConfig = (path) => {
+  const config = {
+    mongoCmd: null,
+    mongoVersionCmd: null,
+    mongodumpCmd: null,
+    mongorestoreCmd: null,
+    mongoimportCmd: null,
+    mongoexportCmd: null
+  };
 
-if (process.env.CONFIG_PATH) {
-  // overwrite using external config yaml file
-  try {
-    const userConfig = yaml.safeLoad(fs.readFileSync(process.env.CONFIG_PATH, 'utf8'));
-    _.assign(config, _.pick(userConfig, _.keys(config)));
-    if (os.platform() === 'win32') {
-      if (!config.mongoCmd.match(new RegExp('.exe$', 'i'))) {
-        config.mongoCmd += '.exe';
+  if (path) {
+    // overwrite using external config yaml file
+    try {
+      const userConfig = yaml.safeLoad(fs.readFileSync(path, 'utf8'));
+      _.assign(config, _.pick(userConfig, _.keys(config)));
+      if (os.platform() === 'win32') {
+        _.keys(config).map((key) => {
+          if (config[key] && key !== 'mongoVersionCmd') {
+            if (!key.match(new RegExp('.exe$', 'i'))) {
+              config[key] += '.exe';
+            }
+          }
+        });
       }
-    }
-  } catch (_e) {
-    // console.error(_e);
-  } // eslint-disable-line no-empty
-}
+    } catch (_e) {
+      // console.error(_e);
+    } // eslint-disable-line no-empty
+  }
 
 // check and figure out missing config
-if (!config.mongoCmd) {
   try {
-    if (os.platform() === 'win32') {
-      config.mongoCmd = 'mongo.exe'; // execSync('where mongo /F', {encoding: 'utf8'}).trim();
-    } else {
-      config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
-      const tmp = config.mongoCmd.split('\n');
-      if (tmp.length > 0) {
-        config.mongoCmd = tmp[tmp.length - 1];
+    let mongoPath = '';
+    if (!config.mongoCmd) {
+      if (os.platform() === 'win32') {
+        config.mongoCmd = 'mongo.exe';
+      } else {
+        config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
+        const tmp = config.mongoCmd.split('\n');
+        if (tmp.length > 0) {
+          config.mongoCmd = tmp[tmp.length - 1];
+        }
+        mongoPath = config.mongoCmd.replace(/mongo$/, '');
       }
+    } else {
+      mongoPath = config.mongoCmd.replace(/mongo$/, '');
     }
+    _.keys(config).map((key) => {
+      if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd') {
+        const cmdName = key.replace('Cmd', '');
+        if (os.platform() === 'win32') {
+          config[key] = cmdName + '.exe';
+        } else {
+          config[key] = mongoPath + cmdName;
+        }
+      }
+    });
   } catch (error) {
     l.error(error.stack);
     config.mongoCmd = null;
   }
-}
 
-if (!config.mongoVersionCmd && config.mongoCmd) {
-  config.mongoVersionCmd = config.mongoCmd + ' --version';
-}
+  if (!config.mongoVersionCmd && config.mongoCmd) {
+    config.mongoVersionCmd = config.mongoCmd + ' --version';
+  }
+  return config;
+};
+
+const config = loadConfig(process.env.CONFIG_PATH);
 
 export default config;
