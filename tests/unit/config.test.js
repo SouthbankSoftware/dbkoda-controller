@@ -38,10 +38,11 @@ describe('configure path tests', () => {
     assert.notEqual(config.mongoimportCmd, null);
     assert.notEqual(config.mongorestoreCmd, null);
     assert.notEqual(config.mongoVersionCmd, null);
+    console.log('loaded config', config);
     if (os.platform() === 'win32') {
       _.keys(config).map((key) => {
         if (key !== 'mongoVersionCmd') {
-          assert.equal(key.match(new RegExp('.exe$')), true);
+          assert.equal(config[key].match(new RegExp('.exe$')) !== null, true);
         }
       });
     }
@@ -60,7 +61,7 @@ describe('configure path tests', () => {
     if (os.platform() === 'win32') {
       _.keys(config).map((key) => {
         if (key !== 'mongoVersionCmd') {
-          assert.equal(key.match(new RegExp('.exe$')), true);
+          assert.equal(config[key].match(new RegExp('.exe$')) !== null, true);
         }
       });
     } else {
