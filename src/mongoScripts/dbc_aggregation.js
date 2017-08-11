@@ -61,9 +61,17 @@ dbk_agg.resetAgg = function(aggId) {
 dbk_agg.addStep = function(aggId, stepJson) {
   dbk_agg.aggregates[aggId].steps.push(stepJson);
 };
+// insert a step in the middle
+dbk_agg.insertStep = function(aggId, stepId, stepJson) {
+  print(aggId, stepId, stepJson);
+  // TODO:  todo
+};
 //  Replace an existing step
 dbk_agg.replaceStep = function(aggId, stepId, stepJson) {
   dbk_agg.aggregates[aggId].steps[stepId] = stepJson;
+  // TODO: IFstep is different
+    // rebuid cache of results and attributes
+    // return FALSE if the step is not valid \
 };
 // Delete a step and move all steps above down
 dbk_agg.removeStep = function(aggId, stepId) {
@@ -76,6 +84,11 @@ dbk_agg.removeStep = function(aggId, stepId) {
   dbk_agg.aggregates[aggId].steps = steps;
   return steps;
 };
+// return current status of all steps
+dbk_agg.removeStep = function(aggId, stepId) {
+  print(stepId);
+};
+
 // Set/Replace all steps
 dbk_agg.setAllSteps = function(aggId, stepArray) {
   dbk_agg.aggregates[aggId].steps = stepArray;
@@ -151,6 +164,8 @@ dbk_agg.attributesFromArray = function(data) {
 
 // Get the attributes for a given step
 // TODO: Caching
+// TODO: During execution, save any errors into a sturcutre
+//       that the front end can read
 dbk_agg.getAttributes = function(aggId, stepId) {
   var inputData = dbk_agg.getResults(aggId, stepId);
   // printjson(inputData[0]);
