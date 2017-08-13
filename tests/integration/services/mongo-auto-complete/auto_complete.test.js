@@ -2,7 +2,7 @@
  * @Last modified by:   guiguan
  * @Last modified time: 2017-04-18T13:11:42+10:00
  */
-
+const os = require('os');
 const assert = require('assert');
 const {launchSingleInstance, killMongoInstance} = require('test-utils');
 const {
@@ -11,6 +11,7 @@ const {
   TIMEOUT,
   shell,
   getRandomPort,
+  WIN_TIMEOUT
 } = require('../commons');
 
 let id;
@@ -19,9 +20,7 @@ let shellId;
 describe('test run auto complete command', () => {
   const port = getRandomPort();
 
-  before(function (done) {
-    this.timeout(TIMEOUT * 3);
-    launchSingleInstance(port);
+  const createConnect = (done) => {
     connection
       .create(
         {},
@@ -38,6 +37,16 @@ describe('test run auto complete command', () => {
         shellId = response.shellId;
         done();
       });
+  };
+
+  before(function (done) {
+    this.timeout(TIMEOUT * 3);
+    launchSingleInstance(port);
+    if (os.platform() === 'win32') {
+      setTimeout(() => createConnect(done), WIN_TIMEOUT);
+    } else {
+      createConnect(done);
+    }
   });
 
   after(function () {
