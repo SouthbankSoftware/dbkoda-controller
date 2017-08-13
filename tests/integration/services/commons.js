@@ -30,6 +30,7 @@ controller.listen(PORT);
 module.exports = {
   app,
   TIMEOUT: 30000,
+  WIN_TIMEOUT: 5000,
   shell,
   connection,
   inspector,
