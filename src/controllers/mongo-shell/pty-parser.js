@@ -25,7 +25,7 @@ const {StringDecoder} = require('string_decoder');
 const EventEmitter = require('events').EventEmitter;
 const PtyOptions = require('./pty-options');
 const ParseState = require('./parser-state');
-const {escapedStateHandler, csiStateHandler, csiStateParameterHandler} = require('./input-handler');
+const {escapedStateHandler, csiStateHandler, csiStateParameterHandler, normalStateHandler} = require('./input-handler');
 
 /* eslint no-fallthrough : 0 */
 
@@ -36,43 +36,51 @@ class Parser extends EventEmitter {
 
   constructor() {
     super();
-    this.buffer = '';
+    this.buffers = [];
     this.state = ParseState.NORMAL;
     this.currentParam = 0;
     this.params = [];
     this.prefix = '';
     this.postfix = '';
     this.bufferX = 0;   // the x position on the buffer
+    this.bufferY = 0;   // the y position on the buffer
   }
 
   onRead(data) {
     log.info('get pty output ', data);
     this.parse(data);
-    console.log('buffer:', this.buffer);
+    console.log('buffer:', this.buffers);
   }
 
   parse(data) {
     for (let i = 0, len = data.length; i < len; i += 1) {
+      const code = data.charCodeAt(i);
+      const ch = data.charAt(i);
       switch (this.state) {
         case ParseState.NORMAL:
-          if (Object.prototype.hasOwnProperty.call(escapedStateHandler, data[i])) {
-            escapedStateHandler[data[i]](this);
+          if (Object.prototype.hasOwnProperty.call(normalStateHandler, code)) {
+            normalStateHandler[code](this);
           } else {
-            this.pushChar(data[i]);
+            this.pushChar(ch);
+          }
+          break;
+        case ParseState.ESCAPED:
+          if (Object.prototype.hasOwnProperty.call(escapedStateHandler, ch)) {
+            escapedStateHandler[ch](this);
           }
           break;
         case ParseState.CSI_PARAM:
-          if (Object.prototype.hasOwnProperty.call(csiStateParameterHandler, data[i])) {
-            csiStateParameterHandler[data[i]](this);
+          if (Object.prototype.hasOwnProperty.call(csiStateParameterHandler, ch)) {
+            csiStateParameterHandler[ch](this);
             break;
           }
           this.finalizeParam();
           this.state = ParseState.CSI;
         case ParseState.CSI:
-          if (Object.prototype.hasOwnProperty.call(csiStateHandler, data[i])) {
+          if (Object.prototype.hasOwnProperty.call(csiStateHandler, ch)) {
             csiStateHandler[data[i]](this, this.params, this.prefix, this.postfix);
           } else {
-            log.error('cant find csi handler for ', data[i]);
+            log.error('cant find csi handler for ', ch);
           }
           this.state = ParseState.NORMAL;
           this.prefix = '';
@@ -91,7 +99,10 @@ class Parser extends EventEmitter {
   }
 
   pushChar(ch) {
-    this.buffer += ch;
+    if (this.buffers.length <= this.bufferY) {
+      this.buffers.push('');
+    }
+    this.buffers[this.bufferY] += ch;
   }
 
 

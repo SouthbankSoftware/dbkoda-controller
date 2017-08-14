@@ -23,12 +23,32 @@
 /* eslint no-return-assign: 0*/
 
 const ParserState = require('./parser-state');
+const escapeSequence = require('./escape-sequence');
+
+const normalStateHandler = {
+
+};
+
+normalStateHandler[escapeSequence.CR] = (parser) => {
+  parser.bufferX = 0;
+};
+
+normalStateHandler[escapeSequence.LF] = (parser) => {
+  parser.bufferX = 0;
+  parser.bufferY += 1;
+};
+
+normalStateHandler[escapeSequence.ESC] = (parser) => {
+  parser.state = ParserState.ESCAPED;
+};
 
 /**
  * check escape character. set the related parser state for each character
  */
 const escapedStateHandler = {
   '[': (parser) => {
+    parser.params = [];
+    parser.currentParam = 0;
     parser.state = ParserState.CSI_PARAM;
   },
 };
@@ -44,14 +64,14 @@ const csiNumberParamHandler = (parser, param) => {
 const csiStateParameterHandler = {
   '0': parser => csiNumberParamHandler(parser, 0),
   '1': parser => csiNumberParamHandler(parser, 1),
-  '2': parser => csiNumberParamHandler(parser, 1),
-  '3': parser => csiNumberParamHandler(parser, 1),
-  '4': parser => csiNumberParamHandler(parser, 1),
-  '5': parser => csiNumberParamHandler(parser, 1),
-  '6': parser => csiNumberParamHandler(parser, 1),
-  '7': parser => csiNumberParamHandler(parser, 1),
-  '8': parser => csiNumberParamHandler(parser, 1),
-  '9': parser => csiNumberParamHandler(parser, 1),
+  '2': parser => csiNumberParamHandler(parser, 2),
+  '3': parser => csiNumberParamHandler(parser, 3),
+  '4': parser => csiNumberParamHandler(parser, 4),
+  '5': parser => csiNumberParamHandler(parser, 5),
+  '6': parser => csiNumberParamHandler(parser, 6),
+  '7': parser => csiNumberParamHandler(parser, 7),
+  '8': parser => csiNumberParamHandler(parser, 8),
+  '9': parser => csiNumberParamHandler(parser, 9),
   '?': parser => parser.prefix = '?',
   '>': parser => parser.prefix = '>',
   '!': parser => parser.prefix = '!',
@@ -61,7 +81,6 @@ const csiStateParameterHandler = {
   '\'': parser => parser.postfix = '\'',
   ';': parser => parser.finalizeParam(),
 };
-
 
 const cursorCharAbsolute = (parser, params) => {
   let param = params[0];
@@ -80,4 +99,4 @@ const csiStateHandler = {
   }
 };
 
-module.exports = {escapedStateHandler, csiStateParameterHandler, csiStateHandler};
+module.exports = {escapedStateHandler, csiStateParameterHandler, csiStateHandler, normalStateHandler};
