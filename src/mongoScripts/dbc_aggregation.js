@@ -51,13 +51,13 @@ dbk_agg.newAggBuilder = function(dbName, collectionName) {
   return dbk_agg.aggId;
 };
 
-dbk_agg.getAggStatus = function (aggId) {
+dbk_agg.getAggStatus = function(aggId) {
   var output = {};
   var agg = dbk_agg.aggregates[aggId];
   output.stepCodes = agg.stepCodes;
   output.steps = agg.steps;
   output.stepAttributes = agg.stepAttributes;
-  return (output);
+  return output;
 };
 // add a new step
 dbk_agg.addStep = function(aggId, stepJson) {
@@ -83,7 +83,7 @@ dbk_agg.removeStep = function(aggId, stepId) {
 };
 // return current status of all steps
 dbk_agg.getStep = function(aggId, stepId) {
-  return (dbk_agg.aggregates[aggId].steps[stepId]);
+  return dbk_agg.aggregates[aggId].steps[stepId];
 };
 // Set/Replace all steps
 dbk_agg.setAllSteps = function(aggId, stepArray) {
@@ -222,11 +222,11 @@ dbk_agg.testData = function() {
   dbk_agg.addStep(myAgg, {
     $group: {
       _id: {
-        Category: '$Category'
+        Category: '$Category',
       },
       count: { $sum: 1 },
-      'Length-sum': { $sum: '$Length' }
-    }
+      'Length-sum': { $sum: '$Length' },
+    },
   });
 
   dbk_agg.addStep(myAgg, { $sort: { 'Length-sum': -1 } });
@@ -238,19 +238,19 @@ dbk_agg.testData = function() {
     {
       $project: {
         CustId: 1,
-        lineItems: 1
-      }
+        lineItems: 1,
+      },
     },
     { $unwind: '$lineItems' },
     {
       $group: {
         _id: {
           CustId: '$CustId',
-          ProdId: '$lineItems.prodId'
+          ProdId: '$lineItems.prodId',
         },
         prodCount: { $sum: '$lineItems.prodCount' },
-        prodCost: { $sum: '$lineItems.Cost' }
-      }
+        prodCost: { $sum: '$lineItems.Cost' },
+      },
     },
     { $sort: { prodCost: -1 } },
     { $limit: 10 },
@@ -259,16 +259,16 @@ dbk_agg.testData = function() {
         from: 'DBEnvyLoad_customers',
         as: 'c',
         localField: '_id.CustId',
-        foreignField: '_id'
-      }
+        foreignField: '_id',
+      },
     },
     {
       $lookup: {
         from: 'DBEnvyLoad_products',
         as: 'p',
         localField: '_id.ProdId',
-        foreignField: '_id'
-      }
+        foreignField: '_id',
+      },
     },
     { $unwind: '$p' },
     { $unwind: '$c' }, // Get rid of single element arrays
@@ -278,20 +278,20 @@ dbk_agg.testData = function() {
         Product: '$p.ProductName',
         prodCount: 1,
         prodCost: 1,
-        _id: 0
-      }
-    }
+        _id: 0,
+      },
+    },
   ];
   var smallSteps = [
     { $match: { Rating: 'R' } },
     {
       $group: {
         _id: {
-          Category: '$Category'
+          Category: '$Category',
         },
-        count: { $sum: 1 }
-      }
-    }
+        count: { $sum: 1 },
+      },
+    },
   ];
   print('setall 1');
   dbk_agg.setAllSteps(myAgg, bigSteps);
@@ -303,18 +303,17 @@ dbk_agg.testData = function() {
   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
   dbk_agg.setAllSteps(myAgg, bigSteps);
   dbk_agg.setAllSteps(myAgg, smallSteps);
-    var badSteps = [
+  var badSteps = [
     { $batch: { Rating: 'R' } },
     {
       $group: {
         _id: {
-          Category: '$Category'
+          Category: '$Category',
         },
-        count: { $sum: 1 }
-      }
-    }
+        count: { $sum: 1 },
+      },
+    },
   ];
-   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
+  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
   dbk_agg.setAllSteps(myAgg, badSteps);
 };
-
