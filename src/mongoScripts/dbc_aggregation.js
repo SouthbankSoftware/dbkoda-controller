@@ -128,7 +128,7 @@ dbk_agg.getResults = function(aggId, stepId, reset) {
   var error = 0;
   if (reset === true) {
     // print ('reseting results');
-    var partialPipeline = agg.steps.slice(0, stepId + 1);
+    var partialPipeline = agg.steps.slice(0, stepId);
     mydb = db.getSiblingDB(agg.dbName); // eslint-disable-line
     try {
       results = mydb // eslint-disable-line
