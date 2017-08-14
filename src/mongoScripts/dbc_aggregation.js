@@ -46,7 +46,7 @@ dbk_agg.newAggBuilder = function(dbName, collectionName) {
   newAgg.stepResults = [];
   newAgg.stepAttributes = [];
   dbk_agg.aggregates[dbk_agg.aggId] = newAgg;
-  return dbk_agg.aggId;
+  return dbk_agg.aggId.toString();
 };
 
 //
@@ -60,6 +60,7 @@ dbk_agg.resetAgg = function(aggId) {
 // add a new step
 dbk_agg.addStep = function(aggId, stepJson) {
   dbk_agg.aggregates[aggId].steps.push(stepJson);
+  return dbk_agg.aggregates[aggId].steps;
 };
 //  Replace an existing step
 dbk_agg.replaceStep = function(aggId, stepId, stepJson) {
@@ -78,7 +79,12 @@ dbk_agg.removeStep = function(aggId, stepId) {
 };
 // Set/Replace all steps
 dbk_agg.setAllSteps = function(aggId, stepArray) {
-  dbk_agg.aggregates[aggId].steps = stepArray;
+  if (stepArray.constructor === Array) {
+    dbk_agg.aggregates[aggId].steps = stepArray;
+  } else {
+    dbk_agg.aggregates[aggId].steps = [];
+    dbk_agg.aggregates[aggId].steps[0] = stepArray;
+  }
 };
 
 // get the results for all steps up to an including the
@@ -92,8 +98,9 @@ dbk_agg.getResults = function(aggId, stepId) {
   var agg = dbk_agg.aggregates[aggId];
   var results = [];
 
-  var partialPipeline = agg.steps.slice(0, stepId + 1);
-  results = db.getSiblingDB(agg.dbName) // eslint-disable-line
+  var partialPipeline = agg.steps.slice(0, stepId);
+  results = db
+    .getSiblingDB(agg.dbName) // eslint-disable-line
     .getCollection(agg.collectionName)
     .aggregate(partialPipeline)
     .toArray();
@@ -167,11 +174,11 @@ dbk_agg.testData = function() {
   dbk_agg.addStep(myAgg, {
     $group: {
       _id: {
-        Category: '$Category'
+        Category: '$Category',
       },
       count: { $sum: 1 },
-      'Length-sum': { $sum: '$Length' }
-    }
+      'Length-sum': { $sum: '$Length' },
+    },
   });
 
   dbk_agg.addStep(myAgg, { $sort: { 'Length-sum': -1 } });
@@ -183,19 +190,19 @@ dbk_agg.testData = function() {
     {
       $project: {
         CustId: 1,
-        lineItems: 1
-      }
+        lineItems: 1,
+      },
     },
     { $unwind: '$lineItems' },
     {
       $group: {
         _id: {
           CustId: '$CustId',
-          ProdId: '$lineItems.prodId'
+          ProdId: '$lineItems.prodId',
         },
         prodCount: { $sum: '$lineItems.prodCount' },
-        prodCost: { $sum: '$lineItems.Cost' }
-      }
+        prodCost: { $sum: '$lineItems.Cost' },
+      },
     },
     { $sort: { prodCost: -1 } },
     { $limit: 10 },
@@ -204,16 +211,16 @@ dbk_agg.testData = function() {
         from: 'DBEnvyLoad_customers',
         as: 'c',
         localField: '_id.CustId',
-        foreignField: '_id'
-      }
+        foreignField: '_id',
+      },
     },
     {
       $lookup: {
         from: 'DBEnvyLoad_products',
         as: 'p',
         localField: '_id.ProdId',
-        foreignField: '_id'
-      }
+        foreignField: '_id',
+      },
     },
     { $unwind: '$p' },
     { $unwind: '$c' }, // Get rid of single element arrays
@@ -223,10 +230,8 @@ dbk_agg.testData = function() {
         Product: '$p.ProductName',
         prodCount: 1,
         prodCost: 1,
-        _id: 0
-      }
-    }
+        _id: 0,
+      },
+    },
   ]);
 };
-
-
