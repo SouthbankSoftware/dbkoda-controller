@@ -35,8 +35,10 @@ const stripAnsi = require('strip-ansi');
 const os = require('os');
 const path = require('path');
 const Status = require('../mongo-connection/status');
+const Parser = require('./pty-parser');
+const PtyOptions = require('./pty-options');
 
-const LineStream = require('./../../../libs/byline').LineStream;
+// const LineStream = require('./../../../libs/byline').LineStream;
 
 class MongoShell extends EventEmitter {
   constructor(connection, mongoScriptPath) {
@@ -52,6 +54,7 @@ class MongoShell extends EventEmitter {
     this.executing = false;
     this.status = Status.CREATED;
     this.mongoScriptPath = mongoScriptPath;
+    this.parser = new Parser();
     this.shellVersion = this.getShellVersion();
     l.debug(`Shell version: ${this.shellVersion}`);
   }
@@ -150,16 +153,8 @@ class MongoShell extends EventEmitter {
       mongoCmdArray = [mongoCmd];
     }
 
-    const spawnOptions = {
-      name: 'xterm-color',
-      cols: 10000,
-      rows: 10000,
-      cwd: '.',
-      env: process.env
-    };
-
     if (os.platform() !== 'win32') {
-      _.assign(spawnOptions, {
+      _.assign(PtyOptions, {
         uid: process.getuid(),
         gid: process.getgid()
       });
@@ -167,7 +162,7 @@ class MongoShell extends EventEmitter {
 
     try {
       // if (os.platform() !== 'win32') {
-      this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], spawnOptions);
+      this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], PtyOptions);
       // } else {
       //   const params = ['/c', mongoCmdArray[0], ...parameters];
       //   this.shell = spawn('cmd.exe', params, spawnOptions);
@@ -189,11 +184,13 @@ class MongoShell extends EventEmitter {
         this.status = Status.CLOSED;
       }
     });
-    this.lineStream = new LineStream(null, MongoShell.prompt, MongoShell.EXECUTE_END);
-    this.shell.pipe(this.lineStream);
+    // this.lineStream = new LineStream(null, MongoShell.prompt, MongoShell.EXECUTE_END);
+    // this.shell.pipe(this.lineStream);
     const that = this;
+    this.shell.on('data', this.parser.onRead.bind(this.parser));
+
     // handle shell output
-    this.lineStream.on('readable', () => {
+    this.shell.on('xxxx', () => {
       let line;
       const lineStream = that.lineStream;
       while ((line = lineStream.read()) !== null) {
@@ -292,32 +289,32 @@ class MongoShell extends EventEmitter {
       }
       lineStream._flush(() => { });
     });
-    this.lineStream.on(MongoShell.EXECUTE_END, (data) => {
-      // one command finish execution
-      log.debug('execution end ', data);
-      let output = stripAnsi(data);
-      that.currentCommand = that.runNextCommand();
-      if (!that.currentCommand) {
-        this.executing = false;
-        if (!this.syncExecution) {
-          that.emit(MongoShell.EXECUTE_END, MongoShell.prompt + that.currentCommand);
-          this.emitOutput(output + MongoShell.enter);
-          this.prevExecutionTime = 0;
-          if (!this.initialized) {
-            this.initialized = true;
-            // if the shell is not initialized, emit an event for completing connection
-            this.emit(MongoShell.INITIALIZED);
-          }
-        } else {
-          this.syncExecution = false;
-          // remove the end of prompt for json output
-          if (output && output.match(/dbKoda>$/)) {
-            output = output.substring(0, output.length - MongoShell.prompt.length);
-          }
-          this.emit(MongoShell.SYNC_EXECUTE_END, output + MongoShell.enter);
-        }
-      }
-    });
+    // this.lineStream.on(MongoShell.EXECUTE_END, (data) => {
+    //   // one command finish execution
+    //   log.debug('execution end ', data);
+    //   let output = stripAnsi(data);
+    //   that.currentCommand = that.runNextCommand();
+    //   if (!that.currentCommand) {
+    //     this.executing = false;
+    //     if (!this.syncExecution) {
+    //       that.emit(MongoShell.EXECUTE_END, MongoShell.prompt + that.currentCommand);
+    //       this.emitOutput(output + MongoShell.enter);
+    //       this.prevExecutionTime = 0;
+    //       if (!this.initialized) {
+    //         this.initialized = true;
+    //         // if the shell is not initialized, emit an event for completing connection
+    //         this.emit(MongoShell.INITIALIZED);
+    //       }
+    //     } else {
+    //       this.syncExecution = false;
+    //       // remove the end of prompt for json output
+    //       if (output && output.match(/dbKoda>$/)) {
+    //         output = output.substring(0, output.length - MongoShell.prompt.length);
+    //       }
+    //       this.emit(MongoShell.SYNC_EXECUTE_END, output + MongoShell.enter);
+    //     }
+    //   }
+    // });
     this.loadScriptsIntoShell();
     if (this.connection.requireSlaveOk) {
       this.writeToShell('rs.slaveOk()' + MongoShell.enter);
