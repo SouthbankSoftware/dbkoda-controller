@@ -34,7 +34,7 @@ dbk_agg.aggregates = {};
 
 dbk_agg.aggId = 0;
 dbk_agg.sampleSize = 100; // No of rows we sample by default
-dbk_agg.debug=false;
+dbk_agg.debug = false;
 
 // Returns a new identifier for the aggregate builder
 dbk_agg.newAggBuilder = function(dbName, collectionName) {
@@ -129,8 +129,8 @@ dbk_agg.getResults = function(aggId, stepId, reset) {
   var error = 0;
   if (reset === true) {
     // print ('reseting results');
-    var partialPipeline = agg.steps.slice(0, stepId+1);
-    if (dbk_agg.debug) printjson(partialPipeline); 
+    var partialPipeline = agg.steps.slice(0, stepId + 1);
+    if (dbk_agg.debug) printjson(partialPipeline); // eslint-disable-line
     mydb = db.getSiblingDB(agg.dbName); // eslint-disable-line
     try {
       results = mydb // eslint-disable-line
@@ -205,7 +205,7 @@ dbk_agg.getAttributes = function(aggId, stepId, reset) {
   if (reset) {
     var inputData = dbk_agg.getResults(aggId, stepId, reset);
     dbk_agg.aggregates[aggId].stepResults[stepId] = inputData;  // TODO: Limit max documents here
-    if (dbk_agg.debug) printjson(inputData[0]);
+    if (dbk_agg.debug) printjson(inputData[0]); // eslint-disable-line
     attributes = dbk_agg.attributesFromArray(inputData);
     dbk_agg.aggregates[aggId].stepAttributes[stepId] = attributes;
   } else {
@@ -235,7 +235,7 @@ dbk_agg.testData = function() {
   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films');
   dbk_agg.addStep(myAgg, { $unwind: '$Actors' });
 
-  var bigSteps = [
+  var bigSteps = [ // eslint-disable-line
     { $match: { orderStatus: 'C' } },
     {
       $project: {
@@ -284,7 +284,7 @@ dbk_agg.testData = function() {
       },
     },
   ];
-  var smallSteps = [
+  var smallSteps = [ // eslint-disable-line
     { $match: { Rating: 'R' } },
     {
       $group: {
@@ -296,14 +296,14 @@ dbk_agg.testData = function() {
     },
   ];
   print('setall 1');
-  //dbk_agg.setAllSteps(myAgg, bigSteps);
+  // dbk_agg.setAllSteps(myAgg, bigSteps);
   print('setall 2');
   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
-  //dbk_agg.setAllSteps(myAgg, smallSteps);
-  //dbk_agg.setAllSteps(myAgg, bigSteps);
+  // dbk_agg.setAllSteps(myAgg, smallSteps);
+  // dbk_agg.setAllSteps(myAgg, bigSteps);
   print('setall 3');
   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
-  //dbk_agg.setAllSteps(myAgg, bigSteps);
+  // dbk_agg.setAllSteps(myAgg, bigSteps);
  // dbk_agg.setAllSteps(myAgg, smallSteps);
   var badSteps = [
     { $batch: { Rating: 'R' } },
@@ -319,25 +319,26 @@ dbk_agg.testData = function() {
   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
   dbk_agg.setAllSteps(myAgg, badSteps);
    myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films');
-  dbk_agg.setAllSteps(myAgg, [
-		{
-			"$sample" : {
-				"size" : 100
-			}
-		},
-		{
-			"$group" : {
-				"_id" : {
-					"Rating" : "$Rating"
-				},
-				"count" : {
-					"$sum" : 1
-				},
-				"Length-sum" : {
-					"$sum" : "$Length"
-				}
-			}
-		}
-	]);
+   var steps2 = [
+     {
+       '$sample': {
+         'size': 100
+       }
+     },
+     {
+       '$group': {
+         '_id': {
+           'Rating': '$Rating'
+         },
+         'count': {
+           '$sum': 1
+         },
+         'Length-sum': {
+           '$sum': '$Length'
+         }
+       }
+     }
+   ];
+  dbk_agg.setAllSteps(myAgg, steps2);
   print(myAgg);
 };
