@@ -192,10 +192,7 @@ class MongoShell extends EventEmitter {
       if (data.indexOf('MongoDB server version') >= 0) {
         this.writeToShell(`${this.changePromptCmd}`);
       }
-      if (!data.trim()) {
-        return;
-      }
-      this.emitOutput(data);
+      this.emitOutput(data.replace(/\r/g, ''));
       if (data === MongoShell.prompt && !this.initialized) {
         this.emit(MongoShell.INITIALIZED);
         this.initialized = true;
