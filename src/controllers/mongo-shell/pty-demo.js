@@ -58,7 +58,7 @@ shell.getShellVersion();
 shell.createShell();
 
 setTimeout(() => {
-  shell.write('\rshow dbs\r');
+  shell.write('show dbs');
 }, 1000);
 
 

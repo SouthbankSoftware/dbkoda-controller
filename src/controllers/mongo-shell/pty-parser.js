@@ -47,12 +47,18 @@ class Parser extends EventEmitter {
   }
 
   onRead(data) {
-    // log.info('get pty output ', data);
     this.parse(data);
-    // console.log('buffer:', this.buffers);
-    this.buffers.map((buffer) => {
-      this.emit('data', buffer);
+    let newBuffers = this.buffers.map((buffer, i) => {
+      if (this.bufferY >= i && buffer) {
+        this.emit('data', buffer);
+      }
+      if (i === this.buffers.length - 1) {
+        return buffer;
+      }
     });
+    newBuffers = _.compact(newBuffers);
+    this.bufferY = newBuffers.length - 1 < 0 ? 0 : newBuffers.length - 1;
+    this.buffers = newBuffers;
   }
 
   parse(data) {

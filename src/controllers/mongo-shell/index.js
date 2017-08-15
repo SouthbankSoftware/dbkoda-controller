@@ -189,8 +189,12 @@ class MongoShell extends EventEmitter {
     const that = this;
     this.shell.on('data', this.parser.onRead.bind(this.parser));
     this.parser.on('data', (data) => {
+      if (data.indexOf('MongoDB server version') >= 0) {
+        // this.writeToShell(`${this.changePromptCmd}`);
+      }
       log.debug('get pty output ', data);
     });
+
     // handle shell output
     this.shell.on('xxxx', () => {
       let line;
@@ -317,11 +321,11 @@ class MongoShell extends EventEmitter {
     //     }
     //   }
     // });
-    this.loadScriptsIntoShell();
+    // this.loadScriptsIntoShell();
     if (this.connection.requireSlaveOk) {
       this.writeToShell('rs.slaveOk()' + MongoShell.enter);
     }
-    this.writeToShell(`${this.changePromptCmd}${MongoShell.enter}`);
+    // this.writeToShell(`${this.changePromptCmd}${MongoShell.enter}`);
     this.on(MongoShell.AUTO_COMPLETE_END, () => {
       this.finishAutoComplete();
     });

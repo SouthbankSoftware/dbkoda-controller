@@ -36,6 +36,7 @@ normalStateHandler[escapeSequence.CR] = (parser) => {
 normalStateHandler[escapeSequence.LF] = (parser) => {
   parser.bufferX = 0;
   parser.bufferY += 1;
+  parser.buffers.push('');
 };
 
 normalStateHandler[escapeSequence.ESC] = (parser) => {
