@@ -56,9 +56,9 @@ class Parser extends EventEmitter {
     const cachedBuffer = this.getCachedBuffer();  // get the previous cached data
     this.parse(data);
     if (this.buffers && this.buffers.length > 0 && cachedBuffer) {
-      if (this.buffers[0].data !== cachedBuffer.data && this.buffers[0].data.indexOf(cachedBuffer.data) === 0) {
+      if (cachedBuffer.data && this.buffers[0].data && this.buffers[0].data.replace(/\n/, '') !== cachedBuffer.data.replace(/\n/, '') && this.buffers[0].data.indexOf(cachedBuffer.data) === 0) {
         this.buffers[0].cached = false;
-        this.buffers[0].data = this.buffers[0].data.replace(new RegExp('^' + cachedBuffer.data), '');
+        this.buffers[0].data = this.buffers[0].data.replace(cachedBuffer.data, '');
       }
     }
     const tmpBuffer = this.buffers.map((buffer, i) => {

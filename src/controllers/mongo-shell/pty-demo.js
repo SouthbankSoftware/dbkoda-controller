@@ -58,12 +58,25 @@ shell.getShellVersion();
 shell.createShell();
 
 shell.on(MongoShell.INITIALIZED, () => {
-  shell.write('show dbs');
+  // shell.write('show dbs');
 });
 
 shell.on(MongoShell.OUTPUT_EVENT, (data) => {
   process.stdout.write(data, 'utf8');
 });
+
+shell.on(MongoShell.AUTO_COMPLETE_END, (data) => {
+  process.stdout.write('AUTO_COMPLETE_END:'+data);
+});
+
+shell.on(MongoShell.EXECUTE_END, () => {
+  process.stdout.write('command execution ended.');
+});
+
+setTimeout(() => {
+  // shell.writeAutoComplete('shellAutocomplete(\'db.\');__autocomplete__\n');
+  shell.write('db.getSiblingDB("city").inspections.find(');
+}, 2000);
 
 // const shell = spawn('mongo');
 // const parser = new Parser();

@@ -55,6 +55,7 @@ class MongoShell extends EventEmitter {
     this.status = Status.CREATED;
     this.mongoScriptPath = mongoScriptPath;
     this.parser = new Parser();
+    this.autoComplete = false;
     this.shellVersion = this.getShellVersion();
     l.debug(`Shell version: ${this.shellVersion}`);
   }
@@ -184,26 +185,9 @@ class MongoShell extends EventEmitter {
         this.status = Status.CLOSED;
       }
     });
-    // this.lineStream = new LineStream(null, MongoShell.prompt, MongoShell.EXECUTE_END);
-    // this.shell.pipe(this.lineStream);
     const that = this;
     this.shell.on('data', this.parser.onRead.bind(this.parser));
-    this.parser.on('data', (data) => {
-      if (data.indexOf('MongoDB server version') >= 0) {
-        this.writeToShell(`${this.changePromptCmd}`);
-      }
-      this.emitOutput(data.replace(/\r/g, ''));
-      if (data === MongoShell.prompt && !this.initialized) {
-        this.emit(MongoShell.INITIALIZED);
-        this.initialized = true;
-      }
-      if (this.executing && !this.autoComplete && data === MongoShell.prompt) {
-        this.prevExecutionTime = 0;
-        this.executing = false;
-        this.emitOutput('');
-        this.emit(MongoShell.EXECUTE_END);
-      }
-    });
+    this.parser.on('data', this.readParserOutput.bind(this));
 
     // handle shell output
     this.shell.on('xxxx', () => {
@@ -341,6 +325,41 @@ class MongoShell extends EventEmitter {
     });
   }
 
+  readParserOutput(data) {
+    if (data.indexOf('MongoDB server version') >= 0) {
+      this.writeToShell(`${this.changePromptCmd}`);
+    }
+    if (this.autoComplete) {
+      this.autoCompleteOutput += data.trim();
+    } else if (this.executing) {
+      this.emitOutput(data.replace(/\n/g, ''));
+    }
+    if (data === MongoShell.prompt && !this.initialized) {
+      this.emit(MongoShell.INITIALIZED);
+      this.initialized = true;
+    }
+    if (data === MongoShell.prompt) {
+      if (this.autoComplete) {
+        this.autoComplete = false;
+        const output = this.autoCompleteOutput.replace(/shellAutocomplete.*__autocomplete__/, '').replace(MongoShell.prompt, '');
+        this.emit(MongoShell.AUTO_COMPLETE_END, output);
+      } else if (this.executing) {
+        this.currentCommand = this.runNextCommand();
+        if (!this.currentCommand) {
+          this.prevExecutionTime = 0;
+          this.executing = false;
+          this.emitOutput('');
+          this.emit(MongoShell.EXECUTE_END);
+        }
+      }
+    } else if (data.trim() === '...') {
+      this.currentCommand = this.runNextCommand();
+      if (!this.currentCommand) {
+        this.writeToShell(MongoShell.enter + MongoShell.enter);
+      }
+    }
+  }
+
   loadScriptsIntoShell() {
     const scriptPath = path.join(this.mongoScriptPath + '/all-in-one.js');
     let command = `load("${scriptPath}");`;
@@ -430,7 +449,6 @@ class MongoShell extends EventEmitter {
       // ignore if there is already a auto complete in execution
       return;
     }
-    this.lineStream.autoComplete = true;
     this.autoComplete = true;
     this.autoCompleteOutput = '';
     this.writeToShell(command);
@@ -441,7 +459,6 @@ class MongoShell extends EventEmitter {
    */
   finishAutoComplete() {
     this.autoComplete = false;
-    this.lineStream.autoComplete = false;
     this.autoCompleteOutput = '';
   }
 
