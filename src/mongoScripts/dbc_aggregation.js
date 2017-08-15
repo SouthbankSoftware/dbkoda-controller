@@ -34,6 +34,7 @@ dbk_agg.aggregates = {};
 
 dbk_agg.aggId = 0;
 dbk_agg.sampleSize = 100; // No of rows we sample by default
+dbk_agg.debug = false;
 
 // Returns a new identifier for the aggregate builder
 dbk_agg.newAggBuilder = function(dbName, collectionName) {
@@ -45,40 +46,74 @@ dbk_agg.newAggBuilder = function(dbName, collectionName) {
   newAgg.steps[0] = { $sample: { size: dbk_agg.sampleSize } };
   newAgg.stepResults = [];
   newAgg.stepAttributes = [];
+  newAgg.stepCodes = [0];
   dbk_agg.aggregates[dbk_agg.aggId] = newAgg;
+  dbk_agg.getAttributes(dbk_agg.aggId, 0, true);
   return dbk_agg.aggId;
 };
 
-//
-// Resets all caches and existings steps
-//
-dbk_agg.resetAgg = function(aggId) {
-  dbk_agg.aggregates[aggId].stepResults = [];
-  dbk_agg.aggregates[aggId].stepAttributes = [];
-  dbk_agg.steps = [];
+dbk_agg.getAggStatus = function(aggId) {
+  var output = {};
+  var agg = dbk_agg.aggregates[aggId];
+  output.stepCodes = agg.stepCodes;
+  output.steps = agg.steps;
+  output.stepAttributes = agg.stepAttributes;
+  return output;
 };
 // add a new step
 dbk_agg.addStep = function(aggId, stepJson) {
   dbk_agg.aggregates[aggId].steps.push(stepJson);
+  var stepId = dbk_agg.aggregates[aggId].steps.length;
+  dbk_agg.getAttributes(aggId, stepId, true);
 };
-//  Replace an existing step
-dbk_agg.replaceStep = function(aggId, stepId, stepJson) {
-  dbk_agg.aggregates[aggId].steps[stepId] = stepJson;
-};
+
 // Delete a step and move all steps above down
 dbk_agg.removeStep = function(aggId, stepId) {
-  var steps = dbk_agg.aggregates[aggId].steps;
+  var agg = dbk_agg.aggregates[aggId];
+  var steps = agg.steps;
   var nsteps = steps.length;
   for (var step = stepId; step <= steps.length; step += 1) {
     if (step < nsteps - 1) steps[step] = steps[step + 1];
   }
   steps = steps.slice(0, -1);
+  agg.stepResults = agg.stepResults.slice(0, -1);
+  agg.stepAttributes = agg.stepAttributes.slice(0, -1);
+  agg.stepCodes = agg.stepCodes.slice(0, -1);
   dbk_agg.aggregates[aggId].steps = steps;
   return steps;
 };
+// return current status of all steps
+dbk_agg.getStep = function(aggId, stepId) {
+  return dbk_agg.aggregates[aggId].steps[stepId];
+};
 // Set/Replace all steps
 dbk_agg.setAllSteps = function(aggId, stepArray) {
-  dbk_agg.aggregates[aggId].steps = stepArray;
+  var oldLen = dbk_agg.aggregates[aggId].steps.length - 1;
+  var newLen = stepArray.length;
+  var ind;
+  var oldStep;
+  if (dbk_agg.debug) print('oldLen=' + oldLen + ' newLen=' + newLen);
+  // Replace existing steps
+  for (var stepId = 1; stepId <= newLen; stepId += 1) {
+    if (dbk_agg.debug) print('step ' + stepId);
+    ind = stepId - 1; // incomming array does not include first hidden step
+    oldStep = dbk_agg.aggregates[aggId].steps[stepId];
+    if (dbk_agg.debug) print('oldStep=' + oldStep);
+    var newStep = stepArray[ind];
+    if (oldStep !== newStep) {
+      if (dbk_agg.debug) print('step has changed');
+      dbk_agg.aggregates[aggId].steps[stepId] = newStep;
+      dbk_agg.getAttributes(aggId, stepId, true);
+    }
+  }
+  if (dbk_agg.debug) print('done');
+  // Trim any other steps
+  if (newLen < oldLen) {
+    for (var indx = oldLen; indx > newLen; indx -= 1) {
+      if (dbk_agg.debug) print('removing redunant step ' + indx);
+      dbk_agg.removeStep(aggId, indx);
+    }
+  }
 };
 
 // get the results for all steps up to an including the
@@ -88,20 +123,32 @@ dbk_agg.setAllSteps = function(aggId, stepArray) {
 //   if pipeline changes, regenerate automatically )
 //
 
-dbk_agg.getResults = function(aggId, stepId) {
+dbk_agg.getResults = function(aggId, stepId, reset) {
   var agg = dbk_agg.aggregates[aggId];
   var results = [];
-
-  var partialPipeline = agg.steps.slice(0, stepId + 1);
-  results = db.getSiblingDB(agg.dbName) // eslint-disable-line
-    .getCollection(agg.collectionName)
-    .aggregate(partialPipeline)
-    .toArray();
-  dbk_agg.aggregates[aggId].stepResults[stepId] = results;
-  // printjson(partialPipeline);
+  var error = 0;
+  if (reset === true) {
+    // print ('reseting results');
+    var partialPipeline = agg.steps.slice(0, stepId + 1);
+    if (dbk_agg.debug) printjson(partialPipeline); // eslint-disable-line
+    mydb = db.getSiblingDB(agg.dbName); // eslint-disable-line
+    try {
+      results = mydb // eslint-disable-line
+        .getCollection(agg.collectionName)
+        .aggregate(partialPipeline)
+        .toArray();
+    } catch (err) {
+      error = err.code;
+    }
+    dbk_agg.aggregates[aggId].stepResults[stepId] = results;
+    dbk_agg.aggregates[aggId].stepCodes[stepId] = error;
+  } else {
+    results = dbk_agg.aggregates[aggId].stepResults[stepId];
+  }
 
   return results;
 };
+
 dbk_agg.attributesFromArray = function(data) {
   //
   // Quick sampling of a collection to return attribute names
@@ -151,10 +198,19 @@ dbk_agg.attributesFromArray = function(data) {
 
 // Get the attributes for a given step
 // TODO: Caching
-dbk_agg.getAttributes = function(aggId, stepId) {
-  var inputData = dbk_agg.getResults(aggId, stepId);
-  // printjson(inputData[0]);
-  var attributes = dbk_agg.attributesFromArray(inputData);
+// TODO: During execution, save any errors into a sturcutre
+//       that the front end can read
+dbk_agg.getAttributes = function(aggId, stepId, reset) {
+  var attributes;
+  if (reset) {
+    var inputData = dbk_agg.getResults(aggId, stepId, reset);
+    dbk_agg.aggregates[aggId].stepResults[stepId] = inputData;  // TODO: Limit max documents here
+    if (dbk_agg.debug) printjson(inputData[0]); // eslint-disable-line
+    attributes = dbk_agg.attributesFromArray(inputData);
+    dbk_agg.aggregates[aggId].stepAttributes[stepId] = attributes;
+  } else {
+    attributes = dbk_agg.aggregates[aggId].stepAttributes[stepId];
+  }
   return attributes;
 };
 
@@ -164,38 +220,39 @@ dbk_agg.getAttributes = function(aggId, stepId) {
 dbk_agg.testData = function() {
   var myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films');
   dbk_agg.addStep(myAgg, { $match: { Rating: 'R' } });
+
   dbk_agg.addStep(myAgg, {
     $group: {
       _id: {
-        Category: '$Category'
+        Category: '$Category',
       },
       count: { $sum: 1 },
-      'Length-sum': { $sum: '$Length' }
-    }
+      'Length-sum': { $sum: '$Length' },
+    },
   });
 
   dbk_agg.addStep(myAgg, { $sort: { 'Length-sum': -1 } });
   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films');
   dbk_agg.addStep(myAgg, { $unwind: '$Actors' });
-  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
-  dbk_agg.setAllSteps(myAgg, [
+
+  var bigSteps = [ // eslint-disable-line
     { $match: { orderStatus: 'C' } },
     {
       $project: {
         CustId: 1,
-        lineItems: 1
-      }
+        lineItems: 1,
+      },
     },
     { $unwind: '$lineItems' },
     {
       $group: {
         _id: {
           CustId: '$CustId',
-          ProdId: '$lineItems.prodId'
+          ProdId: '$lineItems.prodId',
         },
         prodCount: { $sum: '$lineItems.prodCount' },
-        prodCost: { $sum: '$lineItems.Cost' }
-      }
+        prodCost: { $sum: '$lineItems.Cost' },
+      },
     },
     { $sort: { prodCost: -1 } },
     { $limit: 10 },
@@ -204,16 +261,16 @@ dbk_agg.testData = function() {
         from: 'DBEnvyLoad_customers',
         as: 'c',
         localField: '_id.CustId',
-        foreignField: '_id'
-      }
+        foreignField: '_id',
+      },
     },
     {
       $lookup: {
         from: 'DBEnvyLoad_products',
         as: 'p',
         localField: '_id.ProdId',
-        foreignField: '_id'
-      }
+        foreignField: '_id',
+      },
     },
     { $unwind: '$p' },
     { $unwind: '$c' }, // Get rid of single element arrays
@@ -223,10 +280,65 @@ dbk_agg.testData = function() {
         Product: '$p.ProductName',
         prodCount: 1,
         prodCost: 1,
-        _id: 0
-      }
-    }
-  ]);
+        _id: 0,
+      },
+    },
+  ];
+  var smallSteps = [ // eslint-disable-line
+    { $match: { Rating: 'R' } },
+    {
+      $group: {
+        _id: {
+          Category: '$Category',
+        },
+        count: { $sum: 1 },
+      },
+    },
+  ];
+  print('setall 1');
+  // dbk_agg.setAllSteps(myAgg, bigSteps);
+  print('setall 2');
+  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
+  // dbk_agg.setAllSteps(myAgg, smallSteps);
+  // dbk_agg.setAllSteps(myAgg, bigSteps);
+  print('setall 3');
+  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
+  // dbk_agg.setAllSteps(myAgg, bigSteps);
+ // dbk_agg.setAllSteps(myAgg, smallSteps);
+  var badSteps = [
+    { $batch: { Rating: 'R' } },
+    {
+      $group: {
+        _id: {
+          Category: '$Category',
+        },
+        count: { $sum: 1 },
+      },
+    },
+  ];
+  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
+  dbk_agg.setAllSteps(myAgg, badSteps);
+   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films');
+   var steps2 = [
+     {
+       '$sample': {
+         'size': 100
+       }
+     },
+     {
+       '$group': {
+         '_id': {
+           'Rating': '$Rating'
+         },
+         'count': {
+           '$sum': 1
+         },
+         'Length-sum': {
+           '$sum': '$Length'
+         }
+       }
+     }
+   ];
+  dbk_agg.setAllSteps(myAgg, steps2);
+  print(myAgg);
 };
-
-
