@@ -188,7 +188,9 @@ class MongoShell extends EventEmitter {
     // this.shell.pipe(this.lineStream);
     const that = this;
     this.shell.on('data', this.parser.onRead.bind(this.parser));
-
+    this.parser.on('data', (data) => {
+      log.debug('get pty output ', data);
+    });
     // handle shell output
     this.shell.on('xxxx', () => {
       let line;

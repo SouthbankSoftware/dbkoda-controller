@@ -47,9 +47,12 @@ class Parser extends EventEmitter {
   }
 
   onRead(data) {
-    log.info('get pty output ', data);
+    // log.info('get pty output ', data);
     this.parse(data);
-    console.log('buffer:', this.buffers);
+    // console.log('buffer:', this.buffers);
+    this.buffers.map((buffer) => {
+      this.emit('data', buffer);
+    });
   }
 
   parse(data) {
@@ -103,14 +106,6 @@ class Parser extends EventEmitter {
       this.buffers.push('');
     }
     this.buffers[this.bufferY] += ch;
-  }
-
-
-  eraseInDisplay(params) {
-    switch (params[0]) {
-      case 0:
-
-    }
   }
 
 }

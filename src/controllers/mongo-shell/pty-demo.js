@@ -22,6 +22,7 @@
  */
 
 import winston from 'winston';
+
 const commonOptions = {
   colorize: 'all',
 };
@@ -47,7 +48,7 @@ global.l = new winston.Logger({
   transports
 });
 global.log = global.l;
-log.debug('create shell')
+log.debug('create shell');
 const MongoShell = require('./index').MongoShell;
 const spawn = require('node-pty').spawn;
 const Parser = require('./pty-parser');
@@ -56,8 +57,8 @@ const shell = new MongoShell({url:'mongodb://localhost'});
 shell.getShellVersion();
 shell.createShell();
 
-setTimeout(()=>{
-  shell.write('\rshow dbs\r')
+setTimeout(() => {
+  shell.write('\rshow dbs\r');
 }, 1000);
 
 

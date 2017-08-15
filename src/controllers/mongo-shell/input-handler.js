@@ -90,12 +90,40 @@ const cursorCharAbsolute = (parser, params) => {
   parser.bufferX = param - 1;
 };
 
+/**
+ * CSI Ps J  Erase in Display (ED).
+ *     Ps = 0  -> Erase Below (default).
+ *     Ps = 1  -> Erase Above.
+ *     Ps = 2  -> Erase All.
+ *     Ps = 3  -> Erase Saved Lines (xterm).
+ * CSI ? Ps J
+ *   Erase in Display (DECSED).
+ *     Ps = 0  -> Selective Erase Below (default).
+ *     Ps = 1  -> Selective Erase Above.
+ *     Ps = 2  -> Selective Erase All.
+ */
+const eraseInDisplay = (parser, params) => {
+  const currentLine = parser.buffers[parser.bufferY];
+  switch (params[0]) {
+    case 0:
+      // erase right
+      parser.buffers[parser.bufferY] = currentLine.substring(0, parser.bufferX);
+      break;
+    case 1:
+      // erase left
+      parser.buffers[parser.bufferY] = currentLine.substring(parser.bufferX);
+      break;
+    default:
+      log.error('unrecognize parameter for J ', params);
+  }
+}
+
 const csiStateHandler = {
   'G': (parser, params) => {
     cursorCharAbsolute(parser, params);
   },
   'J': (parser, params) => {
-    parser.eraseInDisplay(params);
+    eraseInDisplay(parser, params);
   }
 };
 

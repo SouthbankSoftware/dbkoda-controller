@@ -26,12 +26,35 @@ const assert = require('assert');
 const Parser = require('../../../../src/controllers/mongo-shell/pty-parser');
 
 describe('test pty parser', () => {
-  it('test csi parser', () => {
+  it('test csi parser for G Moves the cursor to column n', () => {
     const parser = new Parser();
     const escapeCode = String.fromCharCode(27, 91) + '3G';  // [3G
     parser.parse(escapeCode);
     assert.equal(parser.bufferX, 2);
     assert.equal(parser.params.length, 1);
     assert.equal(parser.params[0], 3);
+  });
+
+  it('test csi parser for J Clears part of the screen. ', () => {
+    const parser = new Parser();
+    let escapeCode = String.fromCharCode(27, 91) + 'J';  // [J
+    parser.buffers = [];
+    parser.buffers.push('abc123');
+    parser.bufferX = 3;
+    parser.parse(escapeCode);
+    assert.equal(parser.bufferX, 3);
+    assert.equal(parser.params.length, 1);
+    assert.equal(parser.params[0], 0);
+    assert.equal(parser.buffers[0], 'abc');
+
+    escapeCode = String.fromCharCode(27, 91) + '1J';  // [1J
+    parser.buffers = [];
+    parser.buffers.push('abc123');
+    parser.bufferX = 3;
+    parser.parse(escapeCode);
+    assert.equal(parser.bufferX, 3);
+    assert.equal(parser.params.length, 1);
+    assert.equal(parser.params[0], 1);
+    assert.equal(parser.buffers[0], '123');
   });
 });
