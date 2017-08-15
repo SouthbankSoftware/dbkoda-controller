@@ -209,6 +209,9 @@ class MongoShell extends EventEmitter {
       this.emit(MongoShell.INITIALIZED);
       this.initialized = true;
     }
+    if (!this.initialized) {
+      this.emit(MongoShell.OUTPUT_EVENT, data);
+    }
     if (data === MongoShell.prompt) {
       if (this.autoComplete) {
         this.autoComplete = false;

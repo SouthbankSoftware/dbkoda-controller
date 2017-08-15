@@ -5,6 +5,7 @@
 
 // if unit test is run beforehand, we need to remove this Node module cache
 const feathers = require('feathers-client');
+const os = require('os');
 
 delete require.cache[require.resolve('../../../src/app')];
 const controller = require('../../../src/app');
@@ -30,7 +31,7 @@ controller.listen(PORT);
 module.exports = {
   app,
   TIMEOUT: 30000,
-  WIN_TIMEOUT: 5000,
+  MLAUNCH_TIMEOUT: os.platform() === 'win32' ? 5000 : 2000,
   shell,
   connection,
   inspector,

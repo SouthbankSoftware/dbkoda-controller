@@ -11,7 +11,7 @@ const {
   TIMEOUT,
   shell,
   getRandomPort,
-  WIN_TIMEOUT
+  MLAUNCH_TIMEOUT
 } = require('../commons');
 
 let id;
@@ -43,7 +43,7 @@ describe('test run auto complete command', () => {
     this.timeout(TIMEOUT * 3);
     launchSingleInstance(port);
     if (os.platform() === 'win32') {
-      setTimeout(() => createConnect(done), WIN_TIMEOUT);
+      setTimeout(() => createConnect(done), MLAUNCH_TIMEOUT);
     } else {
       createConnect(done);
     }

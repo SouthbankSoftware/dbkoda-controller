@@ -7,6 +7,7 @@ const {
   TIMEOUT,
   syncExecution,
   getRandomPort,
+  MLAUNCH_TIMEOUT
 } = require('../commons');
 
 let connectionId;
@@ -17,27 +18,30 @@ describe('test run shell command', () => {
   before(function (done) {
     this.timeout(TIMEOUT * 3);
     launchSingleInstance(port);
-    generateMongoData(port, 'test', 'user', '--num 1000');
-    generateMongoData(port, 'users', 'user', '--num 2000');
-
-    connection
-      .create(
-        {},
-        {
-          query: {
-            url: 'mongodb://localhost:' + port + '/test',
-          },
-        },
-      )
-      .then((v) => {
-        winston.info('create connection ', v);
-        connectionId = v.id;
-        shellId = v.shellId;
-        done();
-      })
-      .catch((e) => {
-        console.log('error:', e);
-      });
+    setTimeout(() => {
+      generateMongoData(port, 'test', 'user', '--num 1000');
+      generateMongoData(port, 'users', 'user', '--num 2000');
+      setTimeout(() => {
+        connection
+          .create(
+            {},
+            {
+              query: {
+                url: 'mongodb://localhost:' + port + '/test',
+              },
+            },
+          )
+          .then((v) => {
+            winston.info('create connection ', v);
+            connectionId = v.id;
+            shellId = v.shellId;
+            done();
+          })
+          .catch((e) => {
+            console.log('error:', e);
+          });
+      }, MLAUNCH_TIMEOUT);
+    }, MLAUNCH_TIMEOUT);
   });
 
   after(function () {
@@ -71,7 +75,7 @@ describe('test run shell command', () => {
         commands: 'show dbs',
         responseType: 'text',
       }).then((output) => {
-        console.log('show dbs ourput ', output);
+        console.log('show dbs output ', output);
         assert.equal(output.indexOf('test') >= 0, true);
         resolve(output);
       }).catch((err) => {

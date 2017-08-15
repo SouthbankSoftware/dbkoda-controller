@@ -71,9 +71,18 @@ shell.on(MongoShell.EXECUTE_END, () => {
   process.stdout.write('command execution ended.');
 });
 
+shell.on(MongoShell.SYNC_OUTPUT_EVENT, (data) => {
+  process.stdout.write('sync output:' + data);
+});
+
+shell.on(MongoShell.SYNC_EXECUTE_END, (data) => {
+  process.stdout.write('SYNC_EXECUTE_END:' + data);
+});
+
 setTimeout(() => {
   // shell.writeAutoComplete('shellAutocomplete(\'db.\');__autocomplete__\n');
-  shell.write('db.getSiblingDB("city").inspections.find(');
+  // shell.write('db.getSiblingDB("city").inspections.find(');
+  shell.writeSyncCommand('use test\nshow collections\n');
 }, 2000);
 
 // const shell = spawn('mongo');
