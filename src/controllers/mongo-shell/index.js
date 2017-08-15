@@ -17,13 +17,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 /* eslint-disable class-methods-use-this */
-
 /**
  * this class is used to create a wrapper on top of mongo shell and listen on its pty channels.
  */
-
 // import fs from 'fs';
 import _ from 'lodash';
 import configObj from '../../config';
@@ -112,7 +109,7 @@ class MongoShell extends EventEmitter {
         params.push('--ssl');
       }
     }
-    const { username, password } = connection;
+    const {username, password} = connection;
     if (username) {
       params = params.concat(['--username', username]);
       if (password) {
@@ -287,7 +284,8 @@ class MongoShell extends EventEmitter {
           this.emitOutput(output + MongoShell.enter);
         }
       }
-      lineStream._flush(() => { });
+      lineStream._flush(() => {
+      });
     });
     // this.lineStream.on(MongoShell.EXECUTE_END, (data) => {
     //   // one command finish execution
@@ -331,6 +329,8 @@ class MongoShell extends EventEmitter {
     }
     if (this.autoComplete) {
       this.autoCompleteOutput += data.trim();
+    } else if (this.syncExecution && data !== MongoShell.prompt) {
+      this.emit(MongoShell.SYNC_OUTPUT_EVENT, data);
     } else if (this.executing) {
       this.emitOutput(data.replace(/\n/g, ''));
     }
@@ -343,6 +343,10 @@ class MongoShell extends EventEmitter {
         this.autoComplete = false;
         const output = this.autoCompleteOutput.replace(/shellAutocomplete.*__autocomplete__/, '').replace(MongoShell.prompt, '');
         this.emit(MongoShell.AUTO_COMPLETE_END, output);
+      } else if (this.syncExecution) {
+        this.syncExecution = false;
+        this.executing = false;
+        this.emit(MongoShell.SYNC_EXECUTE_END, '');
       } else if (this.executing) {
         this.currentCommand = this.runNextCommand();
         if (!this.currentCommand) {
