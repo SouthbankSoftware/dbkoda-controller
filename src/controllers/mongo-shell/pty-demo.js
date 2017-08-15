@@ -50,8 +50,6 @@ global.l = new winston.Logger({
 global.log = global.l;
 log.debug('create shell');
 const MongoShell = require('./index').MongoShell;
-const spawn = require('node-pty').spawn;
-const Parser = require('./pty-parser');
 
 const shell = new MongoShell({url:'mongodb://localhost'});
 shell.getShellVersion();
@@ -66,7 +64,7 @@ shell.on(MongoShell.OUTPUT_EVENT, (data) => {
 });
 
 shell.on(MongoShell.AUTO_COMPLETE_END, (data) => {
-  process.stdout.write('AUTO_COMPLETE_END:'+data);
+  process.stdout.write('AUTO_COMPLETE_END:' + data);
 });
 
 shell.on(MongoShell.EXECUTE_END, () => {

@@ -60,7 +60,7 @@ const escapedStateHandler = {
 
 const csiNumberParamHandler = (parser, param) => {
   const i = parseInt(param, 10);
-  parser.currentParam = parser.currentParam * 10 + i;
+  parser.currentParam = (parser.currentParam * 10) + i;
 };
 
 /**

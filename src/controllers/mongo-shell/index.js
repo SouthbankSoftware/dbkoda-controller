@@ -28,7 +28,6 @@ import configObj from '../../config';
 const spawn = require('node-pty').spawn;
 const execSync = require('child_process').execSync;
 const EventEmitter = require('events').EventEmitter;
-const stripAnsi = require('strip-ansi');
 const os = require('os');
 const path = require('path');
 const Status = require('../mongo-connection/status');
@@ -182,138 +181,10 @@ class MongoShell extends EventEmitter {
         this.status = Status.CLOSED;
       }
     });
-    const that = this;
     this.shell.on('data', this.parser.onRead.bind(this.parser));
     this.parser.on('data', this.readParserOutput.bind(this));
 
     // handle shell output
-    this.shell.on('xxxx', () => {
-      let line;
-      const lineStream = that.lineStream;
-      while ((line = lineStream.read()) !== null) {
-        if (!this.executing && this.initialized && !this.autoComplete) {
-          continue;
-        }
-        let output = '';
-        try {
-          output = stripAnsi(line);
-        } catch (err) {
-          continue;
-        }
-
-        if (!this.initialized && (output.indexOf('load(') >= 0 || output === 'true')) {
-          // handle loading script on connection
-          continue;
-        }
-
-        if (this.autoComplete) {
-          // handle auto complete case
-          if (output.indexOf(MongoShell.prompt) < 0 && output.indexOf('Autocom') < 0) {
-            this.autoCompleteOutput += output.trim();
-          }
-          if (output === MongoShell.prompt) {
-            // command is about finish
-            // if there is no output, let the final timeout emit the event
-            this.autoComplete = false;
-            this.emit(MongoShell.AUTO_COMPLETE_END, this.autoCompleteOutput.slice(0));
-          }
-        } else if (this.currentCommand) {
-          if (os.platform() === 'win32') {
-            // pty generate incomplete command on windows
-            let currentCommandWithPrompt = this.currentCommand.replace(/\r/, '');
-            if (currentCommandWithPrompt.indexOf(output) > 0 && currentCommandWithPrompt.length > output.length * 2
-              && output.indexOf('{') && output.indexOf('}') < 0) {
-              continue;
-            }
-            if (output.indexOf(MongoShell.prompt) === 0) {
-              currentCommandWithPrompt = MongoShell.prompt + this.currentCommand.replace(/\r/, '');
-            }
-            if (currentCommandWithPrompt.trim().indexOf(output) === 0 && currentCommandWithPrompt.trim().length > output.length
-              && output !== MongoShell.prompt && output.indexOf('}') < 0 && output.indexOf('{') < 0) {
-              continue;
-            }
-          }
-          if (output.indexOf(this.currentCommand.replace(/\r*$/, '') + this.currentCommand.replace(/\r*$/, '')) >= 0 && !this.syncExecution) {
-            if (output.indexOf(MongoShell.prompt) >= 0) {
-              // check whether it is the initial prompt
-              if (output.indexOf(`var prompt="${MongoShell.prompt}";`) < 0) {
-                // show command with prompt
-                this.emitOutput(MongoShell.prompt + this.currentCommand);
-              }
-            } else {
-              // for ... output
-              this.emitOutput(this.currentCommand);
-            }
-          } else if (output.indexOf(`var prompt="${MongoShell.prompt}";`) >= 0) {
-            // this is initial change prompt command, ignore it
-          } else if (output === '... ' || output === '...') {
-            // found in complete command
-            if (!this.syncExecution) {
-              this.emitOutput(output);
-            }
-            this.currentCommand = this.runNextCommand();
-            if (!this.currentCommand) {
-              // the command is not complete, clear the incomplete context
-              this.shell.write('\r\r');
-            }
-          } else if (this.syncExecution && output.indexOf(MongoShell.prompt) < 0
-            && output.indexOf(this.currentCommand.trim()) < 0) {
-            // emit sync execution command output
-            this.emit(MongoShell.SYNC_OUTPUT_EVENT, output + MongoShell.enter);
-          } else if (!this.syncExecution) {
-            // emit general command output
-            if (os.platform() === 'win32') {
-              // sometimes windows doesnt show prompt
-              if (this.currentCommand.replace(/\r/, '') === output) {
-                this.emitOutput(MongoShell.prompt + output + MongoShell.enter);
-                continue;
-              }
-              // for in complete output
-              if (output.indexOf('... ') == 0) {
-                if (output.replace('... ', '') !== this.currentCommand.replace(/\r/, '')) {
-                  continue;
-                }
-                this.emitOutput(output.replace('... ', '') + MongoShell.enter);
-                continue;
-              }
-            }
-            this.emitOutput(output + MongoShell.enter);
-          }
-        } else if (output.indexOf(`var prompt="${MongoShell.prompt}"`) < 0) {
-          // initializing connection messages
-          this.emitOutput(output + MongoShell.enter);
-        }
-      }
-      lineStream._flush(() => {
-      });
-    });
-    // this.lineStream.on(MongoShell.EXECUTE_END, (data) => {
-    //   // one command finish execution
-    //   log.debug('execution end ', data);
-    //   let output = stripAnsi(data);
-    //   that.currentCommand = that.runNextCommand();
-    //   if (!that.currentCommand) {
-    //     this.executing = false;
-    //     if (!this.syncExecution) {
-    //       that.emit(MongoShell.EXECUTE_END, MongoShell.prompt + that.currentCommand);
-    //       this.emitOutput(output + MongoShell.enter);
-    //       this.prevExecutionTime = 0;
-    //       if (!this.initialized) {
-    //         this.initialized = true;
-    //         // if the shell is not initialized, emit an event for completing connection
-    //         this.emit(MongoShell.INITIALIZED);
-    //       }
-    //     } else {
-    //       this.syncExecution = false;
-    //       // remove the end of prompt for json output
-    //       if (output && output.match(/dbKoda>$/)) {
-    //         output = output.substring(0, output.length - MongoShell.prompt.length);
-    //       }
-    //       this.emit(MongoShell.SYNC_EXECUTE_END, output + MongoShell.enter);
-    //     }
-    //   }
-    // });
-    // this.loadScriptsIntoShell();
     if (this.connection.requireSlaveOk) {
       this.writeToShell('rs.slaveOk()' + MongoShell.enter);
     }

@@ -21,9 +21,7 @@
  * Created by joey on 14/8/17.
  */
 const _ = require('lodash');
-const {StringDecoder} = require('string_decoder');
 const EventEmitter = require('events').EventEmitter;
-const PtyOptions = require('./pty-options');
 const ParseState = require('./parser-state');
 const {escapedStateHandler, csiStateHandler, csiStateParameterHandler, normalStateHandler} = require('./input-handler');
 const Buffer = require('./buffer');
