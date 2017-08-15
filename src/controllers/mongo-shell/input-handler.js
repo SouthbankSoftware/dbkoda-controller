@@ -20,10 +20,12 @@
 /**
  * Created by joey on 14/8/17.
  */
-/* eslint no-return-assign: 0*/
+
+/* eslint no-return-assign: 0 */
 
 const ParserState = require('./parser-state');
 const escapeSequence = require('./escape-sequence');
+const Buffer = require('./buffer');
 
 const normalStateHandler = {
 
@@ -31,12 +33,14 @@ const normalStateHandler = {
 
 normalStateHandler[escapeSequence.CR] = (parser) => {
   parser.bufferX = 0;
+  parser.pushChar('\n');
 };
 
 normalStateHandler[escapeSequence.LF] = (parser) => {
   parser.bufferX = 0;
   parser.bufferY += 1;
-  parser.buffers.push('');
+  parser.pushChar('\r');
+  parser.buffers.push(new Buffer());
 };
 
 normalStateHandler[escapeSequence.ESC] = (parser) => {
@@ -108,16 +112,16 @@ const eraseInDisplay = (parser, params) => {
   switch (params[0]) {
     case 0:
       // erase right
-      parser.buffers[parser.bufferY] = currentLine.substring(0, parser.bufferX);
+      currentLine.data = currentLine.data.substring(0, parser.bufferX);
       break;
     case 1:
       // erase left
-      parser.buffers[parser.bufferY] = currentLine.substring(parser.bufferX);
+      currentLine.data = currentLine.data.substring(parser.bufferX);
       break;
     default:
       log.error('unrecognize parameter for J ', params);
   }
-}
+};
 
 const csiStateHandler = {
   'G': (parser, params) => {

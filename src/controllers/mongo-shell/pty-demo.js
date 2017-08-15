@@ -57,10 +57,13 @@ const shell = new MongoShell({url:'mongodb://localhost'});
 shell.getShellVersion();
 shell.createShell();
 
-setTimeout(() => {
+shell.on(MongoShell.INITIALIZED, () => {
   shell.write('show dbs');
-}, 1000);
+});
 
+shell.on(MongoShell.OUTPUT_EVENT, (data) => {
+  process.stdout.write(data, 'utf8');
+});
 
 // const shell = spawn('mongo');
 // const parser = new Parser();

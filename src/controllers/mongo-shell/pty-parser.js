@@ -26,6 +26,7 @@ const EventEmitter = require('events').EventEmitter;
 const PtyOptions = require('./pty-options');
 const ParseState = require('./parser-state');
 const {escapedStateHandler, csiStateHandler, csiStateParameterHandler, normalStateHandler} = require('./input-handler');
+const Buffer = require('./buffer');
 
 /* eslint no-fallthrough : 0 */
 
@@ -46,17 +47,34 @@ class Parser extends EventEmitter {
     this.bufferY = 0;   // the y position on the buffer
   }
 
+  getCachedBuffer() {
+    const cachedBuffer = _.find(this.buffers, buffer => buffer.cached === true);
+    return Object.assign({}, cachedBuffer);
+  }
+
   onRead(data) {
+    const cachedBuffer = this.getCachedBuffer();  // get the previous cached data
     this.parse(data);
-    let newBuffers = this.buffers.map((buffer, i) => {
-      if (this.bufferY >= i && buffer) {
-        this.emit('data', buffer);
+    if (this.buffers && this.buffers.length > 0 && cachedBuffer) {
+      if (this.buffers[0].data !== cachedBuffer.data && this.buffers[0].data.indexOf(cachedBuffer.data) === 0) {
+        this.buffers[0].cached = false;
+        this.buffers[0].data = this.buffers[0].data.replace(new RegExp('^' + cachedBuffer.data), '');
+      }
+    }
+    const tmpBuffer = this.buffers.map((buffer, i) => {
+      if (this.bufferY >= i && buffer && buffer.data && !buffer.cached) {
+        const data = buffer.data;
+        this.emit('data', data);
       }
       if (i === this.buffers.length - 1) {
+        // cache the last line
         return buffer;
       }
     });
-    newBuffers = _.compact(newBuffers);
+    const newBuffers = [];
+    if (tmpBuffer && tmpBuffer.length > 0 && tmpBuffer[0] && tmpBuffer[0].data && !tmpBuffer[0].cached) {
+      newBuffers.push(new Buffer(tmpBuffer[0].data, true));
+    }
     this.bufferY = newBuffers.length - 1 < 0 ? 0 : newBuffers.length - 1;
     this.buffers = newBuffers;
   }
@@ -107,11 +125,16 @@ class Parser extends EventEmitter {
     this.currentParam = 0;
   }
 
+  /**
+   * push data to current buffer
+   *
+   * @param data
+   */
   pushChar(ch) {
     if (this.buffers.length <= this.bufferY) {
-      this.buffers.push('');
+      this.buffers.push(new Buffer());
     }
-    this.buffers[this.bufferY] += ch;
+    this.buffers[this.bufferY].data += ch;
   }
 
 }

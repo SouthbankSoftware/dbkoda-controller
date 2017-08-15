@@ -190,9 +190,22 @@ class MongoShell extends EventEmitter {
     this.shell.on('data', this.parser.onRead.bind(this.parser));
     this.parser.on('data', (data) => {
       if (data.indexOf('MongoDB server version') >= 0) {
-        // this.writeToShell(`${this.changePromptCmd}`);
+        this.writeToShell(`${this.changePromptCmd}`);
       }
-      log.debug('get pty output ', data);
+      if (!data.trim()) {
+        return;
+      }
+      this.emitOutput(data);
+      if (data === MongoShell.prompt && !this.initialized) {
+        this.emit(MongoShell.INITIALIZED);
+        this.initialized = true;
+      }
+      if (this.executing && !this.autoComplete && data === MongoShell.prompt) {
+        this.prevExecutionTime = 0;
+        this.executing = false;
+        this.emitOutput('');
+        this.emit(MongoShell.EXECUTE_END);
+      }
     });
 
     // handle shell output
