@@ -34,6 +34,7 @@ dbk_agg.aggregates = {};
 
 dbk_agg.aggId = 0;
 dbk_agg.sampleSize = 100; // No of rows we sample by default
+dbk_agg.debug=false;
 
 // Returns a new identifier for the aggregate builder
 dbk_agg.newAggBuilder = function(dbName, collectionName) {
@@ -91,25 +92,25 @@ dbk_agg.setAllSteps = function(aggId, stepArray) {
   var newLen = stepArray.length;
   var ind;
   var oldStep;
-  print('oldLen=' + oldLen + ' newLen=' + newLen);
+  if (dbk_agg.debug) print('oldLen=' + oldLen + ' newLen=' + newLen);
   // Replace existing steps
   for (var stepId = 1; stepId <= newLen; stepId += 1) {
-    print('step ' + stepId);
+    if (dbk_agg.debug) print('step ' + stepId);
     ind = stepId - 1; // incomming array does not include first hidden step
     oldStep = dbk_agg.aggregates[aggId].steps[stepId];
-    print('oldStep=' + oldStep);
+    if (dbk_agg.debug) print('oldStep=' + oldStep);
     var newStep = stepArray[ind];
     if (oldStep !== newStep) {
-      print('step has changed');
+      if (dbk_agg.debug) print('step has changed');
       dbk_agg.aggregates[aggId].steps[stepId] = newStep;
       dbk_agg.getAttributes(aggId, stepId, true);
     }
   }
-  print('done');
+  if (dbk_agg.debug) print('done');
   // Trim any other steps
   if (newLen < oldLen) {
     for (var indx = oldLen; indx > newLen; indx -= 1) {
-      print('removing redunant step ' + indx);
+      if (dbk_agg.debug) print('removing redunant step ' + indx);
       dbk_agg.removeStep(aggId, indx);
     }
   }
@@ -128,7 +129,8 @@ dbk_agg.getResults = function(aggId, stepId, reset) {
   var error = 0;
   if (reset === true) {
     // print ('reseting results');
-    var partialPipeline = agg.steps.slice(0, stepId);
+    var partialPipeline = agg.steps.slice(0, stepId+1);
+    if (dbk_agg.debug) printjson(partialPipeline); 
     mydb = db.getSiblingDB(agg.dbName); // eslint-disable-line
     try {
       results = mydb // eslint-disable-line
@@ -202,8 +204,8 @@ dbk_agg.getAttributes = function(aggId, stepId, reset) {
   var attributes;
   if (reset) {
     var inputData = dbk_agg.getResults(aggId, stepId, reset);
-    dbk_agg.aggregates[aggId].stepResults[stepId] = inputData;
-    // printjson(inputData[0]);
+    dbk_agg.aggregates[aggId].stepResults[stepId] = inputData;  // TODO: Limit max documents here
+    if (dbk_agg.debug) printjson(inputData[0]);
     attributes = dbk_agg.attributesFromArray(inputData);
     dbk_agg.aggregates[aggId].stepAttributes[stepId] = attributes;
   } else {
@@ -294,15 +296,15 @@ dbk_agg.testData = function() {
     },
   ];
   print('setall 1');
-  dbk_agg.setAllSteps(myAgg, bigSteps);
+  //dbk_agg.setAllSteps(myAgg, bigSteps);
   print('setall 2');
   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
-  dbk_agg.setAllSteps(myAgg, smallSteps);
-  dbk_agg.setAllSteps(myAgg, bigSteps);
+  //dbk_agg.setAllSteps(myAgg, smallSteps);
+  //dbk_agg.setAllSteps(myAgg, bigSteps);
   print('setall 3');
   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
-  dbk_agg.setAllSteps(myAgg, bigSteps);
-  dbk_agg.setAllSteps(myAgg, smallSteps);
+  //dbk_agg.setAllSteps(myAgg, bigSteps);
+ // dbk_agg.setAllSteps(myAgg, smallSteps);
   var badSteps = [
     { $batch: { Rating: 'R' } },
     {
@@ -316,4 +318,26 @@ dbk_agg.testData = function() {
   ];
   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders');
   dbk_agg.setAllSteps(myAgg, badSteps);
+   myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films');
+  dbk_agg.setAllSteps(myAgg, [
+		{
+			"$sample" : {
+				"size" : 100
+			}
+		},
+		{
+			"$group" : {
+				"_id" : {
+					"Rating" : "$Rating"
+				},
+				"count" : {
+					"$sum" : 1
+				},
+				"Length-sum" : {
+					"$sum" : "$Length"
+				}
+			}
+		}
+	]);
+  print(myAgg);
 };
