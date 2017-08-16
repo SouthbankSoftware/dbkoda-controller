@@ -19,8 +19,8 @@
  */
 
 /**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-06-09T14:38:27+10:00
+ * @Last modified by:   wahaj
+ * @Last modified time: 2017-08-15T16:23:38+10:00
  */
 
 /* eslint-disable class-methods-use-this */
@@ -30,6 +30,7 @@ const mongodb = require('mongodb');
 const errors = require('feathers-errors');
 const _ = require('lodash');
 const fs = require('fs');
+const sshTunnel = require('open-ssh-tunnel');
 const MongoShell = require('../mongo-shell').MongoShell;
 const mongoUri = require('mongodb-uri');
 const MongoConnection = require('./connection');
@@ -53,11 +54,40 @@ class MongoConnectionController {
       };
     this.mongoClient = mongodb.MongoClient;
     this.connections = {};
+    this.tunnels = {};
   }
 
   setup(app) {
     this.app = app;
     this.mongoShell = app.service('/mongo-shells');
+  }
+
+  createTunnel(params) {
+    if (params.ssh) {
+      const sshOpts = {
+        host: params.remoteHost, // ip address of the ssh server
+        port: 22, // port of the ssh server
+        username: params.remoteUser,
+        dstPort: Number(params.remotePort), // port of mongo db server
+        srcPort: Number(params.localPort),
+        dstAddr: params.localHost, // ip address of mongo db server
+        srcAddr: params.localHost,
+        localPort: Number(params.localPort),
+        localAddr: params.localHost,
+        readyTimeout: 5000,
+        forwardTimeout: 5000,
+      };
+      if (params.sshKeyFile) {
+        sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
+        sshOpts.passphrase = params.passPhrase;
+      } else {
+        sshOpts.password = params.password;
+      }
+      return sshTunnel(sshOpts);
+    }
+    return new Promise((resolve) => {
+      resolve(null);
+    });
   }
 
   /**
@@ -69,22 +99,30 @@ class MongoConnectionController {
     conn = this.parseMongoConnectionURI(conn);
     let db;
     let dbVersion;
+    let tunnel;
     return new Promise((resolve, reject) => {
-      this
-        .mongoClient
-        .connect(conn.url, that.options, (err, db) => {
-          if (err !== null) {
-            l.error('failed to connect mongo instance ', err.message);
-            const badRequest = new errors.BadRequest(err.message);
-            return reject(badRequest);
-          }
-          if (!db || !db.serverConfig) {
-            l.error('failed to get database instance ');
-            return reject(new errors.BadRequest('Failed to connect Mongo instance'));
-          }
-          l.info('Connected successfully to server');
-          resolve(db);
-        });
+      this.createTunnel(params).then((resTunnel) => {
+        if (resTunnel) {
+          console.log('Tunnel created successfully', resTunnel);
+          tunnel = resTunnel;
+        }
+
+        this
+          .mongoClient
+          .connect(conn.url, that.options, (err, db) => {
+            if (err !== null) {
+              l.error('failed to connect mongo instance ', err.message);
+              const badRequest = new errors.BadRequest(err.message);
+              return reject(badRequest);
+            }
+            if (!db || !db.serverConfig) {
+              l.error('failed to get database instance ');
+              return reject(new errors.BadRequest('Failed to connect Mongo instance'));
+            }
+            l.info('Connected successfully to server');
+            resolve(db);
+          });
+      });
     }).then((v) => {
       db = v;
       return db.command({buildinfo: 1});
@@ -131,6 +169,9 @@ class MongoConnectionController {
         return this
           .createMongoShell(db, conn, dbVersion)
           .then((v) => {
+            if (v.id && tunnel) {
+              this.tunnels[v.id] = tunnel;
+            }
             return {...v, dbVersion};
           })
           .catch((_err) => {
@@ -180,6 +221,12 @@ class MongoConnectionController {
       driver.close();
 
       delete this.connections[id];
+
+      if (this.tunnels[id]) {
+        this.tunnels[id].close();
+        console.log('tunnel closed successfully: ', this.tunnels[id]);
+        delete this.tunnels[id];
+      }
       return Promise.resolve({id, shellIds});
     } catch (err) {
       l.error('get error', err);

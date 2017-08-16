@@ -37,3 +37,7 @@ data/
 *.iml
 
 all-in-one.js
+
+nohup\.out
+
+yarn\.lock
