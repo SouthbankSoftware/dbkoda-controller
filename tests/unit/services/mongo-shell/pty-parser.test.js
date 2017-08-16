@@ -59,6 +59,19 @@ describe('test pty parser', () => {
     assert.equal(parser.buffers[0].data, '123');
   });
 
+  it('test csi parser for K EL – Erase in Line', () => {
+    const parser = new Parser();
+    const escapeCode = String.fromCharCode(27, 91) + 'K';  // [K
+    parser.buffers = [];
+    parser.buffers.push(new Buffer('abc123'));
+    parser.bufferX = 3;
+    parser.parse(escapeCode);
+    assert.equal(parser.bufferX, 3);
+    assert.equal(parser.params.length, 1);
+    assert.equal(parser.params[0], 0);
+    assert.equal(parser.buffers[0].data, 'abc');
+  });
+
   it('test parser for parsing normal string with enter at the last', () => {
     let parser = new Parser();
     parser.parse('MongoDB shell version v3.4.0\r\n');

@@ -80,29 +80,6 @@ class Parser extends EventEmitter {
         this.emit('incomplete-command-ended', '... ');
       }
     }
-
-    // if (this.buffers && this.buffers.length > 0 && cachedBuffer) {
-    //   if (cachedBuffer.data && this.buffers[0].data && this.buffers[0].data.replace(/\n/, '') !== cachedBuffer.data.replace(/\n/, '') && this.buffers[0].data.indexOf(cachedBuffer.data) === 0) {
-    //     this.buffers[0].cached = false;
-    //     this.buffers[0].data = this.buffers[0].data.replace(cachedBuffer.data, '');
-    //   }
-    // }
-    // const tmpBuffer = this.buffers.map((buffer, i) => {
-    //   if (this.bufferY >= i && buffer && buffer.data && !buffer.cached) {
-    //     const data = buffer.data;
-    //     this.emit('data', data);
-    //   }
-    //   if (i === this.buffers.length - 1) {
-    //     // cache the last line
-    //     return buffer;
-    //   }
-    // });
-    // const newBuffers = [];
-    // if (tmpBuffer && tmpBuffer.length > 0 && tmpBuffer[0] && tmpBuffer[0].data && !tmpBuffer[0].cached) {
-    //   newBuffers.push(new Buffer(tmpBuffer[0].data, true));
-    // }
-    // this.bufferY = newBuffers.length - 1 < 0 ? 0 : newBuffers.length - 1;
-    // this.buffers = newBuffers;
   }
 
   parse(data) {

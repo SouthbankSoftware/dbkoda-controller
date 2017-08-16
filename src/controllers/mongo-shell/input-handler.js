@@ -132,6 +132,9 @@ const csiStateHandler = {
   },
   'J': (parser, params) => {
     eraseInDisplay(parser, params);
+  },
+  'K': (parser, params) => {
+    eraseInDisplay(parser, params);
   }
 };
 
