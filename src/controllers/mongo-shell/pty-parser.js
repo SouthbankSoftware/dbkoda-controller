@@ -136,8 +136,10 @@ class Parser extends EventEmitter {
   pushChar(ch) {
     if (this.buffers.length <= this.bufferY) {
       this.buffers.push(new Buffer());
+      this.bufferX = 0;
     }
     this.buffers[this.bufferY].data += ch;
+    this.bufferX += 1;
   }
 
   clearBuffer() {
