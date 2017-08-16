@@ -51,7 +51,7 @@ global.log = global.l;
 log.debug('create shell');
 const MongoShell = require('./index').MongoShell;
 
-const shell = new MongoShell({url:'mongodb://localhost'});
+const shell = new MongoShell({url:'mongodb://10.0.0.41'});
 shell.getShellVersion();
 shell.createShell();
 
@@ -82,7 +82,7 @@ shell.on(MongoShell.SYNC_EXECUTE_END, (data) => {
 
 setTimeout(() => {
   // shell.writeAutoComplete('shellAutocomplete(\'db\');__autocomplete__\n');
-  shell.write('db.getSiblingDB("city").inspections.find(');
+  // shell.write('db.getSiblingDB("city").inspections.find(');
   // shell.write('db.getSiblingDB("city").inspections.find(\n{\n}\n)');
   // shell.writeSyncCommand('show dbs\n');
   // shell.write('show dbs');

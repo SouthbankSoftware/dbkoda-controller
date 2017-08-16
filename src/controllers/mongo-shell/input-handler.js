@@ -136,9 +136,11 @@ const csiStateHandler = {
   'K': (parser, params) => {
     eraseInDisplay(parser, params);
   },
-  'h': (_, params) => {
-    log.debug('get h ', params);
-  }
+  'h': () => { // set mode
+  },
+  'm': () => {  // set color
+  },
+  'l': () => {} // reset mode
 };
 
 module.exports = {escapedStateHandler, csiStateParameterHandler, csiStateHandler, normalStateHandler};
