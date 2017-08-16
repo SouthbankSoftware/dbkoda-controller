@@ -58,4 +58,28 @@ describe('test pty parser', () => {
     assert.equal(parser.params[0], 1);
     assert.equal(parser.buffers[0].data, '123');
   });
+
+  it('test parser for parsing normal string with enter at the last', () => {
+    let parser = new Parser();
+    parser.parse('MongoDB shell version v3.4.0\r\n');
+    assert.equal(parser.buffers.length, 2);
+    assert.equal(parser.buffers[0].data, 'MongoDB shell version v3.4.0');
+    assert.equal(parser.buffers[1].data, '\r');
+
+    parser = new Parser();
+    parser.parse('connecting to: mongodb://localhost\r\n' +
+      'MongoDB server version: 3.4.0\r\n' +
+      'Server has startup warnings: \r\n' +
+      '2017-08-15T23:34:04.190+0000 I STORAGE  [initandlisten] \r\n' +
+      '2017-08-15T23:34:04.807+0000 I CONTROL  [initandlisten] \r\n' +
+      '2017-08-15T23:34:04.807+0000 I CONTROL  [initandlisten] ** WARNING: Access control is not enabled for the database.\r\n' +
+      '2017-08-15T23:34:04.807+0000 I CONTROL  [initandlisten] **          Read and write access to data and configuration is unrestricted.\r\n' +
+      '2017-08-15T23:34:04.807+0000 I CONTROL  [initandlisten] \r\n' +
+      'show dbs\r\n');
+    assert.equal(parser.buffers.length, 10);
+    assert.equal(parser.buffers[0].data, 'connecting to: mongodb://localhost');
+    assert.equal(parser.buffers[8].data, '\rshow dbs');
+    assert.equal(parser.buffers[9].data, '\r');
+
+  });
 });

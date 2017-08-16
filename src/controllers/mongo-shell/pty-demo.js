@@ -56,11 +56,12 @@ shell.getShellVersion();
 shell.createShell();
 
 shell.on(MongoShell.INITIALIZED, () => {
-  // shell.write('show dbs');
+  process.stdout.write('INITIALIZED', 'utf8');
 });
 
 shell.on(MongoShell.OUTPUT_EVENT, (data) => {
-  process.stdout.write(data, 'utf8');
+  // process.stdout.write(data, 'utf8');
+  console.log(data);
 });
 
 shell.on(MongoShell.AUTO_COMPLETE_END, (data) => {
@@ -81,8 +82,12 @@ shell.on(MongoShell.SYNC_EXECUTE_END, (data) => {
 
 setTimeout(() => {
   // shell.writeAutoComplete('shellAutocomplete(\'db.\');__autocomplete__\n');
-  // shell.write('db.getSiblingDB("city").inspections.find(');
-  shell.writeSyncCommand('use test\nshow collections\n');
+  shell.write('db.getSiblingDB("city").inspections.find(');
+  // shell.writeSyncCommand('use test\nshow collections\n');
+  // shell.write('show dbs');
+  // shell.write('show dbs');
+  // shell.write('show dbs');
+  // shell.write('show dbs');
 }, 2000);
 
 // const shell = spawn('mongo');

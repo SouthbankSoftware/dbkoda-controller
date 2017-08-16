@@ -183,6 +183,8 @@ class MongoShell extends EventEmitter {
     });
     this.shell.on('data', this.parser.onRead.bind(this.parser));
     this.parser.on('data', this.readParserOutput.bind(this));
+    this.parser.on('command-ended', this.commandEnded.bind(this));
+    this.parser.on('incomplete-command-ended', this.incompleteCommandEnded.bind(this));
 
     // handle shell output
     if (this.connection.requireSlaveOk) {
@@ -194,48 +196,82 @@ class MongoShell extends EventEmitter {
     });
   }
 
+  commandEnded() {
+    if (!this.initialized) {
+      this.emit(MongoShell.INITIALIZED);
+      this.initialized = true;
+    } else if (this.autoComplete) {
+      this.autoComplete = false;
+      const output = this.autoCompleteOutput.replace(/shellAutocomplete.*__autocomplete__/, '').replace(MongoShell.prompt, '');
+      this.emit(MongoShell.AUTO_COMPLETE_END, output);
+    } else if (this.syncExecution) {
+      this.syncExecution = false;
+      this.executing = false;
+      this.emit(MongoShell.SYNC_EXECUTE_END, '');
+    } else if (this.executing) {
+      this.currentCommand = this.runNextCommand();
+      if (!this.currentCommand) {
+        this.prevExecutionTime = 0;
+        this.executing = false;
+        this.emitOutput(MongoShell.prompt + MongoShell.enter);
+        this.emit(MongoShell.EXECUTE_END);
+      }
+    }
+  }
+
+  incompleteCommandEnded(data) {
+    this.emitOutput(data);
+    const cmd = this.runNextCommand();
+    if (!cmd) {
+      this.writeToShell(MongoShell.enter + MongoShell.enter);
+    }
+  }
+
   readParserOutput(data) {
     if (data.indexOf('MongoDB server version') >= 0) {
       this.writeToShell(`${this.changePromptCmd}`);
+    }
+    if (!this.initialized) {
+      this.emit(MongoShell.OUTPUT_EVENT, data);
+      return;
     }
     if (this.autoComplete) {
       this.autoCompleteOutput += data.trim();
     } else if (this.syncExecution && data !== MongoShell.prompt) {
       this.emit(MongoShell.SYNC_OUTPUT_EVENT, data);
     } else if (this.executing) {
-      this.emitOutput(data.replace(/\n/g, ''));
-    }
-    if (data === MongoShell.prompt && !this.initialized) {
-      this.emit(MongoShell.INITIALIZED);
-      this.initialized = true;
-    }
-    if (!this.initialized) {
+      // this.emitOutput(data);
+      // console.log('emit output:', data, '.');
       this.emit(MongoShell.OUTPUT_EVENT, data);
     }
-    if (data === MongoShell.prompt) {
-      if (this.autoComplete) {
-        this.autoComplete = false;
-        const output = this.autoCompleteOutput.replace(/shellAutocomplete.*__autocomplete__/, '').replace(MongoShell.prompt, '');
-        this.emit(MongoShell.AUTO_COMPLETE_END, output);
-      } else if (this.syncExecution) {
-        this.syncExecution = false;
-        this.executing = false;
-        this.emit(MongoShell.SYNC_EXECUTE_END, '');
-      } else if (this.executing) {
-        this.currentCommand = this.runNextCommand();
-        if (!this.currentCommand) {
-          this.prevExecutionTime = 0;
-          this.executing = false;
-          this.emitOutput('');
-          this.emit(MongoShell.EXECUTE_END);
-        }
-      }
-    } else if (data.trim() === '...') {
-      this.currentCommand = this.runNextCommand();
-      if (!this.currentCommand) {
-        this.writeToShell(MongoShell.enter + MongoShell.enter);
-      }
-    }
+    // if (data === MongoShell.prompt && !this.initialized) {
+    //   this.emit(MongoShell.INITIALIZED);
+    //   this.initialized = true;
+    // }
+    // if (data === MongoShell.prompt) {
+    //   if (this.autoComplete) {
+    //     this.autoComplete = false;
+    //     const output = this.autoCompleteOutput.replace(/shellAutocomplete.*__autocomplete__/, '').replace(MongoShell.prompt, '');
+    //     this.emit(MongoShell.AUTO_COMPLETE_END, output);
+    //   } else if (this.syncExecution) {
+    //     this.syncExecution = false;
+    //     this.executing = false;
+    //     this.emit(MongoShell.SYNC_EXECUTE_END, '');
+    //   } else if (this.executing) {
+    //     this.currentCommand = this.runNextCommand();
+    //     if (!this.currentCommand) {
+    //       this.prevExecutionTime = 0;
+    //       this.executing = false;
+    //       this.emitOutput('');
+    //       this.emit(MongoShell.EXECUTE_END);
+    //     }
+    //   }
+    // } else if (data.trim() === '...') {
+    //   this.currentCommand = this.runNextCommand();
+    //   if (!this.currentCommand) {
+    //     this.writeToShell(MongoShell.enter + MongoShell.enter);
+    //   }
+    // }
   }
 
   loadScriptsIntoShell() {
