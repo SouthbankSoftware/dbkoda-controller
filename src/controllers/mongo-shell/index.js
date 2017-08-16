@@ -220,9 +220,12 @@ class MongoShell extends EventEmitter {
   }
 
   incompleteCommandEnded(data) {
-    this.emitOutput(data);
+    this.emitOutput(data + MongoShell.enter);
     const cmd = this.runNextCommand();
     if (!cmd) {
+      this.prevExecutionTime = 0;
+      this.executing = false;
+      this.emit(MongoShell.EXECUTE_END);
       this.writeToShell(MongoShell.enter + MongoShell.enter);
     }
   }

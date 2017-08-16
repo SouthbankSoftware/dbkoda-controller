@@ -82,7 +82,8 @@ shell.on(MongoShell.SYNC_EXECUTE_END, (data) => {
 
 setTimeout(() => {
   // shell.writeAutoComplete('shellAutocomplete(\'db.\');__autocomplete__\n');
-  shell.write('db.getSiblingDB("city").inspections.find(');
+  // shell.write('db.getSiblingDB("city").inspections.find(');
+  shell.write('db.getSiblingDB("city").inspections.find(\n{\n}\n)');
   // shell.writeSyncCommand('use test\nshow collections\n');
   // shell.write('show dbs');
   // shell.write('show dbs');
