@@ -135,6 +135,9 @@ const csiStateHandler = {
   },
   'K': (parser, params) => {
     eraseInDisplay(parser, params);
+  },
+  'h': (_, params) => {
+    log.debug('get h ', params);
   }
 };
 
