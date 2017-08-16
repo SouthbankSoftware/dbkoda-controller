@@ -94,7 +94,7 @@ class SyncExecutionController {
       shell.removeAllListeners(MongoShell.SYNC_OUTPUT_EVENT);
       shell.removeAllListeners(MongoShell.SYNC_EXECUTE_END);
       let output = ctr.output + data;
-      output = output.replace(commands, '');
+      output = output.replace(commands, '').replace(MongoShell.prompt, '');
       if (responseType === 'json' || responseType === 'explain') {
         output = output.replace(/\n/g, '').replace(/\r/g, '');
         if (os.platform() === 'win32') {

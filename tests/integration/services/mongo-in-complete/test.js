@@ -65,10 +65,12 @@ describe('test run shell command', () => {
         winston.info('test run in-complete statement: get output ', msg);
         if (msg.output && msg.output.includes('...') && !incomplete) {
           incomplete = true;
-          shell.update(connectionId, {
-            shellId,
-            commands: 'use admin',
-          });
+          setTimeout(() => {
+            shell.update(connectionId, {
+              shellId,
+              commands: 'use admin',
+            });
+          }, 1000);
         }
         if (msg.output && msg.output.indexOf('admin') >= 0) {
           expectedOutput = true;

@@ -68,26 +68,16 @@ class Parser extends EventEmitter {
     }
     // all buffers before the last \r should be sent to client
     for (let i = 0; i <= newLineIdx; i += 1) {
-      if (!this.buffers[0].cached) {
-        const buffer = this.buffers.shift();
-        this.emit('data', buffer.data);
-      } else {
-        this.buffers.shift();
-      }
+      const buffer = this.buffers.shift();
+      this.emit('data', buffer.data);
     }
-    // for (let i = newLineIdx + 1; i < this.buffers.length; i += 1) {
-    //   this.buffers[i].cached = true;
-    // }
     this.bufferY = this.buffers.length - 1 >= 0 ? this.buffers.length - 1 : 0;
     // check whether the last line in the buffer is prompt
     if (this.buffers.length > 0) {
       if (this.buffers[0].data === 'dbKoda>') {
         this.emit('command-ended');
       } else if (this.buffers[this.buffers.length - 1].data === '... ') {
-        if (!this.buffers[this.buffers.length - 1].cached) {
-          this.buffers[this.buffers.length - 1].cached = true;
-          this.emit('incomplete-command-ended', this.buffers[this.buffers.length - 1].data);
-        }
+        this.emit('incomplete-command-ended', '... ');
       }
     }
 
@@ -171,6 +161,12 @@ class Parser extends EventEmitter {
       this.buffers.push(new Buffer());
     }
     this.buffers[this.bufferY].data += ch;
+  }
+
+  clearBuffer() {
+    this.buffers = [];
+    this.bufferY = 0;
+    this.bufferX = 0;
   }
 
 }

@@ -109,6 +109,9 @@ const cursorCharAbsolute = (parser, params) => {
  */
 const eraseInDisplay = (parser, params) => {
   const currentLine = parser.buffers[parser.bufferY];
+  if (!currentLine) {
+    return;
+  }
   switch (params[0]) {
     case 0:
       // erase right

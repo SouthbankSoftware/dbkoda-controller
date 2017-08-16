@@ -80,6 +80,5 @@ describe('test pty parser', () => {
     assert.equal(parser.buffers[0].data, 'connecting to: mongodb://localhost');
     assert.equal(parser.buffers[8].data, '\rshow dbs');
     assert.equal(parser.buffers[9].data, '\r');
-
   });
 });

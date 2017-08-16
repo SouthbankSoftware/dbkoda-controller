@@ -55,8 +55,15 @@ describe('test run shell command', () => {
       syncExecution.timeout = 30000;
       syncExecution.update(connectionId, {
         shellId,
-        commands: 'use users\nshow collections\n',
+        commands: 'use users',
         responseType: 'text',
+      }).then((o) => {
+        console.log('get user users output:', o);
+        return syncExecution.update(connectionId, {
+          shellId,
+          commands: 'show collections\n',
+          responseType: 'text',
+        });
       }).then((output) => {
         console.log('xxxx test run show collections through sync service:', output);
         resolve(output);

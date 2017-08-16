@@ -64,7 +64,6 @@ module.exports = function() {
   app.configure(osCommandsService);
 
   if (process.env.NODE_ENV !== 'production') {
-    log.info('start monitoring');
     const monitor = require('./monitor');
     app.configure(monitor);
   }

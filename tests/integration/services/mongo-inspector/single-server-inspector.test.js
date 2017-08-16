@@ -88,19 +88,19 @@ describe('single server inspector test', () => {
         {},
         {
           query: {
-            url: 'mongodb://localhost:' + port + '/test',
+            url: 'mongodb://localhost:' + port + '/test1',
           },
         },
       ).then((v) => {
         id = v.id;
         return Promise.all([syncExecution.update(v.id, {
           shellId: v.shellId,
-          commands: 'use test1;\ndb.createCollection(\'aaaa\');\n',
+          commands: 'db.createCollection(\'aaaa\');',
           responseType: 'text',
         }),
           syncExecution.update(v.id, {
             shellId: v.shellId,
-            commands: 'use test1;\ndb.createCollection(\'bbbb\');\n',
+            commands: 'db.createCollection(\'bbbb\');',
             responseType: 'text',
           })
         ]);
