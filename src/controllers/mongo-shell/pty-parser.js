@@ -59,6 +59,18 @@ class Parser extends EventEmitter {
     this.parse(data);
 
     let newLineIdx = -1;
+    // check the last line of buffer
+    if (this.buffers.length > 0) {
+      const last = this.buffers[this.buffers.length - 1];
+      if (last.data.indexOf('\r') >= 0 && last.data.indexOf('\r') !== last.data.length - 1) {
+        // split the last part of the buffer
+        const lidx = last.data.lastIndexOf('\r');
+        const before = last.data.substring(0, lidx);
+        const left = last.data.substring(lidx);
+        last.data = before;
+        this.buffers.push(new Buffer(left));
+      }
+    }
     for (let i = 0; i < this.buffers.length; i += 1) {
       // find the last \r on buffer array
       const buffer = this.buffers[i];

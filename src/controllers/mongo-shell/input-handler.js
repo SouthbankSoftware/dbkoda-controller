@@ -115,7 +115,7 @@ const eraseInDisplay = (parser, params) => {
   switch (params[0]) {
     case 0:
       // erase right
-      currentLine.data = currentLine.data.substring(0, parser.bufferX);
+      currentLine.data = currentLine.data.substring(0, parser.bufferX + 1);
       break;
     case 1:
       // erase left
@@ -130,6 +130,9 @@ const csiStateHandler = {
   'G': (parser, params) => {
     cursorCharAbsolute(parser, params);
   },
+  'H': (parser, params) => {
+    cursorCharAbsolute(parser, params); // cursorPosition
+  },
   'J': (parser, params) => {
     eraseInDisplay(parser, params);
   },
@@ -140,7 +143,21 @@ const csiStateHandler = {
   },
   'm': () => {  // set color
   },
-  'l': () => {} // reset mode
+  'l': () => {}, // reset mode
+  'A': () => {}, // cursor up
+  'B': () => {}, // cursor down
+  'C': () => {},  // cursorForward
+  'D': () => {}, // cursorBackward
+  'E': () => {}, // cursorNextLine
+  'F': () => {}, // cursorPrecedingLine
+  'I': () => {}, // cursorForwardTab
+  'L': () => {}, // insert line
+  'M': () => {}, // delete line
+  'P': () => {}, // delete char
+  'S': () => {}, // scroll up
+  'T': () => {}, // scroll down
+  'X': () => {}, // eraseChars
+  'Z': () => {}, // cursorBackwardTab
 };
 
 module.exports = {escapedStateHandler, csiStateParameterHandler, csiStateHandler, normalStateHandler};
