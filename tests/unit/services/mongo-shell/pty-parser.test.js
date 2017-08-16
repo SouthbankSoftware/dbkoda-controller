@@ -56,7 +56,7 @@ describe('test pty parser', () => {
     assert.equal(parser.bufferX, 3);
     assert.equal(parser.params.length, 1);
     assert.equal(parser.params[0], 1);
-    assert.equal(parser.buffers[0].data, '123');
+    assert.equal(parser.buffers[0].data, '23');
   });
 
   it('test csi parser for K EL – Erase in Line', () => {

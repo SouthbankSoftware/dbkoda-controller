@@ -115,11 +115,11 @@ const eraseInDisplay = (parser, params) => {
   switch (params[0]) {
     case 0:
       // erase right
-      currentLine.data = currentLine.data.substring(0, parser.bufferX + 1);
+      currentLine.data = currentLine.data.substring(0, parser.bufferX);
       break;
     case 1:
       // erase left
-      currentLine.data = currentLine.data.substring(parser.bufferX);
+      currentLine.data = currentLine.data.substring(parser.bufferX + 1);
       break;
     default:
       log.error('unrecognize parameter for J ', params);
