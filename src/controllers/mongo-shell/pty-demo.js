@@ -60,8 +60,8 @@ shell.on(MongoShell.INITIALIZED, () => {
 });
 
 shell.on(MongoShell.OUTPUT_EVENT, (data) => {
-  process.stdout.write(data, 'utf8');
-  // console.log(data);
+  // process.stdout.write(data, 'utf8');
+  console.log(data);
 });
 
 shell.on(MongoShell.AUTO_COMPLETE_END, (data) => {
@@ -82,11 +82,11 @@ shell.on(MongoShell.SYNC_EXECUTE_END, (data) => {
 
 setTimeout(() => {
   // shell.writeAutoComplete('shellAutocomplete(\'db\');__autocomplete__\n');
-  shell.write('db.getSiblingDB("city").inspections.find(\r{');
+  // shell.write('db.getSiblingDB("city").inspections.find(\r{');
   // shell.write('db.getSiblingDB("city").inspections.find(\n{\n}\n)');
   // shell.writeSyncCommand('show dbs\n');
-  // shell.write('show dbs');
-  // shell.write('show dbs');
+  shell.write('show dbs');
+  shell.write('show dbs');
   // shell.write('show dbs');
   // shell.write('show dbs');
 }, 2000);

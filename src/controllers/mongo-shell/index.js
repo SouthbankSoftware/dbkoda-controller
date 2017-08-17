@@ -213,8 +213,9 @@ class MongoShell extends EventEmitter {
       if (!this.currentCommand) {
         this.prevExecutionTime = 0;
         this.executing = false;
-        this.emitOutput(MongoShell.prompt + MongoShell.enter);
+        // this.emitOutput(MongoShell.prompt + MongoShell.enter);
         this.emit(MongoShell.EXECUTE_END);
+        this.emitBufferedOutput();
       }
     }
   }
@@ -241,15 +242,16 @@ class MongoShell extends EventEmitter {
       this.writeToShell(`${this.changePromptCmd}`);
     }
     if (!this.initialized) {
-      this.emit(MongoShell.OUTPUT_EVENT, data);
+      this.emit(MongoShell.OUTPUT_EVENT, data + MongoShell.enter);
       return;
     }
     if (this.autoComplete) {
       this.autoCompleteOutput += data.trim();
     } else if (this.syncExecution && data !== MongoShell.prompt) {
       this.emit(MongoShell.SYNC_OUTPUT_EVENT, data);
-    } else if (this.executing) {
-      this.emitOutput(data);
+    } else {
+      log.debug('emit output ', data);
+      this.emitOutput(data + MongoShell.enter);
       // console.log('emit output:', data, '.');
       // this.emit(MongoShell.OUTPUT_EVENT, data);
     }

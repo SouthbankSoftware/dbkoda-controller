@@ -56,39 +56,51 @@ class Parser extends EventEmitter {
    * @param data
    */
   onRead(data) {
+    // log.debug('get output data from pty', data);
     this.parse(data);
 
-    let newLineIdx = -1;
-    // check the last line of buffer
+    // let newLineIdx = -1;
+    // // check the last line of buffer
+    // if (this.buffers.length > 0) {
+    //   const last = this.buffers[this.buffers.length - 1];
+    //   if (last.data.indexOf('\r') >= 0 && last.data.indexOf('\r') !== last.data.length - 1) {
+    //     // split the last part of the buffer
+    //     const lidx = last.data.lastIndexOf('\r');
+    //     const before = last.data.substring(0, lidx);
+    //     const left = last.data.substring(lidx);
+    //     last.data = before;
+    //     this.buffers.push(new Buffer(left));
+    //   }
+    // }
+    // for (let i = 0; i < this.buffers.length; i += 1) {
+    //   // find the last \r on buffer array
+    //   const buffer = this.buffers[i];
+    //   if (buffer.data && buffer.data.indexOf('\r') >= 0) {
+    //     newLineIdx = i;
+    //   }
+    // }
+    // // all buffers before the last \r should be sent to client
+    // for (let i = 0; i <= newLineIdx; i += 1) {
+    //   const buffer = this.buffers.shift();
+    //   this.emit('data', buffer.data);
+    // }
+    
     if (this.buffers.length > 0) {
+      this.buffers.map((buffer) => {
+        this.emit('data', buffer.data);
+      });
       const last = this.buffers[this.buffers.length - 1];
-      if (last.data.indexOf('\r') >= 0 && last.data.indexOf('\r') !== last.data.length - 1) {
-        // split the last part of the buffer
-        const lidx = last.data.lastIndexOf('\r');
-        const before = last.data.substring(0, lidx);
-        const left = last.data.substring(lidx);
-        last.data = before;
-        this.buffers.push(new Buffer(left));
-      }
+      this.buffers = [];
+      this.buffers.push(last);
     }
-    for (let i = 0; i < this.buffers.length; i += 1) {
-      // find the last \r on buffer array
-      const buffer = this.buffers[i];
-      if (buffer.data && buffer.data.indexOf('\r') >= 0) {
-        newLineIdx = i;
-      }
-    }
-    // all buffers before the last \r should be sent to client
-    for (let i = 0; i <= newLineIdx; i += 1) {
-      const buffer = this.buffers.shift();
-      this.emit('data', buffer.data);
-    }
+    
     this.bufferY = this.buffers.length - 1 >= 0 ? this.buffers.length - 1 : 0;
     // check whether the last line in the buffer is prompt
     if (this.buffers.length > 0) {
       if (this.buffers[0].data === 'dbKoda>') {
         this.emit('command-ended');
-      } else if (this.buffers[this.buffers.length - 1].data === '... ') {
+        this.buffers = [];
+      } else if (this.buffers[0].data === '... ') {
         this.emit('incomplete-command-ended', '... ');
       }
     }
