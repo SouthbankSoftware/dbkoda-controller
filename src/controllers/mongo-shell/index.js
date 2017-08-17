@@ -228,11 +228,11 @@ class MongoShell extends EventEmitter {
     this.emitOutput(data + MongoShell.enter);
     const cmd = this.runNextCommand();
     if (!cmd) {
-      this.emitOutput(MongoShell.prompt + MongoShell.enter);
+      // this.emitOutput(MongoShell.prompt + MongoShell.enter);
       this.parser.clearBuffer();
       this.prevExecutionTime = 0;
       this.executing = false;
-      this.emitBufferedOutput();
+      // this.emitBufferedOutput();
       this.emit(MongoShell.EXECUTE_END);
       this.writeToShell(MongoShell.enter + MongoShell.enter);
     }
@@ -253,37 +253,7 @@ class MongoShell extends EventEmitter {
     } else {
       log.debug('emit output ', data);
       this.emitOutput(data + MongoShell.enter);
-      // console.log('emit output:', data, '.');
-      // this.emit(MongoShell.OUTPUT_EVENT, data);
     }
-    // if (data === MongoShell.prompt && !this.initialized) {
-    //   this.emit(MongoShell.INITIALIZED);
-    //   this.initialized = true;
-    // }
-    // if (data === MongoShell.prompt) {
-    //   if (this.autoComplete) {
-    //     this.autoComplete = false;
-    //     const output = this.autoCompleteOutput.replace(/shellAutocomplete.*__autocomplete__/, '').replace(MongoShell.prompt, '');
-    //     this.emit(MongoShell.AUTO_COMPLETE_END, output);
-    //   } else if (this.syncExecution) {
-    //     this.syncExecution = false;
-    //     this.executing = false;
-    //     this.emit(MongoShell.SYNC_EXECUTE_END, '');
-    //   } else if (this.executing) {
-    //     this.currentCommand = this.runNextCommand();
-    //     if (!this.currentCommand) {
-    //       this.prevExecutionTime = 0;
-    //       this.executing = false;
-    //       this.emitOutput('');
-    //       this.emit(MongoShell.EXECUTE_END);
-    //     }
-    //   }
-    // } else if (data.trim() === '...') {
-    //   this.currentCommand = this.runNextCommand();
-    //   if (!this.currentCommand) {
-    //     this.writeToShell(MongoShell.enter + MongoShell.enter);
-    //   }
-    // }
   }
 
   loadScriptsIntoShell() {
