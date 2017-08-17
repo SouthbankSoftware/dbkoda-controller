@@ -51,7 +51,7 @@ global.log = global.l;
 log.debug('create shell');
 const MongoShell = require('./index').MongoShell;
 
-const shell = new MongoShell({url:'mongodb://localhost'});
+const shell = new MongoShell({url:'mongodb://localhost'}, './lib');
 shell.getShellVersion();
 shell.createShell();
 
@@ -86,9 +86,9 @@ setTimeout(() => {
   // shell.write('db.getSiblingDB("city").inspections.find(\n{\n}\n)');
   // shell.writeSyncCommand('show dbs\n');
   // shell.write('show dbs');
-  shell.write('show dbs');
   // shell.write('show dbs');
   // shell.write('show dbs');
+  shell.write('show dbs\r');
 }, 2000);
 
 // const shell = spawn('mongo');

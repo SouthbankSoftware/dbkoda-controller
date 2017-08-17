@@ -180,7 +180,12 @@ class MongoShell extends EventEmitter {
     this.parser.on('data', this.readParserOutput.bind(this));
     this.parser.on('command-ended', this.commandEnded.bind(this));
     this.parser.on('incomplete-command-ended', this.incompleteCommandEnded.bind(this));
-
+    this.parser.on('send-more', () => {
+      this.currentCommand = this.runNextCommand();
+      if (!this.currentCommand) {
+        this.commandEnded();
+      }
+    });
     // handle shell output
     if (this.connection.requireSlaveOk) {
       this.writeToShell('rs.slaveOk()' + MongoShell.enter);
@@ -246,8 +251,9 @@ class MongoShell extends EventEmitter {
     } else if (this.syncExecution && data !== MongoShell.prompt) {
       this.emit(MongoShell.SYNC_OUTPUT_EVENT, data);
     } else {
-      log.debug('emit output ', data);
-      this.emitOutput(data + MongoShell.enter);
+      // this.emitOutput(data + MongoShell.enter);
+      this.emitOutput(data);
+      this.currentCommand = this.runNextCommand();
     }
   }
 
@@ -364,6 +370,22 @@ class MongoShell extends EventEmitter {
   }
 
   write(data) {
+    const split = data.split('');
+    this.executing = true;
+    this.outputQueue = [];
+    this.prevExecutionTime = (new Date()).getTime();
+    split.map((ch) => {
+      this.cmdQueue.push(ch);
+    });
+    this.currentCommand = this.runNextCommand();
+    if (!this.currentCommand) {
+      // got an empty command request
+      this.emit(MongoShell.EXECUTE_END, MongoShell.prompt + MongoShell.enter);
+      this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt + MongoShell.enter);
+    }
+  }
+
+  write1(data) {
     const split = data.split('\n');
     this.executing = true;
     this.outputQueue = [];

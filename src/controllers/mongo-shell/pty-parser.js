@@ -56,26 +56,38 @@ class Parser extends EventEmitter {
    * @param data
    */
   onRead(data) {
-    // log.debug('get output data from pty', data);
+    log.debug('get output data from pty', data);
     this.parse(data);
     let cached = null;
+    let last = null;
     if (this.buffers.length > 0) {
-      cached = this.buffers.pop();
-      this.buffers.map((buffer) => {
-        this.emit('data', buffer.data);
-      });
-      this.buffers = [];
-      this.buffers.push(cached);
+      last = this.buffers[this.buffers.length - 1];
+      for (let i=0; i<this.buffers.length - 1; i++ ){
+         this.emit('data', this.buffers[i].data);
+      }
+      // cached = this.buffers.pop();
+      // this.buffers.map((buffer) => {
+      //   this.emit('data', buffer.data);
+      // });
+      // this.buffers = [];
+      // this.buffers.push(cached);
+    }
+    this.buffers = [];
+    if (last) {
+      this.buffers.push(last);
     }
     this.bufferY = this.buffers.length - 1 >= 0 ? this.buffers.length - 1 : 0;
-    // check whether the last line in the buffer is prompt
-    if (this.buffers.length > 0) {
-      if (this.buffers[0].data === 'dbKoda>') {
-        this.emit('command-ended');
-      } else if (this.buffers[0].data === '... ') {
-        this.emit('incomplete-command-ended', '... ');
-      }
-    }
+    this.emit('send-more');
+    
+    // this.bufferY = this.buffers.length - 1 >= 0 ? this.buffers.length - 1 : 0;
+    // // check whether the last line in the buffer is prompt
+    // if (this.buffers.length > 0) {
+    //   if (this.buffers[0].data === 'dbKoda>') {
+    //     this.emit('command-ended');
+    //   } else if (this.buffers[0].data === '... ') {
+    //     this.emit('incomplete-command-ended', '... ');
+    //   }
+    // }
   }
 
   parse(data) {
