@@ -131,7 +131,21 @@ describe('test run shell command', () => {
         responseType: 'json'
       }).then((output) => {
         console.log('test get user roles command get output', output);
-        // JSON.parse(output.replace(/[\r\n\t]*/g, ''));
+        JSON.parse(output.replace(/[\r\n\t]*/g, ''));
+        resolve();
+      }).catch(err => reject(err));
+    });
+  }).timeout(TIMEOUT);
+
+  it('test get user roles command', () => {
+    return new Promise((resolve, reject) => {
+      syncExecution.update(connectionId, {
+        shellId,
+        commands: 'db.getSiblingDB("admin").runCommand( { getParameter : "*" })',
+        responseType: 'json'
+      }).then((output) => {
+        console.log('test get user roles command get output', output);
+        JSON.parse(output);
         resolve();
       }).catch(err => reject(err));
     });
