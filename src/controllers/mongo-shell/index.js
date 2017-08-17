@@ -158,12 +158,7 @@ class MongoShell extends EventEmitter {
     }
 
     try {
-      // if (os.platform() !== 'win32') {
       this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], PtyOptions);
-      // } else {
-      //   const params = ['/c', mongoCmdArray[0], ...parameters];
-      //   this.shell = spawn('cmd.exe', params, spawnOptions);
-      // }
     } catch (error) {
       console.error(error);
       throw error;
@@ -190,7 +185,7 @@ class MongoShell extends EventEmitter {
     if (this.connection.requireSlaveOk) {
       this.writeToShell('rs.slaveOk()' + MongoShell.enter);
     }
-    // this.writeToShell(`${this.changePromptCmd}${MongoShell.enter}`);
+    this.loadScriptsIntoShell();
     this.on(MongoShell.AUTO_COMPLETE_END, () => {
       this.finishAutoComplete();
     });
@@ -239,7 +234,7 @@ class MongoShell extends EventEmitter {
   }
 
   readParserOutput(data) {
-    if (data.indexOf('MongoDB server version') >= 0) {
+    if (data.indexOf('MongoDB server') >= 0) {
       this.writeToShell(`${this.changePromptCmd}`);
     }
     if (!this.initialized) {
@@ -263,7 +258,7 @@ class MongoShell extends EventEmitter {
       command = command.replace(/\\/g, '\\\\');
     }
     log.info('load pre defined scripts ' + scriptPath);
-    this.writeToShell(command);
+    this.writeToShell(command + MongoShell.enter);
   }
 
   /**
