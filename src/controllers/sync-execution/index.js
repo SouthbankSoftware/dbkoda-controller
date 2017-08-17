@@ -90,10 +90,11 @@ class SyncExecutionController {
       .shift();
     shell.on(MongoShell.SYNC_OUTPUT_EVENT, this.outputListener.bind(this));
     const syncExecutEnd = (data) => {
-      log.info('execution ended ', ctr.output);
+      log.debug('execution ended ', ctr.output);
       shell.removeAllListeners(MongoShell.SYNC_OUTPUT_EVENT);
       shell.removeAllListeners(MongoShell.SYNC_EXECUTE_END);
       let output = ctr.output + data;
+      log.debug('all sync output ', output);
       output = output.replace(commands, '').replace(MongoShell.prompt, '');
       if (responseType === 'json' || responseType === 'explain') {
         output = output.replace(/\n/g, '').replace(/\r/g, '');

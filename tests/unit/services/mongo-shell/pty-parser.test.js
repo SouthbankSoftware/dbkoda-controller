@@ -77,7 +77,7 @@ describe('test pty parser', () => {
     parser.parse('MongoDB shell version v3.4.0\r\n');
     assert.equal(parser.buffers.length, 2);
     assert.equal(parser.buffers[0].data, 'MongoDB shell version v3.4.0');
-    assert.equal(parser.buffers[1].data, '\r');
+    assert.equal(parser.buffers[1].data, '');
 
     parser = new Parser();
     parser.parse('connecting to: mongodb://localhost\r\n' +
@@ -91,7 +91,7 @@ describe('test pty parser', () => {
       'show dbs\r\n');
     assert.equal(parser.buffers.length, 10);
     assert.equal(parser.buffers[0].data, 'connecting to: mongodb://localhost');
-    assert.equal(parser.buffers[8].data, '\rshow dbs');
-    assert.equal(parser.buffers[9].data, '\r');
+    assert.equal(parser.buffers[8].data, 'show dbs');
+    assert.equal(parser.buffers[9].data, '');
   });
 });

@@ -198,6 +198,7 @@ class MongoShell extends EventEmitter {
 
   commandEnded() {
     if (!this.initialized) {
+      this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt + MongoShell.enter);
       this.emit(MongoShell.INITIALIZED);
       this.initialized = true;
     } else if (this.autoComplete) {
@@ -213,7 +214,7 @@ class MongoShell extends EventEmitter {
       if (!this.currentCommand) {
         this.prevExecutionTime = 0;
         this.executing = false;
-        // this.emitOutput(MongoShell.prompt + MongoShell.enter);
+        this.emitOutput(MongoShell.prompt + MongoShell.enter);
         this.emit(MongoShell.EXECUTE_END);
         this.emitBufferedOutput();
       }
