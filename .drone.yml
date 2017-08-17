@@ -21,5 +21,4 @@ pipeline:
       - yarn test
     when:
       status: [success, failure]
-
 branches: master

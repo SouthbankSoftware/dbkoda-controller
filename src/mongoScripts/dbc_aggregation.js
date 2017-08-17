@@ -140,7 +140,7 @@ dbk_agg.getResults = function(aggId, stepId, reset) {
     } catch (err) {
       error = err.code;
     }
-    var subset=results.slice(0,20); 
+    var subset=results.slice(0,10); 
      
     dbk_agg.aggregates[aggId].stepResults[stepId] = results;
     if (dbk_agg.debug) print('result len',dbk_agg.aggregates[aggId].stepResults[stepId].length); 
