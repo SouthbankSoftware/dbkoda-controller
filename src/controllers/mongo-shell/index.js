@@ -234,7 +234,7 @@ class MongoShell extends EventEmitter {
   }
 
   readParserOutput(data) {
-    if (data.indexOf('MongoDB server') >= 0) {
+    if (data.indexOf('shell') >= 0) {
       this.writeToShell(`${this.changePromptCmd}`);
     }
     if (!this.initialized) {
