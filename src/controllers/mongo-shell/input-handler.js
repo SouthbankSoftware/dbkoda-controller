@@ -93,6 +93,13 @@ const cursorCharAbsolute = (parser, params) => {
     param = 1;
   }
   parser.bufferX = param - 1;
+  if (parser.buffers.length > parser.bufferY) {
+    // if the x cursor is greater than the current line length, append space
+    const currentLine = parser.buffers[parser.bufferY];
+    while (currentLine.data && currentLine.data.length < parser.bufferX) {
+      currentLine.data += ' ';
+    }
+  }
 };
 
 /**
