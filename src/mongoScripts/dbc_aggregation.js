@@ -128,7 +128,7 @@ dbk_agg.getResults = function(aggId, stepId, reset) {
   var results = [];
   var error = 0;
   if (reset === true) {
-    // print ('reseting results');
+    if (dbk_agg.debug) print ('reseting results');
     var partialPipeline = agg.steps.slice(0, stepId + 1);
     if (dbk_agg.debug) printjson(partialPipeline); // eslint-disable-line
     mydb = db.getSiblingDB(agg.dbName); // eslint-disable-line
@@ -140,7 +140,11 @@ dbk_agg.getResults = function(aggId, stepId, reset) {
     } catch (err) {
       error = err.code;
     }
+    var subset=results.slice(0,10); 
+     
     dbk_agg.aggregates[aggId].stepResults[stepId] = results;
+    if (dbk_agg.debug) print('result len',dbk_agg.aggregates[aggId].stepResults[stepId].length); 
+    
     dbk_agg.aggregates[aggId].stepCodes[stepId] = error;
   } else {
     results = dbk_agg.aggregates[aggId].stepResults[stepId];
@@ -204,7 +208,7 @@ dbk_agg.getAttributes = function(aggId, stepId, reset) {
   var attributes;
   if (reset) {
     var inputData = dbk_agg.getResults(aggId, stepId, reset);
-    dbk_agg.aggregates[aggId].stepResults[stepId] = inputData;  // TODO: Limit max documents here
+    dbk_agg.aggregates[aggId].stepResults[stepId] = inputData.slice(0,20);  // Limit max documents here
     if (dbk_agg.debug) printjson(inputData[0]); // eslint-disable-line
     attributes = dbk_agg.attributesFromArray(inputData);
     dbk_agg.aggregates[aggId].stepAttributes[stepId] = attributes;

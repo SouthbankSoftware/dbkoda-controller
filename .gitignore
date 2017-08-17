@@ -39,3 +39,5 @@ data/
 all-in-one.js
 
 nohup\.out
+
+yarn\.lock
