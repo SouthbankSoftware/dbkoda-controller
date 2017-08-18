@@ -49,7 +49,7 @@ dbk_agg.newAggBuilder = function(dbName, collectionName) {
   newAgg.stepCodes = [0];
   dbk_agg.aggregates[dbk_agg.aggId] = newAgg;
   dbk_agg.getAttributes(dbk_agg.aggId, 0, true);
-  return dbk_agg.aggId;
+  return {id: dbk_agg.aggId};
 };
 
 dbk_agg.getAggStatus = function(aggId) {
