@@ -20,7 +20,7 @@
 
 /**
  * @Last modified by:   wahaj
- * @Last modified time: 2017-08-15T16:23:38+10:00
+ * @Last modified time: 2017-08-17T20:14:31+10:00
  */
 
 /* eslint-disable class-methods-use-this */
@@ -66,7 +66,7 @@ class MongoConnectionController {
     if (params.ssh) {
       const sshOpts = {
         host: params.remoteHost, // ip address of the ssh server
-        port: 22, // port of the ssh server
+        port: Number(params.sshPort), // port of the ssh server
         username: params.remoteUser,
         dstPort: Number(params.remotePort), // port of mongo db server
         srcPort: Number(params.localPort),
@@ -81,7 +81,7 @@ class MongoConnectionController {
         sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
         sshOpts.passphrase = params.passPhrase;
       } else {
-        sshOpts.password = params.password;
+        sshOpts.password = params.remotePass;
       }
       return sshTunnel(sshOpts);
     }
@@ -122,6 +122,10 @@ class MongoConnectionController {
             l.info('Connected successfully to server');
             resolve(db);
           });
+      }).catch((err) => {
+        l.error('failed to connect mongo instance ', err.message);
+        const badRequest = new errors.BadRequest(err.message);
+        return reject(badRequest);
       });
     }).then((v) => {
       db = v;
