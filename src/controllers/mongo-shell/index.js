@@ -157,6 +157,10 @@ class MongoShell extends EventEmitter {
       });
     }
 
+    if (os.platform() === 'win32') {
+      mongoCmdArray = ['cmd.exe', '/c'].concat(mongoCmdArray);
+    }
+
     try {
       this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], PtyOptions);
     } catch (error) {
@@ -246,7 +250,6 @@ class MongoShell extends EventEmitter {
     } else if (this.syncExecution && data !== MongoShell.prompt) {
       this.emit(MongoShell.SYNC_OUTPUT_EVENT, data);
     } else {
-      log.debug('emit output ', data);
       this.emitOutput(data + MongoShell.enter);
     }
   }

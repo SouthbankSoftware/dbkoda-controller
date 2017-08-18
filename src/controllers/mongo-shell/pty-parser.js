@@ -56,7 +56,7 @@ class Parser extends EventEmitter {
    * @param data
    */
   onRead(data) {
-    // log.debug('get output data from pty', data);
+    log.debug('get output data from pty', data);
     this.parse(data);
     let cached = null;
     if (this.buffers.length > 0) {
@@ -134,7 +134,15 @@ class Parser extends EventEmitter {
       this.buffers.push(new Buffer());
       this.bufferX = 0;
     }
-    this.buffers[this.bufferY].data += ch;
+    if (!this.buffers[this.bufferY].data) {
+      this.buffers[this.bufferY].data = ' ';
+    }
+    const diff = this.bufferX - this.buffers[this.bufferY].data.length + 1;
+    if (diff > 0) {
+      _.times(diff, this.buffers[this.bufferY].data += ' ');
+    }
+    const tmp = this.buffers[this.bufferY].data;
+    this.buffers[this.bufferY].data = tmp.substr(0, this.bufferX) + ch + tmp.substr(this.bufferX + 1);
     this.bufferX += 1;
   }
 
