@@ -373,7 +373,11 @@ class MongoShell extends EventEmitter {
     this.prevExecutionTime = (new Date()).getTime();
     split.forEach((cmd) => {
       if (cmd && cmd.trim() && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
-        this.cmdQueue.push(cmd + MongoShell.enter);
+        if (cmd.match(/\r$/)) {
+          this.cmdQueue.push(cmd);
+        } else {
+          this.cmdQueue.push(cmd + MongoShell.enter);
+        }
       }
     });
     this.currentCommand = this.runNextCommand();

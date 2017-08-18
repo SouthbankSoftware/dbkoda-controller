@@ -55,7 +55,7 @@ class Parser extends EventEmitter {
    * @param data
    */
   onRead(data) {
-    log.debug('get output data from pty', data);
+    // log.debug('get output data from pty', data);
     this.parse(data);
     let cached = null;
     if (this.buffers.length > 0) {
