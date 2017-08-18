@@ -13,15 +13,17 @@ const {
   connection,
   TIMEOUT,
   getRandomPort,
+  MLAUNCH_TIMEOUT
 } = require('../commons');
 
 describe('integration test mongo-reconnection', () => {
   const port1 = getRandomPort();
 
-  before(function() {
+  before(function(done) {
     this.timeout(TIMEOUT * 3);
 
     launchSingleInstance(port1);
+    setTimeout(() => done(), MLAUNCH_TIMEOUT);
   });
 
   after(function() {

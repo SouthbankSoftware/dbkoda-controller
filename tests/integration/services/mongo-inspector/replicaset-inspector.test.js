@@ -6,14 +6,16 @@ const {
   inspector,
   TIMEOUT,
   getRandomPort,
+  MLAUNCH_TIMEOUT
 } = require('../commons');
 
 const port = getRandomPort();
 
 describe('replica server inspector test', () => {
-  before(function () {
+  before(function (done) {
     this.timeout(TIMEOUT * 3);
     launchReplicaSet(port, 3, ' --arbiter --name replset');
+    setTimeout(() => done(), MLAUNCH_TIMEOUT * 2);
   });
 
   after(function () {

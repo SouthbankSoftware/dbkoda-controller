@@ -366,7 +366,7 @@ class MongoConnectionController {
         };
         if (!shell.initialized) {
           l.debug('initialized message', data);
-          if (data.indexOf('prompt=') < 0 && data.indexOf('load') < 0) {
+          if (data.indexOf('prompt=') < 0 && data.indexOf('load') < 0 && data.indexOf('true') < 0) {
             connectionMessage.push(emitData);
           }
           return;

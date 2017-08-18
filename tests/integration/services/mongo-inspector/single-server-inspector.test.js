@@ -12,12 +12,13 @@ const {
   TIMEOUT,
   syncExecution,
   getRandomPort,
+  MLAUNCH_TIMEOUT
 } = require('../commons');
 
 const port = getRandomPort();
 
 describe('single server inspector test', () => {
-  before(function () {
+  before(function (done) {
     this.timeout(TIMEOUT * 3);
     launchSingleInstance(port);
     _.times(3, (i) => {
@@ -27,6 +28,7 @@ describe('single server inspector test', () => {
         generateMongoData(port, dbName, colname);
       });
     });
+    setTimeout(() => done(), MLAUNCH_TIMEOUT);
   });
 
   after(function () {
