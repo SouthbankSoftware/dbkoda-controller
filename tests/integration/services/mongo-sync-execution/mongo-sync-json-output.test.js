@@ -6,6 +6,7 @@ const {
   TIMEOUT,
   syncExecution,
   getRandomPort,
+  MLAUNCH_TIMEOUT
 } = require('../commons');
 
 let connectionId;
@@ -32,7 +33,7 @@ describe('test run shell command', () => {
         winston.info('create connection ', v);
         connectionId = v.id;
         shellId = v.shellId;
-        done();
+        setTimeout(() => done(), MLAUNCH_TIMEOUT);
       })
       .catch((e) => {
         console.log('error:', e);

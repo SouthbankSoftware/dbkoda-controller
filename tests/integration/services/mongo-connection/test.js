@@ -13,6 +13,7 @@ const {
 const {
   connection,
   TIMEOUT,
+  MLAUNCH_TIMEOUT,
   getRandomPort,
 } = require('../commons');
 
@@ -20,11 +21,13 @@ describe('integration test mongo-connection', () => {
   const port1 = getRandomPort();
   const port2 = getRandomPort();
 
-  before(function () {
+  before(function (done) {
     this.timeout(TIMEOUT * 3);
-
     launchSingleInstance(port1);
     launchSingleInstance(port2, ' --auth --username admin --password 123456 --auth-db admin');
+    setTimeout(() => {
+      done();
+    }, MLAUNCH_TIMEOUT);
   });
 
   after(function () {

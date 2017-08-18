@@ -42,11 +42,7 @@ describe('test run auto complete command', () => {
   before(function (done) {
     this.timeout(TIMEOUT * 3);
     launchSingleInstance(port);
-    if (os.platform() === 'win32') {
-      setTimeout(() => createConnect(done), MLAUNCH_TIMEOUT);
-    } else {
-      createConnect(done);
-    }
+    setTimeout(() => createConnect(done), MLAUNCH_TIMEOUT);
   });
 
   after(function () {

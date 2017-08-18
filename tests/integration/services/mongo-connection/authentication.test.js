@@ -10,13 +10,15 @@ const {
   shell,
   TIMEOUT,
   getRandomPort,
+  MLAUNCH_TIMEOUT,
 } = require('../commons');
 
 describe('test run shell command', () => {
   const port = getRandomPort();
-  before(function () {
+  before(function (done) {
     this.timeout(TIMEOUT * 3);
     launchSingleInstance(port, '--auth --username admin --password 123456 --auth-db admin');
+    setTimeout(() => done(), MLAUNCH_TIMEOUT * 2);
   });
 
   after(function () {

@@ -13,6 +13,7 @@ const {
   TIMEOUT,
   events,
   getRandomPort,
+  MLAUNCH_TIMEOUT
 } = require('../commons');
 
 let connectionId;
@@ -23,9 +24,10 @@ describe('test run shell command', () => {
   before(function (done) {
     this.timeout(TIMEOUT * 3);
     launchSingleInstance(port);
-    generateMongoData(port, 'test', 'user', '--num 1000');
-    generateMongoData(port, 'users', 'user', '--num 2000');
-    connection
+    setTimeout(() => generateMongoData(port, 'test', 'user', '--num 1000'), MLAUNCH_TIMEOUT);
+    setTimeout(() => generateMongoData(port, 'users', 'user', '--num 2000'), MLAUNCH_TIMEOUT);
+    setTimeout(() => {
+      connection
       .create(
         {},
         {
@@ -43,6 +45,7 @@ describe('test run shell command', () => {
       .catch((e) => {
         console.log('error:', e);
       });
+    }, MLAUNCH_TIMEOUT * 2);
   });
 
   after(function () {
