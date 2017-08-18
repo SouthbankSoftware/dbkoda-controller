@@ -33,14 +33,12 @@ const normalStateHandler = {
 
 normalStateHandler[escapeSequence.CR] = (parser) => {
   parser.bufferX = 0;
-  parser.bufferY += 1;
-  parser.buffers.push(new Buffer());
-  // parser.pushChar('\r');
 };
 
 normalStateHandler[escapeSequence.LF] = (parser) => {
   parser.bufferX = 0;
-  // parser.pushChar('\n');
+  parser.bufferY += 1;
+  parser.buffers.push(new Buffer());
 };
 
 normalStateHandler[escapeSequence.ESC] = (parser) => {
