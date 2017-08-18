@@ -32,7 +32,6 @@ const Buffer = require('./buffer');
  * parsing pty output
  */
 class Parser extends EventEmitter {
-
   constructor() {
     super();
     this.buffers = [];
@@ -41,8 +40,8 @@ class Parser extends EventEmitter {
     this.params = [];
     this.prefix = '';
     this.postfix = '';
-    this.bufferX = 0;   // the x position on the buffer
-    this.bufferY = 0;   // the y position on the buffer
+    this.bufferX = 0; // the x position on the buffer
+    this.bufferY = 0; // the y position on the buffer
   }
 
   getCachedBuffer() {
@@ -137,7 +136,7 @@ class Parser extends EventEmitter {
     if (!this.buffers[this.bufferY].data) {
       this.buffers[this.bufferY].data = ' ';
     }
-    const diff = this.bufferX - this.buffers[this.bufferY].data.length + 1;
+    const diff = (this.bufferX - this.buffers[this.bufferY].data.length) + 1;
     if (diff > 0) {
       _.times(diff, this.buffers[this.bufferY].data += ' ');
     }
@@ -151,7 +150,6 @@ class Parser extends EventEmitter {
     this.bufferY = 0;
     this.bufferX = 0;
   }
-
 }
 
 
