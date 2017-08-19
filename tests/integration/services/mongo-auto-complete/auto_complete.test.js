@@ -2,7 +2,6 @@
  * @Last modified by:   guiguan
  * @Last modified time: 2017-04-18T13:11:42+10:00
  */
-const os = require('os');
 const assert = require('assert');
 const {launchSingleInstance, killMongoInstance} = require('test-utils');
 const {
