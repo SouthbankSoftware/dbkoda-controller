@@ -25,6 +25,7 @@ const EventEmitter = require('events').EventEmitter;
 const ParseState = require('./parser-state');
 const {escapedStateHandler, csiStateHandler, csiStateParameterHandler, normalStateHandler} = require('./input-handler');
 const Buffer = require('./buffer');
+const PytOptions = require('./pty-options');
 
 /* eslint no-fallthrough : 0 */
 
@@ -144,6 +145,10 @@ class Parser extends EventEmitter {
     const tmp = this.buffers[this.bufferY].data;
     this.buffers[this.bufferY].data = tmp.substr(0, this.bufferX) + ch + tmp.substr(this.bufferX + 1);
     this.bufferX += 1;
+    if (this.bufferX >= PytOptions.cols) {
+      this.bufferX = 0;
+      this.bufferY += 1;
+    }
   }
 
   clearBuffer() {

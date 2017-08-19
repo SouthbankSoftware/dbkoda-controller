@@ -94,4 +94,19 @@ describe('test pty parser', () => {
     assert.equal(parser.buffers[8].data, 'show dbs');
     assert.equal(parser.buffers[9].data, '');
   });
+
+  it('test parse FEEDLINE \n character', () => {
+    const parser = new Parser();
+    parser.parse('first line \n second line');
+    assert.equal(parser.buffers.length, 2);
+    assert.equal(parser.buffers[0].data, 'first line ');
+    assert.equal(parser.buffers[1].data, ' second line');
+  });
+
+  it('test parse carriage return \r character', () => {
+    const parser = new Parser();
+    parser.parse('first line \r second line');
+    assert.equal(parser.buffers.length, 1);
+    assert.equal(parser.buffers[0].data, ' second line');
+  });
 });
