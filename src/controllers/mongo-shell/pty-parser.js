@@ -137,6 +137,7 @@ class Parser extends EventEmitter {
     } else if (this.bufferX >= PytOptions.cols) {
       this.bufferX = 0;
       this.bufferY += 1;
+      this.buffers.push(new Buffer());
     }
     if (!this.buffers[this.bufferY].data) {
       this.buffers[this.bufferY].data = ' ';
