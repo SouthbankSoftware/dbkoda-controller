@@ -134,6 +134,9 @@ class Parser extends EventEmitter {
     if (this.buffers.length <= this.bufferY) {
       this.buffers.push(new Buffer());
       this.bufferX = 0;
+    } else if (this.bufferX >= PytOptions.cols) {
+      this.bufferX = 0;
+      this.bufferY += 1;
     }
     if (!this.buffers[this.bufferY].data) {
       this.buffers[this.bufferY].data = ' ';
@@ -145,10 +148,6 @@ class Parser extends EventEmitter {
     const tmp = this.buffers[this.bufferY].data;
     this.buffers[this.bufferY].data = tmp.substr(0, this.bufferX) + ch + tmp.substr(this.bufferX + 1);
     this.bufferX += 1;
-    if (this.bufferX >= PytOptions.cols) {
-      this.bufferX = 0;
-      this.bufferY += 1;
-    }
   }
 
   clearBuffer() {
