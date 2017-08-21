@@ -88,6 +88,7 @@ dbk_agg.getStep = function(aggId, stepId) {
 };
 // Set/Replace all steps
 dbk_agg.setAllSteps = function(aggId, stepArray) {
+  print('hi');
   var oldLen = dbk_agg.aggregates[aggId].steps.length - 1;
   var newLen = stepArray.length;
   var ind;
@@ -116,6 +117,10 @@ dbk_agg.setAllSteps = function(aggId, stepArray) {
   }
 };
 
+// Is the step a valid BSON object?
+dbk_agg.validateStep=function(step) {
+  return(typeof step);
+}
 // get the results for all steps up to an including the
 // current step.
 // TODO: Caching
