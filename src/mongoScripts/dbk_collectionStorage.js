@@ -77,7 +77,7 @@ dbk_Cs.collectionSize = function(dbName, collectionName, sampleSize) {
   if (dbe.majorVersion() < 3.2) {
     sampleClause = { $limit: sampleSize };
   }
-  var sample = collection.aggregate([sampleClause]);
+  var sample = collection.aggregate([sampleClause],{allowDiskUse: true});
 
   dbk_Cs.sizeSample(sample.toArray(), ["total"]);
 
