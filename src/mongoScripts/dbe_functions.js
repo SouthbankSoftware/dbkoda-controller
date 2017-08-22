@@ -317,33 +317,6 @@ dbe.collectionStorageAnalysis= function (dbName, collectionName, sampleSize) {
   return(dbk_Cs.collectionSize(dbName, collectionName, sampleSize));
 }
 
-dbe.collectionStorageAnalysisObsolete = function (dbName, collectionName, sampleSize) {
-  //
-  // Takes a collection and a sample size.  Returns an array of
-  // Sizes for top level elements (eg, not for nested elements )
-  //
-  var myDb = db.getSiblingDB(dbName); // eslint-disable-line
-  var collection = myDb.getCollection(collectionName);
-  var documentCount = collection.stats().count;
-  var diskSize = collection.stats().storageSize;
-  var sampleClause = {$sample: { size: sampleSize } };
-  if (dbe.majorVersion() < 3.2) {
-    sampleClause = {$limit:sampleSize};
-  }
-  var sample = collection
-    .aggregate([sampleClause])
-    .toArray();
-  var totalBsonSize = 0;
-  sample.forEach(function (d) {
-    totalBsonSize += Object.bsonsize(d);
-  });
-
-  // Adjust for wiredtiger compression and our sampling
-  var adjustmentRatio = diskSize / totalBsonSize;
-
-  return dbe.sizeEstimateArray(sample, sampleSize, documentCount, adjustmentRatio);
-};
-
 //
 // Provide a breakdown of storage for a sample of data
 //
