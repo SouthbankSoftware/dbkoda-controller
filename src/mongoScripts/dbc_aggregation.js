@@ -134,9 +134,9 @@ dbk_agg.setAllSteps = function (aggId, stepArray, preserve) {
 dbk_agg.validateStep = function (step) {
   var returnval={};
   returnval.type=typeof step;
-  returnval.step=step;
   return (returnval);
 };
+
 // get the results for all steps up to an including the
 // current step.
 // TODO: Caching
