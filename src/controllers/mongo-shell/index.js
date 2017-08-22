@@ -364,7 +364,7 @@ class MongoShell extends EventEmitter {
     l.info('write sync command ', data);
     this.syncExecution = true;
     this.prevExecutionTime = (new Date()).getTime();
-    this.write(data);
+    this.write(data + MongoShell.enter);
   }
 
   write(data) {

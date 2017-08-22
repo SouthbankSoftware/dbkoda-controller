@@ -56,18 +56,19 @@ class SyncExecutionController {
     const shell = this
       .mongoController
       .getMongoShell(id, shellId);
+    const newCmd = commands.replace(/\r/g, '');
     if (shell.isShellBusy()) {
       log.debug('shell is busy, put command in queue');
       return new Promise((resolve, reject) => {
         this
           .requestQueue
-          .push({ shell, commands, resolve, reject, responseType });
+          .push({ shell, commands: newCmd, resolve, reject, responseType });
       });
     }
     return new Promise((resolve, reject) => {
       this
         .requestQueue
-        .push({ shell, commands, resolve, reject, responseType });
+        .push({ shell, commands: newCmd, resolve, reject, responseType });
       this.runSyncCommandFromQueue(this);
     });
   }
@@ -98,23 +99,23 @@ class SyncExecutionController {
       output = output.replace(commands, '').replace(MongoShell.prompt, '');
       if (responseType === 'json' || responseType === 'explain') {
         output = output.replace(/\n/g, '').replace(/\r/g, '');
-        if (os.platform() === 'win32') {
-          const brackIdx = output.indexOf('{');
-          const bracketIdx = output.indexOf('[');
-          const idx = Math.min(bracketIdx, brackIdx);
-          if (idx > 0) {
-            output = output.substring(idx);
-          }
+        // if (os.platform() === 'win32') {
+        //   const brackIdx = output.indexOf('{');
+        //   const bracketIdx = output.indexOf('[');
+        //   const idx = Math.min(bracketIdx, brackIdx);
+        //   if (idx > 0) {
+        //     output = output.substring(idx);
+        //   }
 
-          output = output.replace(/\\:/g, '\\\\');
-          if (responseType === 'explain') {
-            output = output.replace(/\s/g, '');
-            const braceIdx = output.indexOf('"queryPlanner":');
-            if (braceIdx >= 0) {
-              output = '{' + output.substring(braceIdx);
-            }
-          }
-        }
+        //   output = output.replace(/\\:/g, '\\\\');
+        //   if (responseType === 'explain') {
+        //     output = output.replace(/\s/g, '');
+        //     const braceIdx = output.indexOf('"queryPlanner":');
+        //     if (braceIdx >= 0) {
+        //       output = '{' + output.substring(braceIdx);
+        //     }
+        //   }
+        // }
         output = output.replace(/ObjectId\("([a-zA-Z0-9]*)"\)/g, '"ObjectId(\'$1\')"');
         output = output.replace(/ISODate\("([a-zA-Z0-9-:.]*)"\)/g, '"ISODate(\'$1\')"');
         output = output.replace(/NumberLong\(([a-zA-Z0-9]*)\)/g, '"NumberLong(\'$1\')"');
