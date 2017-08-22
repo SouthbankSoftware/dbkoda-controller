@@ -132,7 +132,10 @@ dbk_agg.setAllSteps = function (aggId, stepArray, preserve) {
 
 // Is the step a valid BSON object?
 dbk_agg.validateStep = function (step) {
-  return (typeof step);
+  var returnval={};
+  returnval.type=typeof step;
+  returnval.step=step;
+  return (returnval);
 };
 // get the results for all steps up to an including the
 // current step.
