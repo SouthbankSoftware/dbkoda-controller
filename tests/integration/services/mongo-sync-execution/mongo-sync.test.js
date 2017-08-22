@@ -1,4 +1,3 @@
-
 const winston = require('winston');
 const {launchSingleInstance, killMongoInstance, generateMongoData} = require('test-utils');
 const assert = require('assert');
@@ -7,6 +6,7 @@ const {
   TIMEOUT,
   syncExecution,
   getRandomPort,
+  shell,
   MLAUNCH_TIMEOUT
 } = require('../commons');
 
@@ -113,11 +113,44 @@ describe('test run shell command', () => {
       Promise.all(promises).then((v) => {
         console.log('run promise request through sync service xxxx:', v);
         assert.equal(v.length, 3);
-        // assert.equal(true, v[0].indexOf('local') >= 0, 'show dbs assert failed.');
-        // assert.equal(true, v[1].indexOf('user') >= 0, 'show collections assert failed.');
-        // assert.equal(true, v[2].indexOf('switched to db test') >= 0, 'use test assert failed.');
         resolve();
       }).catch(err => reject(err));
+    });
+  }).timeout(TIMEOUT);
+
+  it('run sync commands in different shell id', () => {
+    let shell1Id;
+    let shell2Id;
+    let shell3Id;
+    return shell.create({id: connectionId}).then((o) => {
+      shell1Id = o.shellId;
+      return shell.create({id: connectionId});
+    }).then((o) => {
+      shell2Id = o.shellId;
+      return shell.create({id: connectionId});
+    }).then((o) => {
+      shell3Id = o.shellId;
+      console.log('shell id ', shell1Id, shell2Id, shell3Id);
+      const promises = [];
+      promises.push(syncExecution.update(connectionId, {
+        shellId: shell1Id,
+        commands: 'show dbs',
+        responseType: 'text'
+      }));
+      promises.push(syncExecution.update(connectionId, {
+        shellId: shell2Id,
+        commands: 'show collections',
+        responseType: 'text'
+      }));
+      promises.push(syncExecution.update(connectionId, {
+        shellId: shell3Id,
+        commands: 'use test',
+        responseType: 'text'
+      }));
+      return Promise.all(promises);
+    }).then((o) => {
+      console.log('get output ', o);
+      assert.equal(o.length, 3);
     });
   }).timeout(TIMEOUT);
 });

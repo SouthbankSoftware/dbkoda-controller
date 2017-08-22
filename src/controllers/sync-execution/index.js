@@ -34,15 +34,12 @@ const errors = require('feathers-errors');
  */
 class SyncExecutionController {
 
-  constructor() {
+  setup(app) {
     this.emitter = new EventEmitter();
     this.requestQueue = [];
     this
       .emitter
       .on('command::finished', this.commandFinished.bind(this));
-  }
-
-  setup(app) {
     this.app = app;
     this.mongoController = app.service('mongo/connection/controller');
   }
@@ -51,30 +48,32 @@ class SyncExecutionController {
    * write sync command execution on shell
    */
   writeSyncCommand(id, shellId, commands, responseType = 'json') {
-    this.output = '';
+    // this.output = '';
     const shell = this
       .mongoController
       .getMongoShell(id, shellId);
     const newCmd = commands.replace(/\r/g, '');
-    if (shell.isShellBusy()) {
-      log.debug('shell is busy, put command in queue');
-      return new Promise((resolve, reject) => {
-        this
-          .requestQueue
-          .push({ shell, commands: newCmd, resolve, reject, responseType });
-      });
-    }
+    // if (shell.isShellBusy()) {
+    //   log.debug('shell is busy, put command in queue');
+    //   return new Promise((resolve, reject) => {
+    //     this
+    //       .requestQueue
+    //       .push({ shell, commands: newCmd, resolve, reject, responseType });
+    //     log.debug('current queue commands ', this.requestQueue.length);
+    //   });
+    // }
     return new Promise((resolve, reject) => {
       this
         .requestQueue
         .push({ shell, commands: newCmd, resolve, reject, responseType });
-      this.runSyncCommandFromQueue(this);
+      this.runSyncCommandFromQueue();
     });
   }
 
-  commandFinished() {
+  commandFinished(commands) {
+    log.debug('commands finished ', commands, 'current queue size:', this.requestQueue.length);
     if (this.requestQueue.length > 0) {
-      this.runSyncCommandFromQueue(this);
+      this.runSyncCommandFromQueue();
     }
   }
 
@@ -82,18 +81,28 @@ class SyncExecutionController {
    * run the next request from the request queue.
    *
    */
-  runSyncCommandFromQueue(ctr) {
-    const { shell, commands, resolve, responseType } = ctr.requestQueue[0];
-    ctr.output = '';
-    ctr
-      .requestQueue
-      .shift();
-    shell.on(MongoShell.SYNC_OUTPUT_EVENT, this.outputListener.bind(this));
+  runSyncCommandFromQueue() {
+    const newQueue = [];
+    while (this.requestQueue.length > 0) {
+      const req = this.requestQueue.shift();
+      if (req && !req.shell.isShellBusy()) {
+        this.runSyncCommandOnShell(req);
+      } else if (req) {
+        newQueue.push(req);
+      }
+    }
+    this.requestQueue = newQueue;
+  }
+
+  runSyncCommandOnShell(req) {
+    const { shell, commands, resolve, responseType } = req;
+    const shellOutputs = [];
+    shell.on(MongoShell.SYNC_OUTPUT_EVENT, this.outputListener.bind(this, shellOutputs));
     const syncExecutEnd = (data) => {
-      log.debug('execution ended ', ctr.output);
+      log.debug('execution ended ', shellOutputs.join('\n'));
       shell.removeAllListeners(MongoShell.SYNC_OUTPUT_EVENT);
       shell.removeAllListeners(MongoShell.SYNC_EXECUTE_END);
-      let output = ctr.output + data;
+      let output = shellOutputs.join('\n') + data;
       log.debug('all sync output ', output);
       output = output.replace(commands, '').replace(MongoShell.prompt, '');
       if (responseType === 'json' || responseType === 'explain') {
@@ -132,19 +141,13 @@ class SyncExecutionController {
           resolve(output);
         }
       } else {
-        resolve(ctr.output + data);
+        resolve(shellOutputs.join('\n') + data);
       }
       this
         .emitter
-        .emit('command::finished');
+        .emit('command::finished', commands);
     };
     shell.on(MongoShell.SYNC_EXECUTE_END, syncExecutEnd.bind(this));
-    // let newCmd = commands;
-    // let tempVar = null;
-    // if (responseType === 'json' || responseType === 'explain') {
-    //   tempVar = SyncExecutionController.tempVariable;
-    //   newCmd = `var ${tempVar}=${newCmd}${MongoShell.enter}${tempVar}${MongoShell.enter}`;
-    // }
     this.currentCommand = { shell, commands, resolve, responseType };
     shell.writeSyncCommand(commands);
   }
@@ -171,7 +174,7 @@ class SyncExecutionController {
     } else {
       commands += 'connect("' + url + '")';
     }
-    this.output = '';
+    // this.output = '';
     let shell = null;
     if (!this.mongoController.existMongoShell(id, shellId)) {
       // connection doesn't exist, need to create a new shell for the new profile
@@ -198,12 +201,13 @@ class SyncExecutionController {
       this
         .requestQueue
         .push({ shell, commands, resolve });
-      this.runSyncCommandFromQueue(this);
+      this.runSyncCommandFromQueue();
     });
   }
 
-  outputListener(data) {
-    this.output += data + '\n';
+  outputListener(shellOutputs, data) { // eslint-disable-line
+    shellOutputs.push(data);
+    // this.output += data + '\n';
   }
 }
 
