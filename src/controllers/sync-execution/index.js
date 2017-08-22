@@ -23,7 +23,6 @@
  * @Last modified time: 2017-06-08T17:59:18+10:00
  */
 
-const os = require('os');
 const MongoShell = require('../mongo-shell').MongoShell;
 const EventEmitter = require('events');
 const hooks = require('feathers-hooks-common');
