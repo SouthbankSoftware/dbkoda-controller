@@ -132,7 +132,7 @@ class MongoShell extends EventEmitter {
     if (os.platform() === 'win32') {
       let verCmd = mongoCmd;
       if (verCmd.indexOf(' ') >= 0 && verCmd.indexOf('"') !== 0) {
-        verCmd = verCmd.replace(/\ /g, '^ '); // eslint-disable-line 
+        verCmd = verCmd.replace(/\ /g, '^ '); // eslint-disable-line
       }
       try {
         execSync(`${verCmd} --version`, {encoding: 'utf8'});
@@ -209,14 +209,14 @@ class MongoShell extends EventEmitter {
       this.executing = false;
       this.emit(MongoShell.SYNC_EXECUTE_END, '');
     } else {
-      this.currentCommand = this.runNextCommand();
-      if (!this.currentCommand) {
+      // this.currentCommand = this.runNextCommand();
+      // if (!this.currentCommand) {
         this.prevExecutionTime = 0;
         this.executing = false;
         this.emitOutput(MongoShell.prompt + MongoShell.enter);
         this.emit(MongoShell.EXECUTE_END);
         this.emitBufferedOutput();
-      }
+      // }
     }
   }
 
@@ -226,8 +226,8 @@ class MongoShell extends EventEmitter {
       return;
     }
     // this.emitOutput(data + MongoShell.enter);
-    const cmd = this.runNextCommand();
-    if (!cmd) {
+    // const cmd = this.runNextCommand();
+    // if (!cmd) {
       // this.emitOutput(MongoShell.prompt + MongoShell.enter);
       this.parser.clearBuffer();
       this.prevExecutionTime = 0;
@@ -235,7 +235,7 @@ class MongoShell extends EventEmitter {
       // this.emitBufferedOutput();
       this.emit(MongoShell.EXECUTE_END);
       this.writeToShell(MongoShell.enter + MongoShell.enter);
-    }
+    // }
   }
 
   readParserOutput(data) {
@@ -289,7 +289,7 @@ class MongoShell extends EventEmitter {
 
     const milliseconds = (new Date()).getTime();
 
-    if (milliseconds - this.prevExecutionTime > 200) {
+    if (milliseconds - this.prevExecutionTime > 10) {
       this.emitBufferedOutput();
     }
   }
@@ -311,14 +311,14 @@ class MongoShell extends EventEmitter {
    *
    * @returns {*}
    */
-  runNextCommand() {
-    const cmd = this.cmdQueue.shift();
-    if (cmd) {
-      this.writeToShell(cmd);
-      return cmd;
-    }
-    return '';
-  }
+  // runNextCommand() {
+  //   const cmd = this.cmdQueue.shift();
+  //   if (cmd) {
+  //     this.writeToShell(cmd);
+  //     return cmd;
+  //   }
+  //   return '';
+  // }
 
   /**
    * write the command to shell
@@ -372,17 +372,21 @@ class MongoShell extends EventEmitter {
     this.executing = true;
     this.outputQueue = [];
     this.prevExecutionTime = (new Date()).getTime();
-    split.forEach((cmd) => {
-      if (cmd && cmd.trim() && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
-        if (cmd.match(/\r$/)) {
-          this.cmdQueue.push(cmd);
-        } else {
-          this.cmdQueue.push(cmd + MongoShell.enter);
-        }
-      }
-    });
-    this.currentCommand = this.runNextCommand();
-    if (!this.currentCommand) {
+    if (!data.match(/\n$/)) {
+      data += '\n';
+    }
+    this.writeToShell(data);
+    // split.forEach((cmd) => {
+    //   if (cmd && cmd.trim() && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
+    //     if (cmd.match(/\r$/)) {
+    //       this.cmdQueue.push(cmd);
+    //     } else {
+    //       this.cmdQueue.push(cmd + MongoShell.enter);
+    //     }
+    //   }
+    // });
+    // this.currentCommand = this.runNextCommand();
+    if (!data) {
       // got an empty command request
       this.emit(MongoShell.EXECUTE_END, MongoShell.prompt + MongoShell.enter);
       this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt + MongoShell.enter);
