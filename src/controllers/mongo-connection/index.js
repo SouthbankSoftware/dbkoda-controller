@@ -20,7 +20,7 @@
 
 /**
  * @Last modified by:   wahaj
- * @Last modified time: 2017-08-23T09:09:07+10:00
+ * @Last modified time: 2017-08-23T14:54:27+10:00
  */
 
 /* eslint-disable class-methods-use-this */
@@ -65,8 +65,8 @@ class MongoConnectionController {
   createTunnel(params) {
     if (params.ssh) {
       const sshOpts = {
-        host: params.remoteHost, // ip address of the ssh server
-        port: Number(params.sshPort), // port of the ssh server
+        host: params.sshHost, // ip address of the ssh server
+        port: 22, // Number(params.sshPort), // port of the ssh server
         username: params.remoteUser,
         srcAddr: params.localHost,
         srcPort: Number(params.localPort),
