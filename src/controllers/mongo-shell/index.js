@@ -367,7 +367,7 @@ class MongoShell extends EventEmitter {
     this.executing = true;
     this.outputQueue = [];
     this.prevExecutionTime = (new Date()).getTime();
-    const cmdQueue = []
+    const cmdQueue = [];
     split.forEach((cmd) => {
       if (cmd && cmd.trim() && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
         if (cmd.match(/\r$/)) {
