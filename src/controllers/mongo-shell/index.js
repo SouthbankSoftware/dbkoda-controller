@@ -34,8 +34,6 @@ const Status = require('../mongo-connection/status');
 const Parser = require('./pty-parser');
 const PtyOptions = require('./pty-options');
 
-// const LineStream = require('./../../../libs/byline').LineStream;
-
 class MongoShell extends EventEmitter {
   constructor(connection, mongoScriptPath) {
     super();
@@ -209,14 +207,11 @@ class MongoShell extends EventEmitter {
       this.executing = false;
       this.emit(MongoShell.SYNC_EXECUTE_END, '');
     } else {
-      // this.currentCommand = this.runNextCommand();
-      // if (!this.currentCommand) {
-        this.prevExecutionTime = 0;
-        this.executing = false;
-        this.emitOutput(MongoShell.prompt + MongoShell.enter);
-        this.emit(MongoShell.EXECUTE_END);
-        this.emitBufferedOutput();
-      // }
+      this.prevExecutionTime = 0;
+      this.executing = false;
+      this.emitOutput(MongoShell.prompt + MongoShell.enter);
+      this.emit(MongoShell.EXECUTE_END);
+      this.emitBufferedOutput();
     }
   }
 
@@ -225,17 +220,11 @@ class MongoShell extends EventEmitter {
       this.emitOutput(data + MongoShell.enter);
       return;
     }
-    // this.emitOutput(data + MongoShell.enter);
-    // const cmd = this.runNextCommand();
-    // if (!cmd) {
-      // this.emitOutput(MongoShell.prompt + MongoShell.enter);
-      this.parser.clearBuffer();
-      this.prevExecutionTime = 0;
-      this.executing = false;
-      // this.emitBufferedOutput();
-      this.emit(MongoShell.EXECUTE_END);
-      this.writeToShell(MongoShell.enter + MongoShell.enter);
-    // }
+    this.parser.clearBuffer();
+    this.prevExecutionTime = 0;
+    this.executing = false;
+    this.emit(MongoShell.EXECUTE_END);
+    this.writeToShell(MongoShell.enter + MongoShell.enter);
   }
 
   readParserOutput(data) {
@@ -368,29 +357,28 @@ class MongoShell extends EventEmitter {
   }
 
   write(data) {
-    const split = data.split('\n');
-    this.executing = true;
-    this.outputQueue = [];
-    this.prevExecutionTime = (new Date()).getTime();
-    if (!data.match(/\n$/)) {
-      data += '\n';
-    }
-    this.writeToShell(data);
-    // split.forEach((cmd) => {
-    //   if (cmd && cmd.trim() && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
-    //     if (cmd.match(/\r$/)) {
-    //       this.cmdQueue.push(cmd);
-    //     } else {
-    //       this.cmdQueue.push(cmd + MongoShell.enter);
-    //     }
-    //   }
-    // });
-    // this.currentCommand = this.runNextCommand();
     if (!data) {
       // got an empty command request
       this.emit(MongoShell.EXECUTE_END, MongoShell.prompt + MongoShell.enter);
       this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt + MongoShell.enter);
+      return;
     }
+    const split = data.split('\n');
+    this.executing = true;
+    this.outputQueue = [];
+    this.prevExecutionTime = (new Date()).getTime();
+    const cmdQueue = []
+    split.forEach((cmd) => {
+      if (cmd && cmd.trim() && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
+        if (cmd.match(/\r$/)) {
+          cmdQueue.push(cmd);
+        } else {
+          cmdQueue.push(cmd + MongoShell.enter);
+        }
+      }
+    });
+    const combinedCmd = cmdQueue.join('');
+    this.writeToShell(combinedCmd);
   }
 
   /**
