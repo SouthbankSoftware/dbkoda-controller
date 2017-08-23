@@ -20,7 +20,7 @@
 
 /**
  * @Last modified by:   wahaj
- * @Last modified time: 2017-08-17T20:14:31+10:00
+ * @Last modified time: 2017-08-23T09:09:07+10:00
  */
 
 /* eslint-disable class-methods-use-this */
@@ -68,10 +68,10 @@ class MongoConnectionController {
         host: params.remoteHost, // ip address of the ssh server
         port: Number(params.sshPort), // port of the ssh server
         username: params.remoteUser,
-        dstPort: Number(params.remotePort), // port of mongo db server
-        srcPort: Number(params.localPort),
-        dstAddr: params.localHost, // ip address of mongo db server
         srcAddr: params.localHost,
+        srcPort: Number(params.localPort),
+        dstAddr: params.remoteHost, // ip address of mongo db server
+        dstPort: Number(params.remotePort), // port of mongo db server
         localPort: Number(params.localPort),
         localAddr: params.localHost,
         readyTimeout: 5000,
