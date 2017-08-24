@@ -39,13 +39,13 @@ describe('test run auto complete command', () => {
   };
 
   before(function (done) {
-    this.timeout(TIMEOUT * 3);
+    this.timeout(TIMEOUT);
     launchSingleInstance(port);
     setTimeout(() => createConnect(done), MLAUNCH_TIMEOUT);
   });
 
   after(function () {
-    this.timeout(TIMEOUT * 3);
+    this.timeout(TIMEOUT);
     killMongoInstance(port);
     return connection.remove(id);
   });
