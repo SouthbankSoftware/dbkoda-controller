@@ -296,20 +296,6 @@ class MongoShell extends EventEmitter {
   }
 
   /**
-   * run next command from the commands queue
-   *
-   * @returns {*}
-   */
-  // runNextCommand() {
-  //   const cmd = this.cmdQueue.shift();
-  //   if (cmd) {
-  //     this.writeToShell(cmd);
-  //     return cmd;
-  //   }
-  //   return '';
-  // }
-
-  /**
    * write the command to shell
    * @param data
    */
