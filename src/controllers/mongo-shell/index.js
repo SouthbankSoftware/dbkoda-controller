@@ -217,8 +217,8 @@ class MongoShell extends EventEmitter {
 
   incompleteCommandEnded(data) {
     if (!this.executing) {
+      this.previousOutput = data;
       this.emitOutput(data + MongoShell.enter);
-      this.emitOutput(MongoShell.prompt + MongoShell.enter);
       return;
     }
     this.parser.clearBuffer();
@@ -240,9 +240,10 @@ class MongoShell extends EventEmitter {
       this.autoCompleteOutput += data.trim();
     } else if (this.syncExecution && data !== MongoShell.prompt) {
       this.emit(MongoShell.SYNC_OUTPUT_EVENT, data);
-    } else if (this.executing) {
+    } else if (!(data === this.previousOutput && this.previousOutput === MongoShell.prompt)) {
       this.emitOutput(data + MongoShell.enter);
     }
+    this.previousOutput = data;
   }
 
   loadScriptsIntoShell() {
