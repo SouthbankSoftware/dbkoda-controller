@@ -278,7 +278,7 @@ class MongoShell extends EventEmitter {
 
     const milliseconds = (new Date()).getTime();
 
-    if (milliseconds - this.prevExecutionTime > 10) {
+    if (milliseconds - this.prevExecutionTime > 200) {
       this.emitBufferedOutput();
     }
   }
