@@ -23,9 +23,16 @@
 import configObj from '../../config';
 
 const spawn = require('child_process').spawn;
+const stringArgv = require('string-argv');
+
 const _ = require('lodash');
 const EventEmitter = require('events').EventEmitter;
 
+const findCommandParameters = (cmd) => {
+  let params = stringArgv(cmd.trim());
+  params = _.filter(params, o => o !== '');
+  return params;
+};
 
 class OSCommandsController extends EventEmitter {
 
@@ -38,7 +45,6 @@ class OSCommandsController extends EventEmitter {
   runCommand(connect, commands, shellId) {
     const cmds = commands.split('\n');
     log.info('run os command ', cmds);
-    log.info(connect.username, connect.password);
     if (cmds) {
       cmds.map(c => c && this.requestQueue.push({connect, cmd: c, shellId}));
     }
@@ -58,10 +64,9 @@ class OSCommandsController extends EventEmitter {
     if (username && password) {
       cmd = cmd.replace('-p ******', `-p ${password}`);
     }
-    let params = cmd.trim().split(' ');
+    const params = findCommandParameters(cmd);
     const mongoCmd = configObj[params[0] + 'Cmd'] ? configObj[params[0] + 'Cmd'] : params[0];
     params.splice(0, 1);
-    params = _.filter(params, o => o !== '');
     log.debug('spawn mongo command ', mongoCmd, params);
     const p = spawn(mongoCmd, params);
     this.currentProcess = {process: p, cmd};
@@ -100,6 +105,7 @@ class OSCommandsController extends EventEmitter {
 }
 
 module.exports.OSCommandsController = OSCommandsController;
+module.exports.findCommandParameters = findCommandParameters;
 
 OSCommandsController.COMMAND_OUTPUT_EVENT = 'os-command-output';
 OSCommandsController.COMMAND_FINISH_EVENT = 'os-command-finish';
