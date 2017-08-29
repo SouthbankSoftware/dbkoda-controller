@@ -31,7 +31,7 @@ controller.listen(PORT);
 module.exports = {
   app,
   TIMEOUT: 30000,
-  MLAUNCH_TIMEOUT: os.platform() === 'win32' ? 5000 : 2000,
+  MLAUNCH_TIMEOUT: os.platform() === 'win32' ? 30000 : 2000,
   shell,
   connection,
   inspector,
