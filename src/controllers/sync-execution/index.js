@@ -107,29 +107,11 @@ class SyncExecutionController {
       output = output.replace(MongoShell.prompt, '').replace(commands, '');
       if (responseType === 'json' || responseType === 'explain') {
         output = output.replace(/\n/g, '').replace(/\r/g, '');
-        // if (os.platform() === 'win32') {
-        //   const brackIdx = output.indexOf('{');
-        //   const bracketIdx = output.indexOf('[');
-        //   const idx = Math.min(bracketIdx, brackIdx);
-        //   if (idx > 0) {
-        //     output = output.substring(idx);
-        //   }
-
-        //   output = output.replace(/\\:/g, '\\\\');
-        //   if (responseType === 'explain') {
-        //     output = output.replace(/\s/g, '');
-        //     const braceIdx = output.indexOf('"queryPlanner":');
-        //     if (braceIdx >= 0) {
-        //       output = '{' + output.substring(braceIdx);
-        //     }
-        //   }
-        // }
         output = output.replace(/ObjectId\("([a-zA-Z0-9]*)"\)/g, '"ObjectId(\'$1\')"');
         output = output.replace(/ISODate\("([a-zA-Z0-9-:.]*)"\)/g, '"ISODate(\'$1\')"');
         output = output.replace(/NumberLong\(([a-zA-Z0-9]*)\)/g, '"NumberLong(\'$1\')"');
         output = output.replace(/NumberLong\("([a-zA-Z0-9]*)"\)/g, '"NumberLong(\'$1\')"');
         output = output.replace(/Timestamp\(([a-zA-Z0-9.:-_, ]*)\)/g, '"ObjectId(\'$1\')"');
-        // output = output.replace(/:(\/[^\/]*\/)/g, ':"$1"'); // eslint-disable-line
         try {
           JSON.parse(output);
           log.debug('response output ', output);
