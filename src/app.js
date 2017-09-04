@@ -23,6 +23,7 @@
  * @Last modified time: 2017-06-09T11:51:26+10:00
  */
 
+
 import moment from 'moment';
 import _ from 'lodash';
 import winston from 'winston';
@@ -35,6 +36,8 @@ import rest from 'feathers-rest';
 import bodyParser from 'body-parser';
 import primus from 'feathers-primus';
 import swagger from 'feathers-swagger';
+
+require('babel-polyfill');
 
 const app = feathers();
 
