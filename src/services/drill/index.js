@@ -55,7 +55,7 @@ class DrillService {
           type: 'int',
         }]
       },
-      get: {
+      update: {
         description: 'Proxy Drill Service',
         parameters: [
           {
@@ -81,15 +81,9 @@ class DrillService {
     l.info('create apache drill connection ', params);
     return this.controller.create(params);
   }
-  async get(id, params) {
-    const connect = this.controller.connections[id];
-    if (connect) {
-        return await connect({
-            uri: '/query.json',
-            method: 'POST',
-            body: params.sql
-          });
-    }
+  update(id, params) {
+    console.log('drill get:', params);
+    return this.controller.getData(id, params);
   }
 }
 
@@ -111,4 +105,4 @@ module.exports = function() {
   return service;
 };
 
-module.exports.Service = DrillService;
+module.exports.DrillService = DrillService;

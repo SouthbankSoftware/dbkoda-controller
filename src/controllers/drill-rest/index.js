@@ -19,7 +19,7 @@
  */
 
 /* eslint-disable class-methods-use-this */
-
+const errors = require('feathers-errors');
 const hooks = require('feathers-hooks-common');
 const fs = require('fs');
 const sshTunnel = require('open-ssh-tunnel');
@@ -51,7 +51,34 @@ class DrillRestController {
      */
   create(params) {
     const conn = Object.assign({}, params);
-    return this.createShellConnection(conn);
+    return new Promise((resolve, reject) => {
+      const connection = this.createShellConnection(conn);
+      this.checkConnectionStatus(connection).then((result) => {
+        if (result) {
+          // result.connectionId = connection.connId;
+          console.log(result);
+          resolve({id: connection.id, output: JSON.stringify(result)});
+        } else {
+          reject('unable to connect to drill interface');
+        }
+      }).catch((err) => {
+        l.error('failed to connect drill instance ', err.message);
+        const badRequest = new errors.BadRequest(err.message);
+        return reject(badRequest);
+      });
+    });
+  }
+  checkConnectionStatus(connection) {
+    if (connection) {
+      const reqPromise = request.defaults({
+        baseUrl: connection.url,
+        json: true,
+      });
+      return reqPromise({
+        uri: '/status.json',
+        method: 'GET'});
+    }
+    return null;
   }
   remove(id) {
     try {
@@ -74,14 +101,40 @@ class DrillRestController {
     connUrl += ':';
     connUrl += params.port;
 
+    const connId = uuid.v1();
+    const connection = {id: connId, url: connUrl};
+    this.connections[connId] = connection;
+    return connection;
+  }
+
+  getData(id, params) {
+    const connection = this.connections[id];
+    if (connection) {
+      return new Promise((resolve, reject) => {
+        this.getDataFromDrill(connection.url, params.sql).then((res) => {
+          console.log('result query:', res);
+          resolve(JSON.stringify(res));
+        }).catch((err) => {
+          l.error('failed to get data from drill instance ', err.message);
+          reject(err.message);
+        });
+      });
+    }
+  }
+  getDataFromDrill(url, query) {
     const reqPromise = request.defaults({
-      baseUrl: connUrl,
+      baseUrl: url,
       json: true,
     });
-    const connId = uuid.v1();
-
-    this.connections[connId] = reqPromise;
-    return connId;
+    console.log('test wahaj,', url, query);
+    return reqPromise({
+        uri: '/query.json',
+        method: 'POST',
+        json: {
+          'queryType' : 'SQL',
+          'query' : query
+        }
+      });
   }
   createTunnel(params) {
     if (params.ssh) {
