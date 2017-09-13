@@ -28,6 +28,8 @@ module.exports = {
     CONFIG: 'config',
     MONGOS: 'mongos',
     USERS: 'user',
+    DEFAULT_ROLE: 'default_role',
+    ROLE: 'role',
     REPLICA_MEMBER: 'replica_member',
     PRIMARY: 'primary',
     SECONDARY: 'secondary',
