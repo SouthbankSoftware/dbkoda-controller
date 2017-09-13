@@ -86,7 +86,6 @@ class Parser extends EventEmitter {
     for (let i = 0, len = data.length; i < len; i += 1) {
       const code = data.charCodeAt(i);
       const ch = data.charAt(i);
-      // console.log('get char ch=', ch, ' code=', code, 'x=', this.bufferX);
       switch (this.state) {
         case ParseState.NORMAL:
           if (Object.prototype.hasOwnProperty.call(normalStateHandler, code)) {
