@@ -139,7 +139,8 @@ class MongoConnectionController {
               if (!err) {
                 resolve(db);
               } else {
-                reject(new errors.NotAuthenticated('Authorization Failed'));
+                log.error('authentication error ', err);
+                reject(new errors.NotAuthenticated('Authentication Failed'));
               }
             });
           });
@@ -160,7 +161,9 @@ class MongoConnectionController {
                 // conn.requireSlaveOk = true;
                 throw Errors.ConnectSlaveOk(e);
               } else {
-                throw new errors.NotAuthenticated('Authorization Failed');
+                const error = new errors.NotAuthenticated('Authorization Failed: ' + e.message);
+                error.responseCode = 'NOT_AUTHORIZATION_LIST_COLLECTION';
+                throw error;
               }
             });
         }
