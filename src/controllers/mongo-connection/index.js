@@ -178,8 +178,18 @@ class MongoConnectionController {
             }
             return {...v, dbVersion};
           })
-          .catch((_err) => {
-            throw new errors.GeneralError('Create shell connection failed. <br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda/tree/hot-fix_DBKODA-2#config\')">this doc</a> for details)');
+          .catch((err) => {
+            if (err.code === 'MONGO_BINARY_UNDETECTED') {
+              l.error(err);
+              throw new errors.GeneralError('Create shell connection failed. Cannot detect mongo binary.<br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda/tree/hot-fix_DBKODA-2#config\')">this doc</a> for details)');
+            } else if (err.code === 'MONGO_BINARY_CORRUPTED' || typeof err === 'number') {
+              l.error('Corrupted mongo binary');
+              throw new errors.GeneralError('Create shell connection failed. Mongo binary might be corrupted.<br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda/tree/hot-fix_DBKODA-2#config\')">this doc</a> for details)');
+            } else {
+              const errStr = err instanceof Error ? err.stack : String(err);
+              l.error(errStr);
+              throw new errors.GeneralError(errStr);
+            }
           });
       }).catch((err) => {
         l.error('got error ', err);
