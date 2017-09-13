@@ -161,7 +161,9 @@ class MongoConnectionController {
                 // conn.requireSlaveOk = true;
                 throw Errors.ConnectSlaveOk(e);
               } else {
-                throw new errors.NotAuthenticated('Authorization Failed: ' + e.message);
+                const error = new errors.NotAuthenticated('Authorization Failed: ' + e.message);
+                error.responseCode = 'NOT_AUTHORIZATION_LIST_COLLECTION';
+                throw error;
               }
             });
         }
