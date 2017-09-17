@@ -74,4 +74,10 @@ describe('configure path tests', () => {
     }
     done();
   });
+
+  it('load path with exe extension', () => {
+    const p = path.join(__dirname, '/config_mongo_exe.yml');
+    const config = loadConfig(p);
+    assert.equal(config.mongoCmd, 'mongo.exe');
+  });
 });

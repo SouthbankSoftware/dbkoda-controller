@@ -42,7 +42,7 @@ export const loadConfig = (path) => {
       if (os.platform() === 'win32') {
         _.keys(config).map((key) => {
           if (config[key] && key !== 'mongoVersionCmd') {
-            if (!key.match(new RegExp('.exe$', 'i'))) {
+            if (!config[key].match(new RegExp('.exe$', 'i'))) {
               config[key] += '.exe';
             }
           }
