@@ -36,6 +36,8 @@ import bodyParser from 'body-parser';
 import primus from 'feathers-primus';
 import swagger from 'feathers-swagger';
 
+require('babel-polyfill');
+
 const app = feathers();
 
 // feathers-configuration 0.3.x to 0.4.x API change, which now relies on node-config

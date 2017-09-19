@@ -130,7 +130,7 @@ class MongoShell extends EventEmitter {
 
     if (this.shellVersion === 'UNKNOWN') {
       const err = new Error('Mongo binary corrupted');
-      err.code = 'MONGO_BINARY_CORRUPTED';
+      err.responseCode = 'MONGO_BINARY_CORRUPTED';
       throw err;
     }
 
