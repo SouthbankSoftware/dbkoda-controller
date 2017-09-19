@@ -23,8 +23,9 @@ import yaml from 'js-yaml';
 import fs from 'fs';
 import {execSync} from 'child_process';
 import os from 'os';
+import path from 'path';
 
-export const loadConfig = (path) => {
+export const loadConfigFromYamlFile = (p) => {
   const config = {
     mongoCmd: null,
     mongoVersionCmd: null,
@@ -33,11 +34,14 @@ export const loadConfig = (path) => {
     mongoimportCmd: null,
     mongoexportCmd: null
   };
-
-  if (path) {
+  if (!path.existsSync(p)) {
+    log.info('the configuration fiel doesnt exist ', p);
+    return config;
+  }
+  if (p) {
     // overwrite using external config yaml file
     try {
-      const userConfig = yaml.safeLoad(fs.readFileSync(path, 'utf8'));
+      const userConfig = yaml.safeLoad(fs.readFileSync(p, 'utf8'));
       _.assign(config, _.pick(userConfig, _.keys(config)));
       if (os.platform() === 'win32') {
         _.keys(config).map((key) => {
@@ -52,6 +56,11 @@ export const loadConfig = (path) => {
       // console.error(_e);
     } // eslint-disable-line no-empty
   }
+  return config;
+};
+
+export const loadConfig = (p) => {
+  const config = loadConfigFromYamlFile(p);
 
 // check and figure out missing config
   try {
