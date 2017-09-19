@@ -139,7 +139,8 @@ class MongoConnectionController {
               if (!err) {
                 resolve(db);
               } else {
-                reject(new errors.NotAuthenticated('Authorization Failed'));
+                log.error('authentication error ', err);
+                reject(new errors.NotAuthenticated('Authentication Failed'));
               }
             });
           });
@@ -160,7 +161,9 @@ class MongoConnectionController {
                 // conn.requireSlaveOk = true;
                 throw Errors.ConnectSlaveOk(e);
               } else {
-                throw new errors.NotAuthenticated('Authorization Failed');
+                const error = new errors.NotAuthenticated('Authorization Failed: ' + e.message);
+                error.responseCode = 'NOT_AUTHORIZATION_LIST_COLLECTION';
+                throw error;
               }
             });
         }
@@ -178,8 +181,20 @@ class MongoConnectionController {
             }
             return {...v, dbVersion};
           })
-          .catch((_err) => {
-            throw new errors.GeneralError('Create shell connection failed. <br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda/tree/hot-fix_DBKODA-2#config\')">this doc</a> for details)');
+          .catch((err) => {
+            log.error('create mongo shell failed:', err);
+            if (err.code === 'MONGO_BINARY_UNDETECTED') {
+              throw new errors.GeneralError('Create shell connection failed. Cannot detect mongo binary.<br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda/tree/hot-fix_DBKODA-2#config\')">this doc</a> for details)');
+            } else if (err.responseCode === 'MONGO_BINARY_CORRUPTED') {
+              log.error('Corrupted mongo binary');
+              throw new errors.GeneralError('Create shell connection failed. Mongo binary might be corrupted.<br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda/tree/hot-fix_DBKODA-2#config\')">this doc</a> for details)');
+            } else if (err.responseCode === 'FAILED_LAUNCH_MONGO_SHELL') {
+              throw new errors.GeneralError(`Failed to launch mongo shell.<br/> ${err.responseMessage} <br/>`);
+            } else {
+              const errStr = err instanceof Error ? err.stack : String(err);
+              log.error(errStr);
+              throw new errors.GeneralError(errStr);
+            }
           });
       }).catch((err) => {
         l.error('got error ', err);
@@ -390,8 +405,12 @@ class MongoConnectionController {
           resolve({shell, output: outputMsg});
         } else {
           // failed to initialized
-          l.error('failed to initialize ', err);
-          reject(err);
+          log.error('failed to initialize ', err, connectionMessage);
+          let outputMsg = '';
+          connectionMessage.map((msg) => {
+            outputMsg += msg.output + '.';
+          });
+          reject({code:err, responseMessage: outputMsg, responseCode: 'FAILED_LAUNCH_MONGO_SHELL'});
         }
       });
 

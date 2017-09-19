@@ -108,7 +108,7 @@ dbe.sampleCollection = function (dbName, collectionName) {
 };
 
 dbe.profileLevels = function (dbName) {
-  var mydb = db.getSiblingDB(dbName); // eslint-disable-line 
+  var mydb = db.getSiblingDB(dbName); // eslint-disable-line
   var dbeSpl = {};
   if (mydb.serverStatus().process !== 'mongos') {
     dbeSpl = mydb.getSiblingDB(dbName).getProfilingStatus();
@@ -282,6 +282,9 @@ dbe.storageAnalysis = function () {
       var collArr = [];
       db1.getCollectionNames().forEach(function (cname) {
         var stats = db1.getCollection(cname).stats();
+        if (stats.code === 13) {
+          return;
+        }
         var collData = {
           name: cname,
         };

@@ -123,7 +123,15 @@ class MongoShell extends EventEmitter {
     l.debug(`Mongo Cmd: ${configObj.mongoCmd}`);
 
     if (!configObj.mongoCmd) {
-      throw new Error('Mongo binary undetected');
+      const err = new Error('Mongo binary undetected');
+      err.code = 'MONGO_BINARY_UNDETECTED';
+      throw err;
+    }
+
+    if (this.shellVersion === 'UNKNOWN') {
+      const err = new Error('Mongo binary corrupted');
+      err.responseCode = 'MONGO_BINARY_CORRUPTED';
+      throw err;
     }
 
     const mongoCmd = configObj.mongoCmd;
