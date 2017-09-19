@@ -21,7 +21,7 @@
  * Created by joey on 9/8/17.
  */
 
-import {loadConfig} from '../../src/config';
+import {loadConfig, loadConfigFromYamlFile} from '../../src/config';
 
 const os = require('os');
 const assert = require('assert');
@@ -73,5 +73,16 @@ describe('configure path tests', () => {
       });
     }
     done();
+  });
+
+  it('load path with exe extension', () => {
+    const p = path.join(__dirname, '/config_mongo_exe.yml');
+    const config = loadConfig(p);
+    assert.equal(config.mongoCmd, 'mongo.exe');
+  });
+
+  it('load none existed file', () => {
+    const config = loadConfigFromYamlFile('xxxxx');
+    assert.equal(config.mongoCmd, null);
   });
 });

@@ -23,7 +23,6 @@ import yaml from 'js-yaml';
 import fs from 'fs';
 import {execSync} from 'child_process';
 import os from 'os';
-import path from 'path';
 
 export const loadConfigFromYamlFile = (p) => {
   const config = {
@@ -34,7 +33,7 @@ export const loadConfigFromYamlFile = (p) => {
     mongoimportCmd: null,
     mongoexportCmd: null
   };
-  if (!path.existsSync(p)) {
+  if (!fs.existsSync(p)) {
     log.info('the configuration fiel doesnt exist ', p);
     return config;
   }
