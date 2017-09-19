@@ -22,12 +22,12 @@
  * @Author: guiguan
  * @Date:   2017-03-31T09:40:35+11:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-05-01T00:31:22+10:00
+ * @Last modified time: 2017-09-19T17:16:37+10:00
  */
 
 import { getItems } from 'feathers-hooks-common';
 import errors from 'feathers-errors';
-import fs from 'fs';
+import fs from 'fs-extra';
 
 const ENCODING = 'utf8';
 
@@ -40,33 +40,81 @@ export default _options => (hook) => {
     const path = item._id;
 
     return new Promise((resolve) => {
+      if (item.copyTo) {
+        const copyTo = item.copyTo;
+
+        // copy the file instead of reading
+        try {
+          fs.copy(
+            path,
+            copyTo,
+            {
+              overwrite: true,
+              dereference: false,
+              preserveTimestamps: false,
+            },
+            (err) => {
+              if (err) {
+                if (err.code === 'ENOENT') {
+                  return resolve(
+                    new errors.NotFound(err.message, {
+                      _id: path,
+                      copyTo,
+                    }),
+                  );
+                }
+                return resolve(
+                  new errors.Unprocessable(err.message, {
+                    _id: path,
+                    copyTo,
+                  }),
+                );
+              }
+              resolve({
+                _id: path,
+                copyTo,
+              });
+            },
+          );
+        } catch (err) {
+          return resolve(
+            new errors.Unprocessable(err.message, {
+              _id: path,
+              copyTo,
+            }),
+          );
+        }
+
+        return;
+      }
+
       try {
         fs.readFile(path, ENCODING, (err, content) => {
           if (err) {
             if (err.code === 'ENOENT') {
               return resolve(
                 new errors.NotFound(err.message, {
-                  _id: path
-                })
+                  _id: path,
+                }),
               );
             }
             return resolve(
               new errors.Unprocessable(err.message, {
-                _id: path
-              })
+                _id: path,
+              }),
             );
           }
           resolve({
             _id: path,
             content,
-            encoding: ENCODING
+            encoding: ENCODING,
           });
         });
       } catch (err) {
         return resolve(
           new errors.Unprocessable(err.message, {
-            _id: path
-          })
+            _id: path,
+          }),
         );
       }
     });
