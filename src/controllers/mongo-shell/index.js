@@ -59,6 +59,7 @@ class MongoShell extends EventEmitter {
       log.info('Mongo Version Cmd:', configObj);
 
       if (!configObj.mongoVersionCmd) {
+        log.error('unkonwn version');
         return 'UNKNOWN';
       }
 
@@ -136,17 +137,6 @@ class MongoShell extends EventEmitter {
     }
 
     const mongoCmd = configObj.mongoCmd;
-    if (os.platform() === 'win32') {
-      let verCmd = mongoCmd;
-      if (verCmd.indexOf(' ') >= 0 && verCmd.indexOf('"') !== 0) {
-        verCmd = verCmd.replace(/\ /g, '^ '); // eslint-disable-line
-      }
-      try {
-        execSync(`${verCmd} --version`, {encoding: 'utf8'});
-      } catch (_) {
-        throw new Error('Mongo binary undetected');
-      }
-    }
 
     const parameters = this.createMongoShellParameters();
     let mongoCmdArray;
