@@ -23,7 +23,7 @@
  */
 // import fs from 'fs';
 import _ from 'lodash';
-import configObj from '../../config';
+import {loadCommands} from '../../config';
 
 const spawn = require('node-pty').spawn;
 const execSync = require('child_process').execSync;
@@ -42,7 +42,6 @@ class MongoShell extends EventEmitter {
     this.connection = connection;
     this.initialized = false;
     this.currentCommand = '';
-    this.cmdQueue = [];
     this.outputQueue = [];
     this.prevExecutionTime = 0;
     this.executing = false;
@@ -56,9 +55,11 @@ class MongoShell extends EventEmitter {
 
   getShellVersion() {
     try {
-      l.debug(`Mongo Version Cmd: ${configObj.mongoVersionCmd}`);
+      const configObj = loadCommands();
+      log.info('Mongo Version Cmd:', configObj);
 
       if (!configObj.mongoVersionCmd) {
+        log.error('unkonwn version');
         return 'UNKNOWN';
       }
 
@@ -120,7 +121,8 @@ class MongoShell extends EventEmitter {
    * create a shell with pty
    */
   createShell() {
-    l.debug(`Mongo Cmd: ${configObj.mongoCmd}`);
+    const configObj = loadCommands();
+    log.info('Mongo Cmd:', configObj);
 
     if (!configObj.mongoCmd) {
       const err = new Error('Mongo binary undetected');
@@ -135,17 +137,6 @@ class MongoShell extends EventEmitter {
     }
 
     const mongoCmd = configObj.mongoCmd;
-    if (os.platform() === 'win32') {
-      let verCmd = mongoCmd;
-      if (verCmd.indexOf(' ') >= 0 && verCmd.indexOf('"') !== 0) {
-        verCmd = verCmd.replace(/\ /g, '^ '); // eslint-disable-line
-      }
-      try {
-        execSync(`${verCmd} --version`, {encoding: 'utf8'});
-      } catch (_) {
-        throw new Error('Mongo binary undetected');
-      }
-    }
 
     const parameters = this.createMongoShellParameters();
     let mongoCmdArray;

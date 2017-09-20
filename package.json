@@ -81,6 +81,7 @@
     "feathers-primus": "2.1.0",
     "feathers-rest": "^1.5.2",
     "feathers-swagger": "^0.3.2",
+    "fs-extra": "^4.0.2",
     "generic-pool": "^3.1.6",
     "js-yaml": "^3.8.3",
     "lodash": "^4.17.2",

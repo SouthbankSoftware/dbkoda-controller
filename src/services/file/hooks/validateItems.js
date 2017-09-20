@@ -22,7 +22,7 @@
  * @Author: guiguan
  * @Date:   2017-04-26T12:33:31+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-04-30T15:56:50+10:00
+ * @Last modified time: 2017-09-19T16:47:16+10:00
  */
 
 import _ from 'lodash';
@@ -71,6 +71,9 @@ const schema = {
       watching: {
         type: 'boolean',
         default: watching
+      },
+      copyTo: {
+        type: 'string'
       }
     },
     required: ['_id']

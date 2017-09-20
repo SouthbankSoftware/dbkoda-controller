@@ -23,8 +23,9 @@ import yaml from 'js-yaml';
 import fs from 'fs';
 import {execSync} from 'child_process';
 import os from 'os';
+import path from 'path';
 
-export const loadConfig = (path) => {
+export const loadConfigFromYamlFile = (p) => {
   const config = {
     mongoCmd: null,
     mongoVersionCmd: null,
@@ -33,11 +34,14 @@ export const loadConfig = (path) => {
     mongoimportCmd: null,
     mongoexportCmd: null
   };
-
-  if (path) {
+  if (!fs.existsSync(p)) {
+    console.log('the configuration file doesnt exist ', p);
+    return config;
+  }
+  if (p) {
     // overwrite using external config yaml file
     try {
-      const userConfig = yaml.safeLoad(fs.readFileSync(path, 'utf8'));
+      const userConfig = yaml.safeLoad(fs.readFileSync(p, 'utf8'));
       _.assign(config, _.pick(userConfig, _.keys(config)));
       if (os.platform() === 'win32') {
         _.keys(config).map((key) => {
@@ -52,10 +56,38 @@ export const loadConfig = (path) => {
       // console.error(_e);
     } // eslint-disable-line no-empty
   }
+  return config;
+};
 
+const getMongoPath = (mongoCmd) => {
+  let mongoPath = '';
+  if (mongoCmd) {
+    if (os.platform() === 'win32') {
+      mongoPath = mongoCmd.replace(/mongo.exe$/, '');
+    } else {
+      mongoPath = mongoCmd.replace(/mongo$/, '');
+    }
+  }
+  return mongoPath;
+};
+
+const applyPathToOtherCommands = (config) => {
+  const mongoPath = getMongoPath(config.mongoCmd);
+  _.keys(config).map((key) => {
+    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd') {
+      const cmdName = key.replace('Cmd', '');
+      if (os.platform() === 'win32') {
+        config[key] = mongoPath + '\\' + cmdName + '.exe';
+      } else {
+        config[key] = mongoPath + cmdName;
+      }
+    }
+  });
+};
+
+export const loadConfig = (config) => {
 // check and figure out missing config
   try {
-    let mongoPath = '';
     if (!config.mongoCmd) {
       if (os.platform() === 'win32') {
         config.mongoCmd = 'mongo.exe';
@@ -65,32 +97,54 @@ export const loadConfig = (path) => {
         if (tmp.length > 0) {
           config.mongoCmd = tmp[tmp.length - 1];
         }
-        mongoPath = config.mongoCmd.replace(/mongo$/, '');
       }
-    } else {
-      mongoPath = config.mongoCmd.replace(/mongo$/, '');
     }
-    _.keys(config).map((key) => {
-      if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd') {
-        const cmdName = key.replace('Cmd', '');
-        if (os.platform() === 'win32') {
-          config[key] = cmdName + '.exe';
-        } else {
-          config[key] = mongoPath + cmdName;
-        }
-      }
-    });
+    if (!config.mongoVersionCmd && config.mongoCmd) {
+      config.mongoVersionCmd = config.mongoCmd + ' --version';
+    }
+
+    applyPathToOtherCommands(config);
   } catch (error) {
     l.error(error.stack);
     config.mongoCmd = null;
   }
+  return config;
+};
 
-  if (!config.mongoVersionCmd && config.mongoCmd) {
-    config.mongoVersionCmd = config.mongoCmd + ' --version';
+export const loadCommands = () => {
+  let configPath = process.env.CONFIG_PATH;
+  if (!configPath) {
+    configPath = path.resolve(os.homedir(), '.dbKoda', 'config.yml');
+  }
+  const config = loadConfigFromYamlFile(configPath);
+  if (config.mongoCmd) {
+    // if (os.platform() === 'win32') {
+      config.mongoVersionCmd = '"' + config.mongoCmd + '" --version';
+    // } else {
+    //   config.mongoVersionCmd = config.mongoCmd + ' --version';
+    // }
+    applyPathToOtherCommands(config);
+  }
+  if (os.platform() === 'win32') {
+    _.forOwn(config, (value, key) => {
+      if (value) {
+        config[key] = value.replace(/\\/g, '/');
+      }
+    });
+  }
+  if (global.defaultCommandConfig) {
+    _.forOwn(global.defaultCommandConfig, (value, key) => {
+      if (!config[key] && value) {
+        config[key] = value;
+      }
+    });
   }
   return config;
 };
 
-const config = loadConfig(process.env.CONFIG_PATH);
+const config = loadCommands();
+loadConfig(config);
+log.info('resolve command paths ', config);
+global.defaultCommandConfig = config;
 
 export default config;

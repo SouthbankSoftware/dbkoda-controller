@@ -1,0 +1,5 @@
+mongoCmd: /Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo
+mongodumpCmd: /Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongodump
+mongorestoreCmd: /Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongorestore
+mongoimportCmd: /Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoimport
+mongoexportCmd: /Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoexport
