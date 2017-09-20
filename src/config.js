@@ -72,7 +72,6 @@ const getMongoPath = (mongoCmd) => {
 };
 
 const applyPathToOtherCommands = (config) => {
-  console.log('apply to commands ', config);
   const mongoPath = getMongoPath(config.mongoCmd);
   _.keys(config).map((key) => {
     if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd') {
@@ -117,15 +116,13 @@ export const loadCommands = () => {
   if (!configPath) {
     configPath = path.resolve(os.homedir(), '.dbKoda', 'config.yml');
   }
-  log.info('load configuration file from ', configPath);
   const config = loadConfigFromYamlFile(configPath);
-  log.info('loaded configuration commands ', config);
   if (config.mongoCmd) {
-    if (os.platform() === 'win32') {
+    // if (os.platform() === 'win32') {
       config.mongoVersionCmd = '"' + config.mongoCmd + '" --version';
-    } else {
-      config.mongoVersionCmd = config.mongoCmd + ' --version';
-    }
+    // } else {
+    //   config.mongoVersionCmd = config.mongoCmd + ' --version';
+    // }
     applyPathToOtherCommands(config);
   }
   if (os.platform() === 'win32') {
