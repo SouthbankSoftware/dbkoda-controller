@@ -103,7 +103,7 @@ export const loadConfig = (config) => {
     if (!config.mongoVersionCmd && config.mongoCmd) {
       config.mongoVersionCmd = config.mongoCmd + ' --version';
     }
-    
+
     applyPathToOtherCommands(config);
   } catch (error) {
     l.error(error.stack);
@@ -122,7 +122,7 @@ export const loadCommands = () => {
   log.info('loaded configuration commands ', config);
   if (config.mongoCmd) {
     if (os.platform() === 'win32') {
-      config.mongoVersionCmd = '"' + config.mongoCmd + '"' + ' --version';
+      config.mongoVersionCmd = '"' + config.mongoCmd + '" --version';
     } else {
       config.mongoVersionCmd = config.mongoCmd + ' --version';
     }
