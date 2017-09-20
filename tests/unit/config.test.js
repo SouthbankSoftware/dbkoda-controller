@@ -30,7 +30,14 @@ const path = require('path');
 
 describe('configure path tests', () => {
   it('load path without configure file', () => {
-    const config = loadConfig();
+    const config = loadConfig({
+      mongoCmd: null,
+      mongoVersionCmd: null,
+      mongodumpCmd: null,
+      mongorestoreCmd: null,
+      mongoimportCmd: null,
+      mongoexportCmd: null
+    });
     assert.notEqual(config.mongoCmd, null);
     assert.notEqual(config.mongodumpCmd, null);
     assert.notEqual(config.mongoexportCmd, null);
@@ -49,7 +56,8 @@ describe('configure path tests', () => {
 
   it('load path with mongo configuration only', (done) => {
     const p = path.join(__dirname, '/config_mongo.yml');
-    const config = loadConfig(p);
+    const config = loadConfigFromYamlFile(p);
+    loadConfig(config);
     console.log('config = ', config);
     assert.notEqual(config.mongoCmd, null);
     assert.notEqual(config.mongodumpCmd, null);
@@ -76,7 +84,7 @@ describe('configure path tests', () => {
 
   it('load path with exe extension', () => {
     const p = path.join(__dirname, '/config_mongo_exe.yml');
-    const config = loadConfig(p);
+    const config = loadConfigFromYamlFile(p);
     assert.equal(config.mongoCmd, 'mongo.exe');
   });
 

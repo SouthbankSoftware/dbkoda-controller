@@ -56,7 +56,7 @@ class MongoShell extends EventEmitter {
   getShellVersion() {
     try {
       const configObj = loadCommands();
-      log.info(`Mongo Version Cmd: ${configObj.mongoVersionCmd}`);
+      log.info('Mongo Version Cmd:', configObj);
 
       if (!configObj.mongoVersionCmd) {
         return 'UNKNOWN';
@@ -121,7 +121,7 @@ class MongoShell extends EventEmitter {
    */
   createShell() {
     const configObj = loadCommands();
-    log.info(`Mongo Cmd: ${configObj}`);
+    log.info('Mongo Cmd:', configObj);
 
     if (!configObj.mongoCmd) {
       const err = new Error('Mongo binary undetected');
