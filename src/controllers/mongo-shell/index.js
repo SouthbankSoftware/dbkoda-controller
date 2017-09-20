@@ -23,7 +23,7 @@
  */
 // import fs from 'fs';
 import _ from 'lodash';
-import configObj from '../../config';
+import {loadCommands} from '../../config';
 
 const spawn = require('node-pty').spawn;
 const execSync = require('child_process').execSync;
@@ -42,7 +42,6 @@ class MongoShell extends EventEmitter {
     this.connection = connection;
     this.initialized = false;
     this.currentCommand = '';
-    this.cmdQueue = [];
     this.outputQueue = [];
     this.prevExecutionTime = 0;
     this.executing = false;
@@ -56,7 +55,8 @@ class MongoShell extends EventEmitter {
 
   getShellVersion() {
     try {
-      l.debug(`Mongo Version Cmd: ${configObj.mongoVersionCmd}`);
+      const configObj = loadCommands();
+      log.info(`Mongo Version Cmd: ${configObj.mongoVersionCmd}`);
 
       if (!configObj.mongoVersionCmd) {
         return 'UNKNOWN';
@@ -120,7 +120,8 @@ class MongoShell extends EventEmitter {
    * create a shell with pty
    */
   createShell() {
-    l.debug(`Mongo Cmd: ${configObj.mongoCmd}`);
+    const configObj = loadCommands();
+    log.info(`Mongo Cmd: ${configObj}`);
 
     if (!configObj.mongoCmd) {
       const err = new Error('Mongo binary undetected');

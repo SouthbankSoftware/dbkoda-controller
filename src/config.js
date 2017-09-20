@@ -23,6 +23,7 @@ import yaml from 'js-yaml';
 import fs from 'fs';
 import {execSync} from 'child_process';
 import os from 'os';
+import path from 'path';
 
 export const loadConfigFromYamlFile = (p) => {
   const config = {
@@ -34,7 +35,7 @@ export const loadConfigFromYamlFile = (p) => {
     mongoexportCmd: null
   };
   if (!fs.existsSync(p)) {
-    log.info('the configuration fiel doesnt exist ', p);
+    console.log('the configuration file doesnt exist ', p);
     return config;
   }
   if (p) {
@@ -58,15 +59,14 @@ export const loadConfigFromYamlFile = (p) => {
   return config;
 };
 
-export const loadConfig = (p) => {
-  const config = loadConfigFromYamlFile(p);
-
+export const loadConfig = (config) => {
 // check and figure out missing config
   try {
     let mongoPath = '';
     if (!config.mongoCmd) {
       if (os.platform() === 'win32') {
         config.mongoCmd = 'mongo.exe';
+        mongoPath = config.mongoCmd.replace(/mongo.exe$/, '');
       } else {
         config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
         const tmp = config.mongoCmd.split('\n');
@@ -99,6 +99,27 @@ export const loadConfig = (p) => {
   return config;
 };
 
-const config = loadConfig(process.env.CONFIG_PATH);
+export const loadCommands = () => {
+  let configPath = process.env.CONFIG_PATH;
+  if (!configPath) {
+    configPath = path.resolve(os.homedir(), '.dbKoda', 'config.yml');
+  }
+  log.info('load configuration file from ', configPath);
+  const config = loadConfigFromYamlFile(configPath);
+  log.info('loaded configuration commands ', config);
+  if (global.defaultCommandConfig) {
+    _.forOwn(global.defaultCommandConfig, (value, key) => {
+      if (!config[key] && value) {
+        config[key] = value;
+      }
+    });
+  }
+  return config;
+};
+
+const config = loadCommands();
+loadConfig(config);
+
+global.defaultCommandConfig = config;
 
 export default config;

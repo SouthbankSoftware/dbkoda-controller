@@ -20,14 +20,13 @@
 /**
  * Created by joey on 9/8/17.
  */
-
+import '../../src/app';
 import {loadConfig, loadConfigFromYamlFile} from '../../src/config';
 
 const os = require('os');
 const assert = require('assert');
 const _ = require('lodash');
 const path = require('path');
-
 
 describe('configure path tests', () => {
   it('load path without configure file', () => {
@@ -84,5 +83,14 @@ describe('configure path tests', () => {
   it('load none existed file', () => {
     const config = loadConfigFromYamlFile('xxxxx');
     assert.equal(config.mongoCmd, null);
+  });
+
+  it('load commands from file', () => {
+    const config = loadConfigFromYamlFile(path.join(__dirname, 'config_1.yml'));
+    assert.equal(config.mongoCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo');
+    assert.equal(config.mongodumpCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongodump');
+    assert.equal(config.mongorestoreCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongorestore');
+    assert.equal(config.mongoimportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoimport');
+    assert.equal(config.mongoexportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoexport');
   });
 });

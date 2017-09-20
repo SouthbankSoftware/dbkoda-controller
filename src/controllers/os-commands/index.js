@@ -20,7 +20,7 @@
 /**
  * Created by joey on 21/7/17.
  */
-import configObj from '../../config';
+import {loadCommands} from '../../config';
 
 const spawn = require('child_process').spawn;
 const stringArgv = require('string-argv');
@@ -53,6 +53,8 @@ class OSCommandsController extends EventEmitter {
   }
 
   runCommandFromQueue() {
+    const configObj = loadCommands();
+    log.info(`Mongo Cmd: ${configObj}`);
     if (this.requestQueue.length <= 0) {
       return;
     }
