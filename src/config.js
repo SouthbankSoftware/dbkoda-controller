@@ -59,42 +59,55 @@ export const loadConfigFromYamlFile = (p) => {
   return config;
 };
 
+const getMongoPath = (mongoCmd) => {
+  let mongoPath = '';
+  if (mongoCmd) {
+    if (os.platform() === 'win32') {
+      mongoPath = mongoCmd.replace(/mongo.exe$/, '');
+    } else {
+      mongoPath = mongoCmd.replace(/mongo$/, '');
+    }
+  }
+  return mongoPath;
+};
+
+const applyPathToOtherCommands = (config) => {
+  console.log('apply to commands ', config);
+  const mongoPath = getMongoPath(config.mongoCmd);
+  _.keys(config).map((key) => {
+    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd') {
+      const cmdName = key.replace('Cmd', '');
+      if (os.platform() === 'win32') {
+        config[key] = mongoPath + '\\' + cmdName + '.exe';
+      } else {
+        config[key] = mongoPath + cmdName;
+      }
+    }
+  });
+};
+
 export const loadConfig = (config) => {
 // check and figure out missing config
   try {
-    let mongoPath = '';
     if (!config.mongoCmd) {
       if (os.platform() === 'win32') {
         config.mongoCmd = 'mongo.exe';
-        mongoPath = config.mongoCmd.replace(/mongo.exe$/, '');
       } else {
         config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
         const tmp = config.mongoCmd.split('\n');
         if (tmp.length > 0) {
           config.mongoCmd = tmp[tmp.length - 1];
         }
-        mongoPath = config.mongoCmd.replace(/mongo$/, '');
       }
-    } else {
-      mongoPath = config.mongoCmd.replace(/mongo$/, '');
     }
-    _.keys(config).map((key) => {
-      if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd') {
-        const cmdName = key.replace('Cmd', '');
-        if (os.platform() === 'win32') {
-          config[key] = cmdName + '.exe';
-        } else {
-          config[key] = mongoPath + cmdName;
-        }
-      }
-    });
+    if (!config.mongoVersionCmd && config.mongoCmd) {
+      config.mongoVersionCmd = config.mongoCmd + ' --version';
+    }
+    
+    applyPathToOtherCommands(config);
   } catch (error) {
     l.error(error.stack);
     config.mongoCmd = null;
-  }
-
-  if (!config.mongoVersionCmd && config.mongoCmd) {
-    config.mongoVersionCmd = config.mongoCmd + ' --version';
   }
   return config;
 };
@@ -107,6 +120,21 @@ export const loadCommands = () => {
   log.info('load configuration file from ', configPath);
   const config = loadConfigFromYamlFile(configPath);
   log.info('loaded configuration commands ', config);
+  if (config.mongoCmd) {
+    if (os.platform() === 'win32') {
+      config.mongoVersionCmd = '"' + config.mongoCmd + '"' + ' --version';
+    } else {
+      config.mongoVersionCmd = config.mongoCmd + ' --version';
+    }
+    applyPathToOtherCommands(config);
+  }
+  if (os.platform() === 'win32') {
+    _.forOwn(config, (value, key) => {
+      if (value) {
+        config[key] = value.replace(/\\/g, '/');
+      }
+    });
+  }
   if (global.defaultCommandConfig) {
     _.forOwn(global.defaultCommandConfig, (value, key) => {
       if (!config[key] && value) {
@@ -119,7 +147,7 @@ export const loadCommands = () => {
 
 const config = loadCommands();
 loadConfig(config);
-
+log.info('resolve command paths ', config);
 global.defaultCommandConfig = config;
 
 export default config;
