@@ -206,7 +206,7 @@ class MongoServerInspector {
   }
 
   inspectRoles(db) {
-    const roles = { text: 'Roles', children: [] };
+    const roles = { text: 'Roles', children: [], type: treeNodeTypes.ROLES };
     return new Promise((resolve) => {
       db.command({ rolesInfo: 1, showBuiltinRoles: true })
         .then((roleList) => {
@@ -214,19 +214,21 @@ class MongoServerInspector {
             resolve(roles);
             return;
           }
-          roles.children = _.map(roleList.roles, (role) => {
+          roles.children[0] = { text: 'Built-In', type: treeNodeTypes.ROLES, children: [] };
+          _.each(roleList.roles, (role) => {
             if (role.isBuiltin) {
-              return {
+              roles.children[0].children.push({
                 text: role.role,
                 db: role.db,
                 type: treeNodeTypes.DEFAULT_ROLE
-              };
+              });
+            } else {
+              roles.children.push({
+                text: role.role,
+                db: role.db,
+                type: treeNodeTypes.ROLE
+              });
             }
-            return {
-              text: role.role,
-              db: role.db,
-              type: treeNodeTypes.ROLE
-            };
           });
           resolve(roles);
         })
