@@ -25,7 +25,7 @@
     "dev:install": "yarn install --ignore-scripts",
     "dev:build": "yarn run build -- --source-maps",
     "dev:cbuild": "yarn run clean && yarn run dev:build",
-    "dev:watch": "nodemon --watch src --exec \"yarn dev:cbuild\"",
+    "dev:watch": "nodemon --watch src --exec \"yarn dev\"",
     "start": "node lib/",
     "debug": "node --nolazy --debug-brk=5858 lib",
     "clean": "rimraf lib controller-dev.log",
