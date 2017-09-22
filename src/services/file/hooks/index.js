@@ -1,4 +1,9 @@
-/*
+/**
+ * @Author: guiguan
+ * @Date:   2017-01-27T09:52:50+11:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-09-22T11:07:36+10:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,14 +23,7 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Author: guiguan
- * @Date:   2017-01-27T09:52:50+11:00
- * @Last modified by:   guiguan
- * @Last modified time: 2017-04-30T17:26:57+10:00
- */
-
-import normaliseItems from './normaliseItems';
+import normaliseItems from '~/hooks/normaliseItems';
 import validateItems from './validateItems';
 import openFile from './openFile';
 import writeFile from './writeFile';

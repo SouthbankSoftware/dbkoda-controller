@@ -1,4 +1,9 @@
-/*
+/**
+ * @Author: guiguan
+ * @Date:   2017-09-22T09:43:34+10:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-09-22T11:20:43+10:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,13 +23,31 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Add any common hooks you want to share across services in here.
-//
-// Below is an example of how a hook is written and exported. Please see
-// http://docs.feathersjs.com/hooks/readme.html for more details on hooks.
+import normaliseItems from '~/hooks/normaliseItems';
+import validateItems from './validateItems';
+import aggregate from './aggregate';
 
-exports.myHook = function(_options) {
-  return function(_hook) {
-    console.log('My custom global hook ran. Feathers is awesome!');
-  };
+const before = {
+  all: [normaliseItems(), validateItems()],
+  find: [],
+  get: [],
+  create: [aggregate()],
+  update: [],
+  patch: [],
+  remove: [],
+};
+
+const after = {
+  all: [],
+  find: [],
+  get: [],
+  create: [],
+  update: [],
+  patch: [],
+  remove: [],
+};
+
+export default {
+  before,
+  after,
 };
