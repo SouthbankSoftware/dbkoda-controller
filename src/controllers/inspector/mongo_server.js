@@ -37,7 +37,7 @@ class MongoServerInspector {
       Promise.all([
         this.inspectDatabases(db),
         this.inspectUsers(db),
-        this.inspectRoles(db),
+        this.inspectAllRoles(db),
         this.inspectReplicaMembers(db),
       ])
         .then((value) => {
@@ -205,18 +205,42 @@ class MongoServerInspector {
     });
   }
 
-  inspectRoles(db) {
-    const roles = { text: 'Roles', children: [], type: treeNodeTypes.ROLES };
+  inspectAllRoles(db) {
     return new Promise((resolve) => {
-      db.command({ rolesInfo: 1, showBuiltinRoles: true })
+      const allRoles = { text: 'Roles', children: [] };
+      const promises = [];
+      const adminDb = db.admin();
+      adminDb.listDatabases().then((dbs) => {
+        _.map(dbs.databases, (currentDb) => {
+          promises.push(this.inspectRoles(db, currentDb));
+        });
+        Promise.all(promises).then((values) => {
+          allRoles.children = values;
+          allRoles.children = allRoles.children.filter((roles) => {
+            return !roles.children.length <= 0;
+          });
+          resolve(allRoles);
+        });
+      });
+    });
+  }
+
+  inspectRoles(db, currentDb) {
+    return new Promise((resolve) => {
+      const dbName = currentDb.name;
+      const showBuiltin = (dbName === 'admin');
+      db.db(dbName).command({ rolesInfo: 1, showBuiltinRoles: showBuiltin })
         .then((roleList) => {
+          const roles = { text: dbName, children: [] };
           if (!roleList || roleList.length <= 0) {
             resolve(roles);
-            return;
+            return roles;
           }
-          roles.children[0] = { text: 'Built-In', type: treeNodeTypes.ROLES, children: [] };
+          if (showBuiltin) {
+            roles.children[0] = { text: 'Built-In', children: [] };
+          }
           _.each(roleList.roles, (role) => {
-            if (role.isBuiltin) {
+            if (showBuiltin && role.isBuiltin) {
               roles.children[0].children.push({
                 text: role.role,
                 db: role.db,
@@ -234,9 +258,9 @@ class MongoServerInspector {
         })
         .catch((err) => {
           l.error('inspectRoles error ', err);
-          return roles;
+          resolve();
         });
-    });
+      });
   }
 
   getMemberState(member) {
