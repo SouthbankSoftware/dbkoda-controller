@@ -231,7 +231,7 @@ class MongoServerInspector {
       const showBuiltin = (dbName === 'admin');
       db.db(dbName).command({ rolesInfo: 1, showBuiltinRoles: showBuiltin })
         .then((roleList) => {
-          const roles = { text: dbName, children: [] };
+          const roles = { text: dbName, children: [], type: treeNodeTypes.ROLES };
           if (!roleList || roleList.length <= 0) {
             resolve(roles);
             return roles;
