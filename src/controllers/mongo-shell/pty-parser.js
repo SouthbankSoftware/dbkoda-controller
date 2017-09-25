@@ -56,7 +56,6 @@ class Parser extends EventEmitter {
    * @param data
    */
   onRead(data) {
-    // log.debug('get output data from pty', data);
     this.parse(data);
     let cached = null;
     if (this.buffers.length > 0) {
@@ -78,11 +77,15 @@ class Parser extends EventEmitter {
     }
   }
 
+  /**
+   * parse the data from pty output.
+   * only god and Joey know how it works. please don't make any change
+   * @param data
+   */
   parse(data) {
     for (let i = 0, len = data.length; i < len; i += 1) {
       const code = data.charCodeAt(i);
       const ch = data.charAt(i);
-      // console.log('get char ch=', ch, ' code=', code, 'x=', this.bufferX);
       switch (this.state) {
         case ParseState.NORMAL:
           if (Object.prototype.hasOwnProperty.call(normalStateHandler, code)) {

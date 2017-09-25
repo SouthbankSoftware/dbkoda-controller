@@ -16,14 +16,13 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/**
+ *
+ *
  * @Author: Wahaj Shamim <wahaj>
  * @Date:   2017-02-13T12:23:52+11:00
  * @Email:  wahaj@southbanksoftware.com
  * @Last modified by:   chris
- * @Last modified time: 2017-06-19T15:45:36+10:00
+ * @Last modified time: 2017-09-11T15:36:13+10:00
  */
 
 /* eslint-disable class-methods-use-this */
@@ -38,6 +37,7 @@ class MongoServerInspector {
       Promise.all([
         this.inspectDatabases(db),
         this.inspectUsers(db),
+        this.inspectRoles(db),
         this.inspectReplicaMembers(db),
       ])
         .then((value) => {
@@ -202,6 +202,40 @@ class MongoServerInspector {
     }).catch((err) => {
       l.error('get error ', err);
       return users;
+    });
+  }
+
+  inspectRoles(db) {
+    const roles = { text: 'Roles', children: [], type: treeNodeTypes.ROLES };
+    return new Promise((resolve) => {
+      db.command({ rolesInfo: 1, showBuiltinRoles: true })
+        .then((roleList) => {
+          if (!roleList || roleList.length <= 0) {
+            resolve(roles);
+            return;
+          }
+          roles.children[0] = { text: 'Built-In', type: treeNodeTypes.ROLES, children: [] };
+          _.each(roleList.roles, (role) => {
+            if (role.isBuiltin) {
+              roles.children[0].children.push({
+                text: role.role,
+                db: role.db,
+                type: treeNodeTypes.DEFAULT_ROLE
+              });
+            } else {
+              roles.children.push({
+                text: role.role,
+                db: role.db,
+                type: treeNodeTypes.ROLE
+              });
+            }
+          });
+          resolve(roles);
+        })
+        .catch((err) => {
+          l.error('inspectRoles error ', err);
+          return roles;
+        });
     });
   }
 

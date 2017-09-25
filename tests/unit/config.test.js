@@ -20,18 +20,24 @@
 /**
  * Created by joey on 9/8/17.
  */
-
-import {loadConfig} from '../../src/config';
+import '../../src/app';
+import {loadConfig, loadConfigFromYamlFile} from '../../src/config';
 
 const os = require('os');
 const assert = require('assert');
 const _ = require('lodash');
 const path = require('path');
 
-
 describe('configure path tests', () => {
   it('load path without configure file', () => {
-    const config = loadConfig();
+    const config = loadConfig({
+      mongoCmd: null,
+      mongoVersionCmd: null,
+      mongodumpCmd: null,
+      mongorestoreCmd: null,
+      mongoimportCmd: null,
+      mongoexportCmd: null
+    });
     assert.notEqual(config.mongoCmd, null);
     assert.notEqual(config.mongodumpCmd, null);
     assert.notEqual(config.mongoexportCmd, null);
@@ -50,7 +56,8 @@ describe('configure path tests', () => {
 
   it('load path with mongo configuration only', (done) => {
     const p = path.join(__dirname, '/config_mongo.yml');
-    const config = loadConfig(p);
+    const config = loadConfigFromYamlFile(p);
+    loadConfig(config);
     console.log('config = ', config);
     assert.notEqual(config.mongoCmd, null);
     assert.notEqual(config.mongodumpCmd, null);
@@ -73,5 +80,25 @@ describe('configure path tests', () => {
       });
     }
     done();
+  });
+
+  it('load path with exe extension', () => {
+    const p = path.join(__dirname, '/config_mongo_exe.yml');
+    const config = loadConfigFromYamlFile(p);
+    assert.equal(config.mongoCmd, 'mongo.exe');
+  });
+
+  it('load none existed file', () => {
+    const config = loadConfigFromYamlFile('xxxxx');
+    assert.equal(config.mongoCmd, null);
+  });
+
+  it('load commands from file', () => {
+    const config = loadConfigFromYamlFile(path.join(__dirname, 'config_1.yml'));
+    assert.equal(config.mongoCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo');
+    assert.equal(config.mongodumpCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongodump');
+    assert.equal(config.mongorestoreCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongorestore');
+    assert.equal(config.mongoimportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoimport');
+    assert.equal(config.mongoexportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoexport');
   });
 });
