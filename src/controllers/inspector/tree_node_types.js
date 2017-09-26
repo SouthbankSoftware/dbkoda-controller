@@ -30,6 +30,7 @@ module.exports = {
     USERS: 'user',
     DEFAULT_ROLE: 'default_role',
     ROLE: 'role',
+    ROLES: 'roles',
     REPLICA_MEMBER: 'replica_member',
     PRIMARY: 'primary',
     SECONDARY: 'secondary',
