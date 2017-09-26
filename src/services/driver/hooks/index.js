@@ -18,23 +18,26 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// const globalHooks = require('../../../hooks');
+// const hooks = require('feathers-hooks');
 
-module.exports = {
-  TreeNodeType: {
-    DATABASE: 'database',
-    COLLECTION: 'collection',
-    INDEX: 'index',
-    SHARD: 'shard',
-    CONFIG: 'config',
-    MONGOS: 'mongos',
-    USERS: 'user',
-    DEFAULT_ROLE: 'default_role',
-    ROLE: 'role',
-    ROLES: 'roles',
-    REPLICA_MEMBER: 'replica_member',
-    PRIMARY: 'primary',
-    SECONDARY: 'secondary',
-    ARBITER: 'arbiter',
-  }
 
+exports.before = {
+  all: [],
+  find: [],
+  get: [],
+  create: [],
+  update: [],
+  patch: [],
+  remove: []
+};
+
+exports.after = {
+  all: [],
+  find: [],
+  get: [],
+  create: [],
+  update: [],
+  patch: [],
+  remove: []
 };

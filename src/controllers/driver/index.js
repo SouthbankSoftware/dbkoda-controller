@@ -17,24 +17,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+ * Created by joey on 26/9/17.
+ */
 
+const EventEmitter = require('events').EventEmitter;
 
-module.exports = {
-  TreeNodeType: {
-    DATABASE: 'database',
-    COLLECTION: 'collection',
-    INDEX: 'index',
-    SHARD: 'shard',
-    CONFIG: 'config',
-    MONGOS: 'mongos',
-    USERS: 'user',
-    DEFAULT_ROLE: 'default_role',
-    ROLE: 'role',
-    ROLES: 'roles',
-    REPLICA_MEMBER: 'replica_member',
-    PRIMARY: 'primary',
-    SECONDARY: 'secondary',
-    ARBITER: 'arbiter',
+export default class Driver extends EventEmitter {
+  constructor(connect) {
+    super();
+    this.connect = connect;
   }
 
-};
+  runCommands(commands) {
+    const db = this.connect.driver;
+    if (!db) {
+      return Promise.reject('cant find mongo driver');
+    }
+    log.debug(`run ${commands} on driver`);
+    const output = eval(commands);
+    return Promise.resolve(output);
+  }
+}
