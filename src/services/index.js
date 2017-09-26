@@ -39,6 +39,7 @@ import aggregator from './aggregator';
 import blog from './blog';
 import treeAction from './tree-actions';
 import osCommandsService from './os-commands';
+import driverService from './driver';
 
 module.exports = function() {
   const app = this;
@@ -62,6 +63,7 @@ module.exports = function() {
   app.configure(blog);
   app.configure(treeAction);
   app.configure(osCommandsService);
+  app.configure(driverService);
 
   if (process.env.NODE_ENV !== 'production') {
     const monitor = require('./monitor');

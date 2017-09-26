@@ -30,10 +30,12 @@ export default class Driver extends EventEmitter {
   }
 
   runCommands(commands) {
-    const driver = this.connect.driver;
-    if (!driver) {
+    const db = this.connect.driver;
+    if (!db) {
       return Promise.reject('cant find mongo driver');
     }
     log.debug(`run ${commands} on driver`);
+    const output = eval(commands);
+    return Promise.resolve(output);
   }
 }
