@@ -23,8 +23,7 @@
 
 
 
-const errors = require('feathers-errors');
-const _ = require('lodash');
+// const errors = require('feathers-errors');
 const hooks = require('./hooks');
 const Driver = require('../../controllers/driver');
 
@@ -36,20 +35,8 @@ class DriverService {
         description: 'Run script through mongodb driver',
         parameters: [{
           in: 'query',
-          name: 'url',
+          name: 'commands',
           type: 'string',
-        }, {
-          in: 'query',
-          name: 'test',
-          type: 'bool'
-        }, {
-          in: 'query',
-          name: 'database',
-          type: 'string'
-        }, {
-          in: 'query',
-          name: 'discoverMembers',
-          type: 'bool'
         }]
       },
     };

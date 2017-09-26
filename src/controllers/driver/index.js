@@ -35,6 +35,5 @@ export default class Driver extends EventEmitter {
       return Promise.reject('cant find mongo driver');
     }
     log.debug(`run ${commands} on driver`);
-
   }
 }
