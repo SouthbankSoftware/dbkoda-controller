@@ -21,9 +21,6 @@
  * Created by joey on 26/9/17.
  */
 
-
-
-
 const hooks = require('./hooks');
 const Driver = require('../../controllers/driver');
 
