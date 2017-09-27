@@ -22,6 +22,7 @@ import path from 'path';
 import os from 'os';
 import archiver from 'archiver';
 import fs from 'fs';
+import _ from 'lodash';
 
 const hooks = require('./hooks');
 
@@ -76,22 +77,9 @@ class SupportBundleService {
 
       archive.pipe(output);
 
-      // Append controller log.
-      if (fs.existsSync(filePaths.controllerLogPath)) {
-        archive.append(fs.createReadStream(filePaths.controllerLogPath), {
-          name: 'controllerLog.json',
-        });
-      }
-
-      // Append dbKoda log.
-      if (filePaths.dbKodaLogPath && fs.existsSync(filePaths.dbKodaLogPath)) {
-        archive.append(fs.createReadStream(filePaths.dbKodaLog), {
-          name: 'dbKodaLog.json',
-        });
-      }
-
       // Append stateStore.
       if (fs.existsSync(filePaths.statePath)) {
+        l.info('Appending State Store...');
         archive.append(fs.createReadStream(filePaths.statePath), {
           name: 'stateStore.json',
         });
@@ -99,8 +87,25 @@ class SupportBundleService {
 
       // Append config.yml
       if (fs.existsSync(filePaths.configPath)) {
+        l.info('Appending Config...');
         archive.append(fs.createReadStream(filePaths.configPath), {
           name: 'config.yml',
+        });
+      }
+
+      // Append controller log.
+      if (fs.existsSync(filePaths.controllerLogPath)) {
+        l.info('Appending Controller Log...');
+        archive.append(fs.createReadStream(filePaths.controllerLogPath), {
+          name: 'controllerLog.txt',
+        });
+      }
+
+      // Append dbKoda log.
+      if (filePaths.dbKodaLogPath && fs.existsSync(filePaths.dbKodaLogPath)) {
+        l.info('Appending App Log...');
+        archive.append(fs.createReadStream(filePaths.dbKodaLogPath), {
+          name: 'applicationLog.txt',
         });
       }
 
@@ -113,7 +118,6 @@ class SupportBundleService {
     return new Promise((resolve, reject) => {
       // Do all the logic to create a bundle.
       let controllerLogPath = path.resolve('controller-dev.log');
-      let dbKodaLogPath;
       let configPath = path.resolve(os.homedir(), '.dbKoda', 'config.yml');
       const statePath = path.resolve(
         os.homedir(),
@@ -128,11 +132,57 @@ class SupportBundleService {
 
       l.info('Creating new support bundle (dev mode).');
       l.info('The following paths will be added to a support bundle: ');
+      let logPath;
       if (global.IS_PROD) {
-        controllerLogPath = process.env.LOG_PATH;
+        logPath = path.resolve(path.dirname(process.env.LOG_PATH));
         configPath = process.env.CONFIG_PATH;
-        dbKodaLogPath = path.dirname(controllerLogPath) + '';
+      } else if (os.release().match(/Win/gi)) {
+        logPath = path.resolve(
+          os.homedir(),
+          'AppData',
+          'Roaming',
+          'dbKoda',
+          'logs',
+        );
+      } else {
+        logPath = path.resolve(
+          os.homedir(),
+          'Library',
+          'Application Support',
+          'dbKoda',
+          'logs',
+        );
       }
+
+      const files = fs.readdirSync(logPath);
+      const controllerLogList = [];
+      const appLogList = [];
+
+      l.info('Files in Log Directory:');
+      files.map((file) => {
+        l.info(file);
+        if (file.match(/controller/g)) {
+          controllerLogList.push(file);
+        } else if (file.match(/app/g)) {
+          appLogList.push(file);
+        }
+      });
+
+      controllerLogPath = path.join(
+        logPath,
+        _.max(controllerLogList, (f) => {
+          const fullPath = path.join(logPath, f);
+          return fs.statSync(fullPath).ctime;
+        }),
+      );
+      const dbKodaLogPath = path.join(
+        logPath,
+        _.max(appLogList, (f) => {
+          const fullPath = path.join(logPath, f);
+          return fs.statSync(fullPath).ctime;
+        }),
+      );
+
       l.info('App Logs: ', dbKodaLogPath);
       l.info('Controller Logs: ', controllerLogPath);
       l.info('Config File: ', configPath);
