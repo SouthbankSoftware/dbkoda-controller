@@ -21,6 +21,7 @@
  * Created by joey on 26/9/17.
  */
 
+const errors = require('feathers-errors');
 const EventEmitter = require('events').EventEmitter;
 
 export default class Driver extends EventEmitter {
@@ -35,7 +36,19 @@ export default class Driver extends EventEmitter {
       return Promise.reject('cant find mongo driver');
     }
     log.debug(`run ${commands} on driver`);
-    const output = eval(commands);
-    return Promise.resolve(output);
+    console.oldlog = console.log;
+    console.log = (value) => {
+      log.debug('emit output', value);
+      this.emit(Driver.OUTPUT, value);
+    };
+    try {
+      eval(commands);
+    } catch (err) {
+      log.error('failed to run commands ', err);
+      throw new errors.BadRequest(err.message);
+    }
+    return Promise.resolve();
   }
 }
+
+Driver.OUTPUT = 'output-event';
