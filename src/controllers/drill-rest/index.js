@@ -19,12 +19,19 @@
  */
 
 /* eslint-disable class-methods-use-this */
+
+import { loadCommands } from '../../config';
+
+const exec = require('child_process').exec;
 const errors = require('feathers-errors');
 const hooks = require('feathers-hooks-common');
-const fs = require('fs');
-const sshTunnel = require('open-ssh-tunnel');
 const request = require('request-promise');
 const uuid = require('node-uuid');
+const _ = require('lodash');
+const drillJdbc = require('./jdbc-drill');
+const jdbcApi = require('./jdbc-api');
+
+const drillRestApi = {url: 'http://localhost:8047'};
 /**
  * Mongo instance connection controller
  */
@@ -38,8 +45,15 @@ class DrillRestController {
       // wait 1 second before retrying
       reconnectInterval: 1000,
     };
+    this.profileHash = {};  // will store the profiles which have been added to Drill Instance
+    this.profileDBHash = {}; // will store JDBC Connections with respect to the Profile and DB
     this.connections = {};
-    this.tunnels = {};
+
+    this.bDrillStarted = false;
+    this.drillInstance;
+    this.connectionAttempts = 0;
+
+    this.checkDrillConnectionStatus = this.checkDrillConnectionStatus.bind(this);
   }
 
   setup(app) {
@@ -50,118 +64,173 @@ class DrillRestController {
      * create connections for mongodb instance
      */
   create(params) {
-    const conn = Object.assign({}, params);
-    return new Promise((resolve, reject) => {
-      const connection = this.createShellConnection(conn);
-      this.checkConnectionStatus(connection).then((result) => {
-        if (result) {
-          // result.connectionId = connection.connId;
-          console.log(result);
-          resolve({id: connection.id, output: JSON.stringify(result)});
-        } else {
-          reject('unable to connect to drill interface');
+    const configObj = loadCommands();
+    log.info('Drill Cmd:', configObj.drillCmd);
+
+    if (!configObj.drillCmd) {
+      const err = new Error('Drill binary undetected');
+      err.code = 'DRILL_BINARY_UNDETECTED';
+      throw err;
+    }
+    // Check if Drill instance is not started and start the drill instance.
+    if (!this.bDrillStarted) {
+      const drillCmdStr = configObj.drillCmd + '/bin/drill-embedded';
+      console.log('drill cmd:', drillCmdStr);
+      this.drillInstance = exec(drillCmdStr, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`exec error: ${error}`);
+          return;
         }
-      }).catch((err) => {
-        l.error('failed to connect drill instance ', err.message);
-        const badRequest = new errors.BadRequest(err.message);
-        return reject(badRequest);
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
       });
+      this.bDrillStarted = true;
+    }
+    console.log('params:', params);
+    const profile = Object.assign({}, params);
+    let badRequestError;
+    return new Promise((resolve, reject) => {
+      const resolveJdbcConnForProfile = (profile) => {
+        const profDB = profile.alias + '|' + profile.db;
+        if (this.profileDBHash[profDB] == null) {
+          this.createJdbcConnection(profile).then((jdbcConn) => {
+            console.log(jdbcConn);
+            const jdbcConId = uuid.v1();
+            this.profileDBHash[profDB] = jdbcConId;
+            this.connections[jdbcConId] = {connection: jdbcConn, db: profile.db};
+            resolve({id: jdbcConId, output: profile.output});
+          });
+        } else {
+          resolve({id: this.profileDBHash[profDB], output: profile.output});
+        }
+      };
+      const cbConnectionResult = (result) => {
+        if (result && result.status == 'Running!') {
+          if (this.profileHash[profile.alias] == null) {
+            this.addProfile(profile).then((resultProfile) => {
+              console.log(resultProfile);
+              profile.output = JSON.stringify(resultProfile);
+              this.profileHash[profile.alias] = profile;
+              resolveJdbcConnForProfile(profile);
+            })
+            .catch((err) => {
+              l.error('ProfileAddError: failed to add profile via Drill Rest API', err.message);
+              badRequestError = new errors.BadRequest(err.message);
+              reject(badRequestError);
+            });
+          } else {
+            resolveJdbcConnForProfile(profile);
+          }
+        } else {
+          l.error('ConnectionFailed: unable to connect to drill interface');
+          badRequestError = new errors.BadRequest('ConnectionFailed: unable to connect to drill interface');
+          reject(badRequestError);
+        }
+      };
+      this.checkDrillConnectionStatus(cbConnectionResult);
     });
   }
-  checkConnectionStatus(connection) {
-    if (connection) {
+
+  // Function to ping the drill instance when it has started in the create function. Will try for 60 attempts.
+  checkDrillConnectionStatus(cbFuncResult) {
+    console.log('checkDrillConnectionStatus:', this.connectionAttempts);
+    this.checkDrillConnection().then((result) => {
+      cbFuncResult(result);
+    }).catch((err) => {
+      l.info('Ping drill instance till it comes online, Attempt: ' + this.connectionAttempts, err.message);
+      if (this.connectionAttempts < 60) {
+        this.connectionAttempts += 1;
+        _.delay(this.checkDrillConnectionStatus, 1000, cbFuncResult);
+      } else {
+        cbFuncResult(null);
+      }
+    });
+  }
+
+  // Rest api call to check if the Drill Instance is running based on Request Promise
+  checkDrillConnection() {
+    const reqPromise = request.defaults({
+      baseUrl: drillRestApi.url,
+      json: true,
+    });
+    return reqPromise({
+      uri: '/status.json',
+      method: 'GET',
+    });
+  }
+
+  // Rest api call to add a new profile to Embedded Drill Instance
+  addProfile(profile) {
+    console.log(profile);
+    if (profile) {
       const reqPromise = request.defaults({
-        baseUrl: connection.url,
+        baseUrl: drillRestApi.url,
         json: true,
       });
       return reqPromise({
-        uri: '/status.json',
-        method: 'GET'});
+        uri: '/storage/myplugin.json',
+        method: 'POST',
+        body: {
+          name: profile.alias,
+          config: {
+            type: 'mongo',
+            connection: profile.url,
+            enabled: true
+          }
+        },
+        json: true
+      });
     }
     return null;
   }
+
+  // Function to create a JDBC instance which will be used for query purpose
+  createJdbcConnection(profile) {
+    return new Promise((resolve, reject) => {
+      const conObj = {
+        url: 'jdbc:drill:drillbit=localhost:31010;schema=' + profile.alias,
+        minpoolsize: 5,
+        maxpoolsize: 10,
+      };
+      drillJdbc.getJdbcInstance(conObj, (err, jdbcCon) => {
+        if (err) {
+          l.error(err);
+          reject(err);
+        } else {
+          resolve(jdbcCon);
+        }
+      });
+    });
+  }
+
   remove(id) {
     try {
-        if (!this.connections[id]) {
-          return Promise.resolve({id});
-        }
-        delete this.connections[id];
-        return Promise.resolve({id});
-    } catch (err) {
-        l.error('get error', err);
-        return Promise.reject('Failed to remove connection.');
+      if (!this.profileHash[id]) {
+        return Promise.resolve({ id });
       }
-  }
-  createShellConnection(params) {
-    let connUrl = 'http://';
-    if (params.ssl) {
-      connUrl = 'https://';
+      delete this.profileHash[id];
+      return Promise.resolve({ id });
+    } catch (err) {
+      l.error('get error', err);
+      return Promise.reject('Failed to remove connection.');
     }
-    connUrl += params.hostname;
-    connUrl += ':';
-    connUrl += params.port;
-
-    const connId = uuid.v1();
-    const connection = {id: connId, url: connUrl};
-    this.connections[connId] = connection;
-    return connection;
   }
 
   getData(id, params) {
-    const connection = this.connections[id];
-    if (connection) {
+    const jdbcCon = this.connections[id];
+    if (jdbcCon) {
+      jdbcApi.setup(jdbcCon.connection);
+      const queryArray = ['use ' + jdbcCon.db].concat(params.queries);
       return new Promise((resolve, reject) => {
-        this.getDataFromDrill(connection.url, params.sql).then((res) => {
-          console.log('result query:', res);
-          resolve(JSON.stringify(res));
+        jdbcApi.queryMultiple(queryArray).then((resultQueries) => {
+          const firstRes = resultQueries.shift();
+          console.log(JSON.stringify(firstRes));
+          resolve(resultQueries);
         }).catch((err) => {
-          l.error('failed to get data from drill instance ', err.message);
-          reject(err.message);
+          reject(err);
         });
       });
     }
-  }
-  getDataFromDrill(url, query) {
-    const reqPromise = request.defaults({
-      baseUrl: url,
-      json: true,
-    });
-    console.log('test wahaj,', url, query);
-    return reqPromise({
-        uri: '/query.json',
-        method: 'POST',
-        json: {
-          'queryType' : 'SQL',
-          'query' : query
-        }
-      });
-  }
-  createTunnel(params) {
-    if (params.ssh) {
-      const sshOpts = {
-        host: params.sshHost, // ip address of the ssh server
-        port: 22, // Number(params.sshPort), // port of the ssh server
-        username: params.remoteUser,
-        srcAddr: params.localHost,
-        srcPort: Number(params.localPort),
-        dstAddr: params.remoteHost, // ip address of mongo db server
-        dstPort: Number(params.remotePort), // port of mongo db server
-        localPort: Number(params.localPort),
-        localAddr: params.localHost,
-        readyTimeout: 5000,
-        forwardTimeout: 5000,
-      };
-      if (params.sshKeyFile) {
-        sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
-        sshOpts.passphrase = params.passPhrase;
-      } else {
-        sshOpts.password = params.remotePass;
-      }
-      return sshTunnel(sshOpts);
-    }
-    return new Promise((resolve) => {
-      resolve(null);
-    });
   }
 }
 
