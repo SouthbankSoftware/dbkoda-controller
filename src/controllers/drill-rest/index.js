@@ -29,9 +29,10 @@ const request = require('request-promise');
 const uuid = require('node-uuid');
 const _ = require('lodash');
 const drillJdbc = require('./jdbc-drill');
-const jdbcApi = require('./jdbc-api');
+const JdbcApi = require('./jdbc-api');
 
 const drillRestApi = {url: 'http://localhost:8047'};
+const jdbcApiInst = new JdbcApi();
 /**
  * Mongo instance connection controller
  */
@@ -98,7 +99,10 @@ class DrillRestController {
             const jdbcConId = uuid.v1();
             this.profileDBHash[profDB] = jdbcConId;
             this.connections[jdbcConId] = {connection: jdbcConn, db: profile.db};
-            resolve({id: jdbcConId, output: profile.output});
+            jdbcApiInst.setup(jdbcConn);
+            jdbcApiInst.query('use ' + profile.db).then((resultQuery) => {
+              resolve({id: jdbcConId, output: JSON.stringify(resultQuery)});
+            });
           });
         } else {
           resolve({id: this.profileDBHash[profDB], output: profile.output});
@@ -219,12 +223,12 @@ class DrillRestController {
   getData(id, params) {
     const jdbcCon = this.connections[id];
     if (jdbcCon) {
-      jdbcApi.setup(jdbcCon.connection);
-      const queryArray = ['use ' + jdbcCon.db].concat(params.queries);
+      jdbcApiInst.setup(jdbcCon.connection);
+      const queryArray = params.queries; // ['use ' + jdbcCon.db].concat(params.queries);
       return new Promise((resolve, reject) => {
-        jdbcApi.queryMultiple(queryArray).then((resultQueries) => {
-          const firstRes = resultQueries.shift();
-          console.log(JSON.stringify(firstRes));
+        jdbcApiInst.queryMultiple(queryArray).then((resultQueries) => {
+          // const firstRes = resultQueries.shift();
+          // console.log(JSON.stringify(firstRes));
           resolve(resultQueries);
         }).catch((err) => {
           reject(err);
