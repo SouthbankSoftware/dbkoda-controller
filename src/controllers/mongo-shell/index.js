@@ -23,7 +23,7 @@
  */
 // import fs from 'fs';
 import _ from 'lodash';
-import {loadCommands} from '../../config';
+import { loadCommands } from '../../config';
 
 const spawn = require('node-pty').spawn;
 const execSync = require('child_process').execSync;
@@ -63,7 +63,7 @@ class MongoShell extends EventEmitter {
         return 'UNKNOWN';
       }
 
-      const output = execSync(configObj.mongoVersionCmd, {encoding: 'utf8'});
+      const output = execSync(configObj.mongoVersionCmd, { encoding: 'utf8' });
       const mongoVStr = output.split('\n');
       if (mongoVStr && mongoVStr.length > 0) {
         if (mongoVStr[0].indexOf('MongoDB shell version v') >= 0) {
@@ -81,14 +81,19 @@ class MongoShell extends EventEmitter {
   }
 
   createMongoShellParameters() {
-    const ver = this.shellVersion.trim().substring(0, 6).trim();
+    const ver = this.shellVersion
+      .trim()
+      .substring(0, 6)
+      .trim();
     const mongo30 = ver.indexOf('3.0') >= 0;
     const connection = this.connection;
     let params = [];
     if (mongo30) {
       params.push('--host');
       if (connection.options && connection.options.replicaSet) {
-        params = params.concat([connection.options.replicaSet + '/' + connection.hosts]);
+        params = params.concat([
+          connection.options.replicaSet + '/' + connection.hosts,
+        ]);
       } else {
         params = params.concat([connection.hosts]);
       }
@@ -98,7 +103,9 @@ class MongoShell extends EventEmitter {
       params.push(connection.database);
     } else {
       if (connection.url && connection.url.indexOf('ssl=') > 0) {
-        const url = connection.url.replace(/.ssl=true/, '').replace(/.ssl=false/, '');
+        const url = connection.url
+          .replace(/.ssl=true/, '')
+          .replace(/.ssl=false/, '');
         params.push(url);
       } else {
         params.push(connection.url);
@@ -107,12 +114,18 @@ class MongoShell extends EventEmitter {
         params.push('--ssl');
       }
     }
-    const {username, password} = connection;
+    const { username, password } = connection;
     if (username) {
       params = params.concat(['--username', username]);
       if (password) {
         params = params.concat(['--password', password]);
       }
+    }
+    if (connection.authenticationDatabase) {
+      params = params.concat([
+        '--authenticationDatabase',
+        connection.authenticationDatabase,
+      ]);
     }
     return params;
   }
@@ -150,7 +163,7 @@ class MongoShell extends EventEmitter {
     if (os.platform() !== 'win32') {
       _.assign(PtyOptions, {
         uid: process.getuid(),
-        gid: process.getgid()
+        gid: process.getgid(),
       });
     }
 
@@ -159,7 +172,11 @@ class MongoShell extends EventEmitter {
     }
 
     try {
-      this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], PtyOptions);
+      this.shell = spawn(
+        mongoCmdArray[0],
+        [...mongoCmdArray.slice(1), ...parameters],
+        PtyOptions,
+      );
     } catch (error) {
       console.error(error);
       throw error;
@@ -180,7 +197,10 @@ class MongoShell extends EventEmitter {
     this.shell.on('data', this.parser.onRead.bind(this.parser));
     this.parser.on('data', this.readParserOutput.bind(this));
     this.parser.on('command-ended', this.commandEnded.bind(this));
-    this.parser.on('incomplete-command-ended', this.incompleteCommandEnded.bind(this));
+    this.parser.on(
+      'incomplete-command-ended',
+      this.incompleteCommandEnded.bind(this),
+    );
 
     // handle shell output
     if (this.connection.requireSlaveOk) {
@@ -199,7 +219,9 @@ class MongoShell extends EventEmitter {
       this.initialized = true;
     } else if (this.autoComplete) {
       this.autoComplete = false;
-      const output = this.autoCompleteOutput.replace(/shellAutocomplete.*__autocomplete__/, '').replace(MongoShell.prompt, '');
+      const output = this.autoCompleteOutput
+        .replace(/shellAutocomplete.*__autocomplete__/, '')
+        .replace(MongoShell.prompt, '');
       this.emit(MongoShell.AUTO_COMPLETE_END, output);
     } else if (this.syncExecution) {
       this.syncExecution = false;
@@ -239,7 +261,12 @@ class MongoShell extends EventEmitter {
       this.autoCompleteOutput += data.trim();
     } else if (this.syncExecution && data !== MongoShell.prompt) {
       this.emit(MongoShell.SYNC_OUTPUT_EVENT, data);
-    } else if (!(data === this.previousOutput && this.previousOutput === MongoShell.prompt)) {
+    } else if (
+      !(
+        data === this.previousOutput &&
+        this.previousOutput === MongoShell.prompt
+      )
+    ) {
       this.emitOutput(data + MongoShell.enter);
     }
     this.previousOutput = data;
@@ -277,7 +304,7 @@ class MongoShell extends EventEmitter {
     // this.emit(MongoShell.OUTPUT_EVENT, output);
     this.outputQueue.push(output);
 
-    const milliseconds = (new Date()).getTime();
+    const milliseconds = new Date().getTime();
 
     if (milliseconds - this.prevExecutionTime > 200) {
       this.emitBufferedOutput();
@@ -285,7 +312,7 @@ class MongoShell extends EventEmitter {
   }
 
   emitBufferedOutput() {
-    this.prevExecutionTime = (new Date()).getTime();
+    this.prevExecutionTime = new Date().getTime();
     let allData = '';
     this.outputQueue.map((o) => {
       // this.emit(MongoShell.OUTPUT_EVENT, o);
@@ -339,7 +366,7 @@ class MongoShell extends EventEmitter {
   writeSyncCommand(data) {
     l.info('write sync command ', data);
     this.syncExecution = true;
-    this.prevExecutionTime = (new Date()).getTime();
+    this.prevExecutionTime = new Date().getTime();
     this.write(data + MongoShell.enter);
   }
 
@@ -353,10 +380,16 @@ class MongoShell extends EventEmitter {
     const split = data.split('\n');
     this.executing = true;
     this.outputQueue = [];
-    this.prevExecutionTime = (new Date()).getTime();
+    this.prevExecutionTime = new Date().getTime();
     const cmdQueue = [];
     split.forEach((cmd) => {
-      if (cmd && cmd.trim() && cmd.trim() !== 'exit' && cmd.trim() !== 'exit;' && cmd.trim().indexOf('quit()') < 0) {
+      if (
+        cmd &&
+        cmd.trim() &&
+        cmd.trim() !== 'exit' &&
+        cmd.trim() !== 'exit;' &&
+        cmd.trim().indexOf('quit()') < 0
+      ) {
         if (cmd.match(/\r$/)) {
           cmdQueue.push(cmd);
         } else {
