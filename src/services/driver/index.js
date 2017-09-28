@@ -21,9 +21,6 @@
  * Created by joey on 26/9/17.
  */
 
-
-
-// const errors = require('feathers-errors');
 const hooks = require('./hooks');
 const Driver = require('../../controllers/driver');
 
@@ -45,11 +42,16 @@ class DriverService {
   setup(app) {
     this.app = app;
     this.connection = app.service('mongo/connection/controller');
+    this.shellService = app.service('mongo-shells');
   }
 
   update(id, data) {
     const connect = this.connection.connections[id];
+    const shellId = data.shellId;
     const driver = new Driver(connect);
+    driver.on(Driver.OUTPUT, (o) => {
+      this.shellService.emit('shell-output', {output: o + '\r', id, shellId});
+    });
     return driver.runCommands(data.commands);
   }
 }
