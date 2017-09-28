@@ -108,12 +108,6 @@ class MongoConnectionController {
             console.log('Tunnel created successfully', resTunnel);
             tunnel = resTunnel;
           }
-
-          l.info('Driver Options: ', that.options);
-          if (conn.authenticationDatabase) {
-            l.info('Authorization database set: ', conn.authenticationDatabase);
-            that.options.authSource = params.authenticationDatabase;
-          }
           this.mongoClient.connect(conn.url, that.options, (err, db) => {
             if (err !== null) {
               l.error('failed to connect mongo instance ', err.message);
@@ -144,7 +138,11 @@ class MongoConnectionController {
         dbVersion = v.version;
         if (conn.username && conn.password) {
           return new Promise((resolve, reject) => {
-            db.authenticate(conn.username, conn.password, (err, _result) => {
+            let authDb = db;
+            if (conn.authenticationDatabase) {
+              authDb = db.db(conn.authenticationDatabase);
+            }
+            authDb.authenticate(conn.username, conn.password, (err, _result) => {
               if (!err) {
                 resolve(db);
               } else {
