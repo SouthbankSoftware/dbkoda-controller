@@ -94,7 +94,6 @@ class MongoConnectionController {
    * create connections for mongodb instance
    */
   create(params) {
-    l.info('Connection Params: ', params);
     let conn = Object.assign({}, params);
     const that = this;
     conn = this.parseMongoConnectionURI(conn);
@@ -142,14 +141,18 @@ class MongoConnectionController {
             if (conn.authenticationDatabase) {
               authDb = db.db(conn.authenticationDatabase);
             }
-            authDb.authenticate(conn.username, conn.password, (err, _result) => {
-              if (!err) {
-                resolve(db);
-              } else {
-                log.error('authentication error ', err);
-                reject(new errors.NotAuthenticated('Authentication Failed'));
-              }
-            });
+            authDb.authenticate(
+              conn.username,
+              conn.password,
+              (err, _result) => {
+                if (!err) {
+                  resolve(db);
+                } else {
+                  log.error('authentication error ', err);
+                  reject(new errors.NotAuthenticated('Authentication Failed'));
+                }
+              },
+            );
           });
         }
         return db;
@@ -183,7 +186,6 @@ class MongoConnectionController {
           l.debug('this is test connection.');
           return { success: true };
         }
-        l.info('Conn object: ', conn);
         return this.createMongoShell(db, conn, dbVersion)
           .then((v) => {
             if (v.id && tunnel) {
