@@ -32,7 +32,8 @@ export const loadConfigFromYamlFile = (p) => {
     mongodumpCmd: null,
     mongorestoreCmd: null,
     mongoimportCmd: null,
-    mongoexportCmd: null
+    mongoexportCmd: null,
+    drillCmd: null
   };
   if (!fs.existsSync(p)) {
     console.log('the configuration file doesnt exist ', p);
@@ -74,7 +75,7 @@ const getMongoPath = (mongoCmd) => {
 const applyPathToOtherCommands = (config) => {
   const mongoPath = getMongoPath(config.mongoCmd);
   _.keys(config).map((key) => {
-    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd') {
+    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd') {
       const cmdName = key.replace('Cmd', '');
       if (os.platform() === 'win32') {
         config[key] = mongoPath + '\\' + cmdName + '.exe';
