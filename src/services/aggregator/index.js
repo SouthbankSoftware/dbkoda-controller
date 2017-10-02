@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T09:43:34+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-09-22T11:16:58+10:00
+ * @Last modified time: 2017-10-02T16:12:47+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -30,7 +30,7 @@
 
  export class Aggregator {
    constructor(_options) {
-     this.events = [];
+     this.events = ['result'];
    }
 
    setup(app, _path) {
