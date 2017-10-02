@@ -105,7 +105,8 @@
     "strip-ansi": "^3.0.1",
     "winston": "^2.3.0",
     "winston-daily-rotate-file": "^1.4.6",
-    "ws": "^1.1.1"
+    "ws": "^1.1.1",
+    "jdbc": "^0.5.1"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
