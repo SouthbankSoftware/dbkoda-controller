@@ -1,4 +1,9 @@
-/*
+/**
+ * @Author: guiguan
+ * @Date:   2017-09-22T09:43:34+10:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-09-22T11:20:43+10:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,23 +23,31 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import normaliseItems from '~/hooks/normaliseItems';
+import validateItems from './validateItems';
+import aggregate from './aggregate';
 
-module.exports = {
-  TreeNodeType: {
-    DATABASE: 'database',
-    COLLECTION: 'collection',
-    INDEX: 'index',
-    SHARD: 'shard',
-    CONFIG: 'config',
-    MONGOS: 'mongos',
-    USERS: 'user',
-    DEFAULT_ROLE: 'default_role',
-    ROLE: 'role',
-    ROLES: 'roles',
-    REPLICA_MEMBER: 'replica_member',
-    PRIMARY: 'primary',
-    SECONDARY: 'secondary',
-    ARBITER: 'arbiter',
-  }
+const before = {
+  all: [normaliseItems(), validateItems()],
+  find: [],
+  get: [],
+  create: [aggregate()],
+  update: [],
+  patch: [],
+  remove: [],
+};
 
+const after = {
+  all: [],
+  find: [],
+  get: [],
+  create: [],
+  update: [],
+  patch: [],
+  remove: [],
+};
+
+export default {
+  before,
+  after,
 };

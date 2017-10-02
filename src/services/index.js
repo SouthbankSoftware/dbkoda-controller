@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-09-22T10:56:04+10:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,11 +21,6 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-06-09T13:22:42+10:00
- */
-
 import mongoStopExecution from './mongo-stop-execution';
 import mongoConnectionController from '../controllers/mongo-connection';
 import mongoInspectorController from '../controllers/inspector';
@@ -38,9 +36,12 @@ import autoComplete from './mongo-auto-complete';
 import linter from './linter';
 import syncExecution from './mongo-sync-execution';
 import file from './file';
+import aggregator from './aggregator';
 import blog from './blog';
 import treeAction from './tree-actions';
 import osCommandsService from './os-commands';
+import supportBundleService from './support-bundle';
+import driverService from './driver';
 import drill from './drill';
 
 module.exports = function() {
@@ -62,9 +63,12 @@ module.exports = function() {
   app.configure(mongoStopExecution);
   app.configure(syncExecution);
   app.configure(file);
+  app.configure(aggregator);
   app.configure(blog);
   app.configure(treeAction);
   app.configure(osCommandsService);
+  app.configure(supportBundleService);
+  app.configure(driverService);
   app.configure(drill);
 
   if (process.env.NODE_ENV !== 'production') {

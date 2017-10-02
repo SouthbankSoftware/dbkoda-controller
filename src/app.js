@@ -23,14 +23,13 @@
  * @Last modified time: 2017-06-09T11:51:26+10:00
  */
 
-
 import moment from 'moment';
 import _ from 'lodash';
 import winston from 'winston';
 import path from 'path';
 import compress from 'compression';
 import cors from 'cors';
-import feathers, {static as serveStatic} from 'feathers';
+import feathers, { static as serveStatic } from 'feathers';
 import hooks from 'feathers-hooks';
 import rest from 'feathers-rest';
 import bodyParser from 'body-parser';
@@ -54,7 +53,7 @@ global.UAT = process.env.UAT === 'true';
     colorize: 'all',
     timestamp() {
       return moment().format();
-    }
+    },
   };
 
   const transports = [new winston.transports.Console(commonOptions)];
@@ -68,17 +67,17 @@ global.UAT = process.env.UAT === 'true';
           datePattern: 'yyyy-MM-dd.',
           localTime: true,
           prepend: true,
-          json: false
-        })
-      )
+          json: false,
+        }),
+      ),
     );
   } else {
     transports.push(
       new winston.transports.File({
         name: 'info-file',
         filename: 'controller-dev.log',
-        level: 'debug'
-      })
+        level: 'debug',
+      }),
     );
   }
 
@@ -90,16 +89,16 @@ global.UAT = process.env.UAT === 'true';
       warn: 1,
       notice: 2,
       info: 3,
-      debug: 4
+      debug: 4,
     },
     colors: {
       error: 'red',
       warn: 'yellow',
       notice: 'green',
-      info: 'black',
-      debug: 'blue'
+      info: 'gray',
+      debug: 'blue',
     },
-    transports
+    transports,
   });
   global.log = global.l;
 
@@ -122,7 +121,7 @@ app
   .use(cors())
   .use('/', serveStatic(app.get('public')))
   .use(bodyParser.json())
-  .use(bodyParser.urlencoded({extended: true}))
+  .use(bodyParser.urlencoded({ extended: true }))
   .configure(hooks())
   .configure(rest())
   .configure(
@@ -131,21 +130,21 @@ app
       uiIndex: path.join(__dirname, '../public/docs.html'),
       info: {
         title: process.env.npm_package_fullName,
-        description: process.env.npm_package_description
-      }
-    })
+        description: process.env.npm_package_description,
+      },
+    }),
   )
   .configure(
     primus(
       {
         transformer: 'websockets',
-        timeout: false
+        timeout: false,
       },
       (primus) => {
         primus.library();
         primus.save(path.join(__dirname, '../public/dist/primus.js'));
-      }
-    )
+      },
+    ),
   )
   .configure(services)
   .configure(middleware);

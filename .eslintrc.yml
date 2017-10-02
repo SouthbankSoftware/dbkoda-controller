@@ -18,6 +18,7 @@ rules:
   no-cond-assign: [error, except-parens]
   no-nested-ternary: 0
   no-shadow: 0
+  no-eval: 0
   eqeqeq: 0
   array-callback-return: 0
   no-param-reassign: 0
