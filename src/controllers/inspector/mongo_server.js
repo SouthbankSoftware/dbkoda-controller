@@ -215,6 +215,9 @@ class MongoServerInspector {
           promises.push(this.inspectRoles(db, currentDb));
         });
         Promise.all(promises).then((values) => {
+          values = values.filter((value) => {
+            return value;
+          });
           allRoles.children = values;
           allRoles.children = allRoles.children.filter((roles) => {
             return !roles.children.length <= 0;
