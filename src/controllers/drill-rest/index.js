@@ -27,6 +27,7 @@ const errors = require('feathers-errors');
 const hooks = require('feathers-hooks-common');
 const request = require('request-promise');
 const uuid = require('node-uuid');
+const os = require('os');
 const _ = require('lodash');
 const drillJdbc = require('./jdbc-drill');
 const JdbcApi = require('./jdbc-api');
@@ -75,9 +76,22 @@ class DrillRestController {
     }
     // Check if Drill instance is not started and start the drill instance.
     if (!this.bDrillStarted) {
-      const drillCmdStr = configObj.drillCmd + '/bin/drill-embedded';
+      let drillCmdStr = configObj.drillCmd + '/bin/sqlline';
+      if (os.platform() === 'win32') {
+        drillCmdStr += '.bat';
+      }
+      drillCmdStr += ' -u "jdbc:drill:zk=local"';
       console.log('drill cmd:', drillCmdStr);
-      this.drillInstance = exec(drillCmdStr, (error, stdout, stderr) => {
+
+      const drillOptions = {
+        encoding: 'utf8',
+        timeout: 0,
+        maxBuffer: 200 * 1024,
+        killSignal: 'SIGTERM',
+        cwd: configObj.drillCmd + '/bin',
+        env: null
+      };
+      this.drillInstance = exec(drillCmdStr, drillOptions, (error, stdout, stderr) => {
         if (error) {
           console.error(`exec error: ${error}`);
           return;

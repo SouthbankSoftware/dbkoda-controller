@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T11:09:38+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-09-22T13:10:25+10:00
+ * @Last modified time: 2017-10-02T16:38:00+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -35,7 +35,7 @@ export default _options => (hook) => {
   // processItem should only return resolvable promise
   const processItem = async (item) => {
     try {
-      const { connectionId, database, collection, pipeline, options } = item;
+      const { editorId, connectionId, database, collection, pipeline, options } = item;
       const connection = mongoConnection.connections[connectionId];
 
       if (!connection) {
@@ -43,11 +43,21 @@ export default _options => (hook) => {
       }
 
       const db = connection.driver.db(database);
+      const emitResult = (result) => {
+        hook.service.emit('result', {
+          editorId,
+          result: result instanceof Error ? result.message : result,
+        });
+      };
 
-      return db
+      db
         .collection(collection)
         .aggregate(pipeline, options)
-        .toArray();
+        .toArray()
+        .then(emitResult)
+        .catch(emitResult);
+
+      return 'requested';
     } catch (err) {
       return err;
     }
