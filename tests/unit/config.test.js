@@ -47,7 +47,7 @@ describe('configure path tests', () => {
     console.log('loaded config', config);
     if (os.platform() === 'win32') {
       _.keys(config).map((key) => {
-        if (key !== 'mongoVersionCmd') {
+        if (key !== 'mongoVersionCmd' && key !== 'drillCmd') {
           assert.equal(config[key].match(new RegExp('.exe$')) !== null, true);
         }
       });
@@ -67,14 +67,14 @@ describe('configure path tests', () => {
     assert.notEqual(config.mongoVersionCmd, null);
     if (os.platform() === 'win32') {
       _.keys(config).map((key) => {
-        if (key !== 'mongoVersionCmd') {
+        if (key !== 'mongoVersionCmd' && key !== 'drillCmd') {
           assert.equal(config[key].match(new RegExp('.exe$')) !== null, true);
         }
       });
     } else {
       _.keys(config).map((key) => {
         const cmdName = key.replace('Cmd', '');
-        if (key !== 'mongoVersionCmd') {
+        if (key !== 'mongoVersionCmd' && key !== 'drillCmd') {
           assert.equal(config[key], '/opt/mongo/bin/' + cmdName);
         }
       });
