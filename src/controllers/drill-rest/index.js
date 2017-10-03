@@ -82,7 +82,16 @@ class DrillRestController {
       }
       drillCmdStr += ' -u "jdbc:drill:zk=local"';
       console.log('drill cmd:', drillCmdStr);
-      this.drillInstance = exec(drillCmdStr, (error, stdout, stderr) => {
+
+      const drillOptions = {
+        encoding: 'utf8',
+        timeout: 0,
+        maxBuffer: 200 * 1024,
+        killSignal: 'SIGTERM',
+        cwd: configObj.drillCmd + '/bin',
+        env: null
+      };
+      this.drillInstance = exec(drillCmdStr, drillOptions, (error, stdout, stderr) => {
         if (error) {
           console.error(`exec error: ${error}`);
           return;

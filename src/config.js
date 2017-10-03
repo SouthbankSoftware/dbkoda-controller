@@ -46,7 +46,7 @@ export const loadConfigFromYamlFile = (p) => {
       _.assign(config, _.pick(userConfig, _.keys(config)));
       if (os.platform() === 'win32') {
         _.keys(config).map((key) => {
-          if (config[key] && key !== 'mongoVersionCmd') {
+          if (config[key] && key !== 'mongoVersionCmd' && key !== 'drillCmd') {
             if (!config[key].match(new RegExp('.exe$', 'i'))) {
               config[key] += '.exe';
             }
