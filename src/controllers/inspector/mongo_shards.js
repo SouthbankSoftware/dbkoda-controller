@@ -43,6 +43,7 @@ class MongoShardsInspector {
         this.getAllMongos(db),
         this.serverInspector.inspectDatabases(db),
         this.serverInspector.inspectUsers(db),
+        this.serverInspector.inspectAllRoles(db),
         this.serverInspector.inspectReplicaMembers(db),
       ])
         .then((value) => {
