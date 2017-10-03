@@ -21,6 +21,7 @@
  * Created by joey on 26/9/17.
  */
 
+const errors = require('feathers-errors');
 const hooks = require('./hooks');
 const Driver = require('../../controllers/driver');
 
@@ -52,7 +53,12 @@ class DriverService {
     driver.on(Driver.OUTPUT, (o) => {
       this.shellService.emit('shell-output', {output: o + '\r', id, shellId});
     });
-    return driver.runCommands(data.commands);
+    try {
+      return driver.runCommands(data.commands);
+    } catch (err) {
+      log.error('failed to run commands ', err);
+      throw new errors.BadRequest(err.message);
+    }
   }
 }
 
