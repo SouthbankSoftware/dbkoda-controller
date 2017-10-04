@@ -60,7 +60,6 @@ class MongoServerInspector {
   inspectDatabases(db) {
     return new Promise((resolve, _reject) => {
       const adminDb = db.admin();
-
       const inspectResult = {text: 'Databases', children: []};
       adminDb
         .listDatabases()
@@ -206,8 +205,8 @@ class MongoServerInspector {
   }
 
   inspectAllRoles(db) {
+    const allRoles = { text: 'Roles', children: [] };
     return new Promise((resolve) => {
-      const allRoles = { text: 'Roles', children: [] };
       const promises = [];
       const adminDb = db.admin();
       adminDb.listDatabases().then((dbs) => {
@@ -224,7 +223,13 @@ class MongoServerInspector {
           });
           resolve(allRoles);
         });
+      }).catch((err) => {
+        log.warn(err.message);
+        resolve(allRoles);
       });
+    }).catch((err) => {
+      log.error('get error ', err);
+      return allRoles;
     });
   }
 
