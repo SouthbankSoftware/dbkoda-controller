@@ -1,4 +1,5 @@
 /* eslint-disable class-methods-use-this */
+const _ = require('lodash');
 
 class JdbcApi {
   setup(dbInst) {
@@ -29,6 +30,11 @@ class JdbcApi {
       });
     });
   }
+  toHexString(byteArray) {
+    return Array.from(byteArray, (byte) => {
+      return ('0' + (byte & 0xFF).toString(16)).slice(-2); // eslint-disable-line
+    }).join('');
+  }
 
   executeQueryOnConn(sql, conn) {
     return new Promise((resolve, reject) => {
@@ -45,6 +51,14 @@ class JdbcApi {
                   reject(err);
                 } else {
                   resultset.toObjArray((err, results) => {
+                    results = results.map((row) => {
+                      return _.mapValues(row, (cell) => {     // for specific condition on key we can use (cell, key)
+                        if (cell !== null && typeof cell === 'object' && cell instanceof Int8Array) {
+                          return this.toHexString(cell);
+                        }
+                        return cell;
+                      });
+                    });
                     if (results.length > 0) {
                       const qResult = { query: sql, result: results };
                       resolve(qResult);
