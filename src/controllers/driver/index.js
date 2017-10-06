@@ -37,10 +37,13 @@ export default class Driver extends EventEmitter {
     }
     log.debug(`run ${commands} on driver`);
     console.oldlog = console.log;
-    console.log = (value) => {
+    console.olderror = console.error;
+    const evalLog = (value) => {
       log.debug('emit output', value);
       this.emit(Driver.OUTPUT, value);
     };
+    console.log = evalLog;
+    console.error = evalLog;
     try {
       eval(commands);
     } catch (err) {
