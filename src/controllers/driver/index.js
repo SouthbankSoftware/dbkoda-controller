@@ -31,21 +31,24 @@ export default class Driver extends EventEmitter {
   }
 
   runCommands(commands) {
+    let driverCmds = commands;
     const db = this.connect.driver;
     if (!db) {
       return Promise.reject('cant find mongo driver');
     }
     log.debug(`run ${commands} on driver`);
-    console.oldlog = console.log;
-    console.olderror = console.error;
+    driverCmds = commands.replace(/console\./g, 'dbkodaConsole.');
+    // console.oldlog = console.log;
+    // console.olderror = console.error;
     const evalLog = (value) => {
       log.debug('emit output', value);
       this.emit(Driver.OUTPUT, value);
     };
-    console.log = evalLog;
-    console.error = evalLog;
+    const dbkodaConsole = {log: evalLog, error: evalLog};  // eslint-disable-line
+    // console.log = evalLog;
+    // console.error = evalLog;
     try {
-      eval(commands);
+      eval(driverCmds); // eslint-disable-line
     } catch (err) {
       log.error('failed to run commands ', err);
       throw new errors.BadRequest(err.message);
