@@ -115,8 +115,17 @@ class DrillRestController {
             this.connections[jdbcConId] = {connection: jdbcConn, db: profile.db};
             jdbcApiInst.setup(jdbcConn);
             jdbcApiInst.query('use ' + profile.db).then((resultQuery) => {
-              resolve({id: jdbcConId, output: JSON.stringify(resultQuery)});
+              console.log('resultQuery:', resultQuery);
+              resolve({id: jdbcConId, output: resultQuery});
+            }).catch((err) => {
+              badRequestError = new errors.BadRequest(err.message);
+              console.log('execute query error:', err);
+              reject(badRequestError);
             });
+          }).catch((err) => {
+            console.log('createJDBC Connection Error', err);
+            badRequestError = new errors.BadRequest(err.message);
+            reject(badRequestError);
           });
         } else {
           resolve({id: this.profileDBHash[profDB], output: profile.output});
@@ -250,6 +259,13 @@ class DrillRestController {
       });
     }
   }
+
+  quitDrillProcess() {
+    console.log('this.bDrillStarted:', this.bDrillStarted);
+    if (this.drillInstance) {
+      this.drillInstance.kill('SIGTERM');
+    }
+  }
 }
 
 module.exports = function() {
@@ -260,10 +276,10 @@ module.exports = function() {
   app.service('drill/rest/controller').before({
     // Users can not be created by external access
     create: hooks.disallow('external'),
-    remove: hooks.disallow('external'),
+    // remove: hooks.disallow('external'),
     // update: hooks.disallow('external'),
     // find: hooks.disallow('external'),
-    // get: hooks.disallow('external')
+    get: hooks.disallow('external')
   });
   return service;
 };
