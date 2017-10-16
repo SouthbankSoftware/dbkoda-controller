@@ -36,9 +36,9 @@ export default class Driver extends EventEmitter {
     if (!db) {
       return Promise.reject('cant find mongo driver');
     }
-    log.debug(`run ${commands} on driver`);
     driverCmds = commands.replace(/console\./g, 'dbkodaConsole.');
     // console.oldlog = console.log;
+    log.debug(`run ${driverCmds} on driver`);
     // console.olderror = console.error;
     const evalLog = (value) => {
       log.debug('emit output', value);
