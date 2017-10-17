@@ -27,6 +27,7 @@ const os = require('os');
 const assert = require('assert');
 const _ = require('lodash');
 const path = require('path');
+const extension = os.platform() === 'win32'? '.exe':'';
 
 describe('configure path tests', () => {
   it('load path without configure file', () => {
@@ -95,11 +96,11 @@ describe('configure path tests', () => {
 
   it('load commands from file', () => {
     const config = loadConfigFromYamlFile(path.join(__dirname, 'config_1.yml'));
-    assert.equal(config.mongoCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo');
-    assert.equal(config.mongodumpCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongodump');
-    assert.equal(config.mongorestoreCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongorestore');
-    assert.equal(config.mongoimportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoimport');
-    assert.equal(config.mongoexportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoexport');
+    assert.equal(config.mongoCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo' + extension);
+    assert.equal(config.mongodumpCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongodump' + extension);
+    assert.equal(config.mongorestoreCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongorestore' + extension);
+    assert.equal(config.mongoimportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoimport' + extension);
+    assert.equal(config.mongoexportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoexport' + extension);
   });
 
   it('test load incorrect mongo command', () => {
@@ -110,7 +111,7 @@ describe('configure path tests', () => {
     assert.equal(config.mongodumpCmd, undefined);
     assert.equal(config.mongorestoreCmd, undefined);
     assert.equal(config.mongoimportCmd, undefined);
-    assert.equal(config.mongoexportCmd, '/var/opt/mongoexport');
+    assert.equal(config.mongoexportCmd, '/var/opt/mongoexport' + extension);
     process.env.CONFIG_PATH = oldPath;
   });
 
