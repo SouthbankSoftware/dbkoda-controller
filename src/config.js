@@ -25,6 +25,18 @@ import {execSync} from 'child_process';
 import os from 'os';
 import path from 'path';
 
+const defaultCommandName = {
+  mongoCmd: 'mongo',
+  mongodumpCmd: 'mongodump',
+  mongorestoreCmd: 'mongorestore',
+  mongoimportCmd: 'mongoimport',
+  mongoexportCmd: 'mongoexport',
+}
+
+const isMongoCommand = (cmd) => {
+  return cmd && cmd.indexOf('mongo') >= 0;
+}
+
 export const loadConfigFromYamlFile = (p) => {
   const config = {
     mongoCmd: null,
@@ -36,7 +48,6 @@ export const loadConfigFromYamlFile = (p) => {
     drillCmd: null
   };
   if (!fs.existsSync(p)) {
-    console.log('the configuration file doesnt exist ', p);
     return config;
   }
   if (p) {
@@ -119,11 +130,7 @@ export const loadCommands = () => {
   }
   const config = loadConfigFromYamlFile(configPath);
   if (config.mongoCmd) {
-    // if (os.platform() === 'win32') {
-      config.mongoVersionCmd = '"' + config.mongoCmd + '" --version';
-    // } else {
-    //   config.mongoVersionCmd = config.mongoCmd + ' --version';
-    // }
+    config.mongoVersionCmd = '"' + config.mongoCmd + '" --version';
     applyPathToOtherCommands(config);
   }
   if (os.platform() === 'win32') {
@@ -140,6 +147,18 @@ export const loadCommands = () => {
       }
     });
   }
+  _.forOwn(config, (value, key) => {
+    if (isMongoCommand(key) && value) {
+      const basename = path.basename(value);
+      let defaultName = defaultCommandName[key];
+      if (os.platform() === 'win32') {
+        defaultName += '.exe';
+      }
+      if (basename !== defaultName) {
+        config[key] = undefined;
+      }
+    }
+  });
   return config;
 };
 

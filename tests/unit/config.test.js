@@ -21,7 +21,7 @@
  * Created by joey on 9/8/17.
  */
 import '../../src/app';
-import {loadConfig, loadConfigFromYamlFile} from '../../src/config';
+import {loadConfig, loadConfigFromYamlFile, loadCommands} from '../../src/config';
 
 const os = require('os');
 const assert = require('assert');
@@ -100,5 +100,31 @@ describe('configure path tests', () => {
     assert.equal(config.mongorestoreCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongorestore');
     assert.equal(config.mongoimportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoimport');
     assert.equal(config.mongoexportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoexport');
+  });
+
+  it('test load incorrect mongo command', () => {
+    const oldPath = process.env.CONFIG_PATH;
+    process.env.CONFIG_PATH = path.join(__dirname, 'config_incorrect_mongocmd_name.yml');
+    const config = loadCommands();
+    assert.equal(config.mongoCmd, undefined);
+    assert.equal(config.mongodumpCmd, undefined);
+    assert.equal(config.mongorestoreCmd, undefined);
+    assert.equal(config.mongoimportCmd, undefined);
+    assert.equal(config.mongoexportCmd, '/var/opt/mongoexport');
+    process.env.CONFIG_PATH = oldPath;
+  });
+
+  it('test load incorrect mongo command on windows', () => {
+    if (os.platform() === 'win32') {
+      const oldPath = process.env.CONFIG_PATH;
+      process.env.CONFIG_PATH = path.join(__dirname, 'config_incorrect_mongocmd_name_win.yml');
+      const config = loadCommands();
+      assert.equal(config.mongoCmd, undefined);
+      assert.equal(config.mongodumpCmd, undefined);
+      assert.equal(config.mongorestoreCmd, undefined);
+      assert.equal(config.mongoimportCmd, undefined);
+      assert.equal(config.mongoexportCmd, undefined);
+      process.env.CONFIG_PATH = oldPath;
+    }
   });
 });

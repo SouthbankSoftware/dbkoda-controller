@@ -1,0 +1,5 @@
+mongoCmd: /var/opt/mongod
+mongodumpCmd: /var/opt/mongoexport
+mongorestoreCmd: /var/opt/mongoexport
+mongoimportCmd: /var/opt/mongoexport
+mongoexportCmd: /var/opt/mongoexport
