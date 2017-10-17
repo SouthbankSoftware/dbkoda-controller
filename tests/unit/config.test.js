@@ -27,7 +27,8 @@ const os = require('os');
 const assert = require('assert');
 const _ = require('lodash');
 const path = require('path');
-const extension = os.platform() === 'win32'? '.exe':'';
+
+const extension = os.platform() === 'win32' ? '.exe' : '';
 
 describe('configure path tests', () => {
   it('load path without configure file', () => {
