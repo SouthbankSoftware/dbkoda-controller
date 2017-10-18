@@ -122,10 +122,10 @@ describe('configure path tests', () => {
       process.env.CONFIG_PATH = path.join(__dirname, 'config_incorrect_mongocmd_name1.yml');
       const config = loadCommands();
       assert.equal(config.mongoCmd, undefined);
-      assert.equal(config.mongodumpCmd, undefined);
-      assert.equal(config.mongorestoreCmd, undefined);
-      assert.equal(config.mongoimportCmd, undefined);
-      assert.equal(config.mongoexportCmd, undefined);
+      assert.equal(config.mongodumpCmd, '/var/opt/mongodump');
+      assert.equal(config.mongorestoreCmd, '/var/opt/mongorestore');
+      assert.equal(config.mongoimportCmd, '/var/opt/mongoimport');
+      assert.equal(config.mongoexportCmd, '/var/opt/mongoexport');
       process.env.CONFIG_PATH = oldPath;
     }
   });

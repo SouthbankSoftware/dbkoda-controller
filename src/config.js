@@ -79,7 +79,7 @@ const getMongoPath = (mongoCmd) => {
     // } else {
     //   mongoPath = mongoCmd.replace(/mongo$/, '');
     // }
-    mongoPath = path.dirname(mongoCmd);
+    mongoPath = path.dirname(mongoCmd) + '/';
   }
   return mongoPath;
 };
