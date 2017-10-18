@@ -107,7 +107,7 @@ describe('configure path tests', () => {
     assert.equal(config.mongoVersionCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo' + extension + ' --version');
     process.env.CONFIG_PATH = path.join(__dirname, 'config_1.yml');
     config = loadCommands();
-    assert.equal(config.mongoVersionCmd, '"/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo"' + extension + ' --version');
+    assert.equal(config.mongoVersionCmd, '"/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo' + extension + '" --version');
     process.env.CONFIG_PATH = oldPath;
   });
 
@@ -148,7 +148,7 @@ describe('configure path tests', () => {
       assert.equal(config.mongorestoreCmd, 'c:/var/opt/mongorestore.exe');
       assert.equal(config.mongoimportCmd, 'c:/var/opt/mongoimport.exe');
       assert.equal(config.mongoexportCmd, 'c:/var/opt/mongoexport.exe');
-      assert.equal(config.mongoVersionCmd, undefined);
+      assert.equal(config.mongoVersionCmd, '"c:/var/opt/mongod.exe" --version');
       process.env.CONFIG_PATH = oldPath;
     }
   });
@@ -163,6 +163,7 @@ describe('configure path tests', () => {
       assert.equal(config.mongorestoreCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongorestore.exe');
       assert.equal(config.mongoimportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoimport.exe');
       assert.equal(config.mongoexportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoexport.exe');
+      assert.equal(config.mongoVersionCmd, '"c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongo.exe" --version');
       process.env.CONFIG_PATH = oldPath;
     }
   });
