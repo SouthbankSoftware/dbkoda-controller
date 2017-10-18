@@ -212,6 +212,25 @@ class DrillRestController {
     return null;
   }
 
+  removeProfile(profile) {
+    console.log(profile);
+    if (profile) {
+      const reqPromise = request.defaults({
+        baseUrl: drillRestApi.url,
+        json: true,
+      });
+      return reqPromise({
+        uri: '/storage/myplugin.json',
+        method: 'DELETE',
+        body: {
+          name: profile.alias
+        },
+        json: true
+      });
+    }
+    return null;
+  }
+
   // Function to create a JDBC instance which will be used for query purpose
   createJdbcConnection(profileAlias) {
     return new Promise((resolve, reject) => {
@@ -244,8 +263,16 @@ class DrillRestController {
         this.connections = {};
         return Promise.resolve(true);
       }
-      delete this.profileHash[params.alias];
-      return Promise.resolve(true);
+
+      return new Promise((resolve, reject) => {
+        this.removeProfile(params).then((result) => {
+          console.log(result);
+          delete this.profileHash[params.alias];
+          resolve(true);
+        }).catch((err) => {
+          reject(err.message);
+        });
+      });
     } catch (err) {
       l.error('get error', err);
       return Promise.reject('Failed to remove connection.');
