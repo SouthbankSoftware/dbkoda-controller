@@ -85,6 +85,9 @@ class DrillService {
     console.log('drill get:', params);
     return this.controller.getData(id, params);
   }
+  remove(params) {
+    return this.controller.remove(params);
+  }
 }
 
 module.exports = function() {

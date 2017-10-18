@@ -41,8 +41,7 @@ import blog from './blog';
 import treeAction from './tree-actions';
 import osCommandsService from './os-commands';
 import supportBundleService from './support-bundle';
-import driverService from './driver';
-import drill from './drill';
+
 
 module.exports = function() {
   const app = this;
@@ -68,8 +67,14 @@ module.exports = function() {
   app.configure(treeAction);
   app.configure(osCommandsService);
   app.configure(supportBundleService);
-  app.configure(driverService);
-  app.configure(drill);
+
+  console.log('IS_JAVA', global.IS_JAVA);
+  if (global.IS_JAVA) {
+    const driverService = require('./driver');
+    const drill = require('./drill');
+    app.configure(driverService);
+    app.configure(drill);
+  }
 
   if (process.env.NODE_ENV !== 'production') {
     const monitor = require('./monitor');

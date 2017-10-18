@@ -48,7 +48,6 @@ class DrillRestController {
       reconnectInterval: 1000,
     };
     this.profileHash = {};  // will store the profiles which have been added to Drill Instance
-    this.profileDBHash = {}; // will store JDBC Connections with respect to the Profile and DB
     this.connections = {};
 
     this.bDrillStarted = false;
@@ -102,19 +101,18 @@ class DrillRestController {
       this.bDrillStarted = true;
     }
     console.log('params:', params);
-    const profile = Object.assign({}, params);
+    const cParams = Object.assign({}, params);
     let badRequestError;
     return new Promise((resolve, reject) => {
-      const resolveJdbcConnForProfile = (profile) => {
-        const profDB = profile.alias + '|' + profile.db;
-        if (this.profileDBHash[profDB] == null) {
-          this.createJdbcConnection(profile).then((jdbcConn) => {
+      const resolveJdbcConnForProfile = (profile, profileDB) => {
+        if (profile.DBHash[profileDB] == null) {
+          this.createJdbcConnection(profile.alias).then((jdbcConn) => {
             console.log(jdbcConn);
             const jdbcConId = uuid.v1();
-            this.profileDBHash[profDB] = jdbcConId;
-            this.connections[jdbcConId] = {connection: jdbcConn, db: profile.db};
+            profile.DBHash[profileDB] = jdbcConId;
+            this.connections[jdbcConId] = {connection: jdbcConn, db: profileDB};
             jdbcApiInst.setup(jdbcConn);
-            jdbcApiInst.query('use ' + profile.db).then((resultQuery) => {
+            jdbcApiInst.query('use ' + profileDB).then((resultQuery) => {
               console.log('resultQuery:', resultQuery);
               resolve({id: jdbcConId, output: resultQuery});
             }).catch((err) => {
@@ -128,17 +126,20 @@ class DrillRestController {
             reject(badRequestError);
           });
         } else {
-          resolve({id: this.profileDBHash[profDB], output: profile.output});
+          resolve({id: profile.DBHash[profileDB], output: profile.output});
         }
       };
       const cbConnectionResult = (result) => {
         if (result && result.status == 'Running!') {
-          if (this.profileHash[profile.alias] == null) {
-            this.addProfile(profile).then((resultProfile) => {
+          if (this.profileHash[cParams.alias] == null) {
+            this.addProfile(cParams).then((resultProfile) => {
               console.log(resultProfile);
+              const profile = {};
+              profile.alias = cParams.alias;
               profile.output = JSON.stringify(resultProfile);
+              profile.DBHash = {};
               this.profileHash[profile.alias] = profile;
-              resolveJdbcConnForProfile(profile);
+              resolveJdbcConnForProfile(profile, cParams.db);
             })
             .catch((err) => {
               l.error('ProfileAddError: failed to add profile via Drill Rest API', err.message);
@@ -146,7 +147,7 @@ class DrillRestController {
               reject(badRequestError);
             });
           } else {
-            resolveJdbcConnForProfile(profile);
+            resolveJdbcConnForProfile(this.profileHash[cParams.alias], cParams.db);
           }
         } else {
           l.error('ConnectionFailed: unable to connect to drill interface');
@@ -212,10 +213,10 @@ class DrillRestController {
   }
 
   // Function to create a JDBC instance which will be used for query purpose
-  createJdbcConnection(profile) {
+  createJdbcConnection(profileAlias) {
     return new Promise((resolve, reject) => {
       const conObj = {
-        url: 'jdbc:drill:drillbit=localhost:31010;schema=' + profile.alias,
+        url: 'jdbc:drill:drillbit=localhost:31010;schema=' + profileAlias,
         minpoolsize: 5,
         maxpoolsize: 10,
       };
@@ -230,13 +231,21 @@ class DrillRestController {
     });
   }
 
-  remove(id) {
+  remove(params) {
     try {
-      if (!this.profileHash[id]) {
-        return Promise.resolve({ id });
+      if (!this.profileHash[params.alias] && !params.removeAll) {
+        return Promise.reject('no profile found with the specified alias');
+      } else if (params.removeAll) {
+        this.quitDrillProcess();
+        this.bDrillStarted = false;
+        this.connectionAttempts = 0;  // resetting this for starting up drill next time.
+        this.profileHash = {};
+        this.profileDBHash = {};
+        this.connections = {};
+        return Promise.resolve(true);
       }
-      delete this.profileHash[id];
-      return Promise.resolve({ id });
+      delete this.profileHash[params.alias];
+      return Promise.resolve(true);
     } catch (err) {
       l.error('get error', err);
       return Promise.reject('Failed to remove connection.');
