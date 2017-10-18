@@ -105,8 +105,7 @@
     "strip-ansi": "^3.0.1",
     "winston": "^2.3.0",
     "winston-daily-rotate-file": "^1.4.6",
-    "ws": "^1.1.1",
-    "jdbc": "^0.5.1"
+    "ws": "^1.1.1"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
@@ -137,5 +136,8 @@
     "source-map-support": "^0.4.11",
     "strip-comments": "^0.4.4",
     "test-utils": "^1.0.21"
+  },
+  "optionalDependencies": {
+    "jdbc": "^0.5.1"
   }
 }

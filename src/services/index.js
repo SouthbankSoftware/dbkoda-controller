@@ -27,7 +27,6 @@ import mongoInspectorController from '../controllers/inspector';
 import mongoAutoCompleteController from '../controllers/auto-complete';
 import lintingController from '../controllers/linter';
 import syncExecutionController from '../controllers/sync-execution';
-import drillRestController from '../controllers/drill-rest';
 import mongoShell from './mongo-shell';
 import mongoConnection from './mongo-connection';
 import mongoInspector from './mongo-inspector';
@@ -41,7 +40,7 @@ import blog from './blog';
 import treeAction from './tree-actions';
 import osCommandsService from './os-commands';
 import supportBundleService from './support-bundle';
-
+import driverService from './driver';
 
 module.exports = function() {
   const app = this;
@@ -51,7 +50,7 @@ module.exports = function() {
   app.configure(mongoAutoCompleteController);
   app.configure(lintingController);
   app.configure(syncExecutionController);
-  app.configure(drillRestController);
+
 
   app.configure(mongoShell);
   app.configure(mongoConnection);
@@ -67,12 +66,14 @@ module.exports = function() {
   app.configure(treeAction);
   app.configure(osCommandsService);
   app.configure(supportBundleService);
+  app.configure(driverService);
+
 
   console.log('IS_JAVA', global.IS_JAVA);
   if (global.IS_JAVA) {
-    const driverService = require('./driver');
+    const drillRestController = require('../controllers/drill-rest');
     const drill = require('./drill');
-    app.configure(driverService);
+    app.configure(drillRestController);
     app.configure(drill);
   }
 
