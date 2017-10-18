@@ -25,6 +25,18 @@ import {execSync} from 'child_process';
 import os from 'os';
 import path from 'path';
 
+const defaultCommandName = {
+  mongoCmd: 'mongo',
+  mongodumpCmd: 'mongodump',
+  mongorestoreCmd: 'mongorestore',
+  mongoimportCmd: 'mongoimport',
+  mongoexportCmd: 'mongoexport',
+};
+
+const isMongoCommand = (cmd) => {
+  return cmd && cmd.indexOf('mongo') >= 0;
+};
+
 export const loadConfigFromYamlFile = (p) => {
   const config = {
     mongoCmd: null,
@@ -36,7 +48,6 @@ export const loadConfigFromYamlFile = (p) => {
     drillCmd: null
   };
   if (!fs.existsSync(p)) {
-    console.log('the configuration file doesnt exist ', p);
     return config;
   }
   if (p) {
@@ -63,11 +74,12 @@ export const loadConfigFromYamlFile = (p) => {
 const getMongoPath = (mongoCmd) => {
   let mongoPath = '';
   if (mongoCmd) {
-    if (os.platform() === 'win32') {
-      mongoPath = mongoCmd.replace(/mongo.exe$/, '');
-    } else {
-      mongoPath = mongoCmd.replace(/mongo$/, '');
-    }
+    // if (os.platform() === 'win32') {
+    //   mongoPath = mongoCmd.replace(/mongo.exe$/, '');
+    // } else {
+    //   mongoPath = mongoCmd.replace(/mongo$/, '');
+    // }
+    mongoPath = path.dirname(mongoCmd) + '/';
   }
   return mongoPath;
 };
@@ -78,7 +90,7 @@ const applyPathToOtherCommands = (config) => {
     if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd') {
       const cmdName = key.replace('Cmd', '');
       if (os.platform() === 'win32') {
-        config[key] = mongoPath + '\\' + cmdName + '.exe';
+        config[key] = mongoPath + cmdName + '.exe';
       } else {
         config[key] = mongoPath + cmdName;
       }
@@ -119,11 +131,7 @@ export const loadCommands = () => {
   }
   const config = loadConfigFromYamlFile(configPath);
   if (config.mongoCmd) {
-    // if (os.platform() === 'win32') {
-      config.mongoVersionCmd = '"' + config.mongoCmd + '" --version';
-    // } else {
-    //   config.mongoVersionCmd = config.mongoCmd + ' --version';
-    // }
+    config.mongoVersionCmd = '"' + config.mongoCmd + '" --version';
     applyPathToOtherCommands(config);
   }
   if (os.platform() === 'win32') {
@@ -140,6 +148,19 @@ export const loadCommands = () => {
       }
     });
   }
+  // reject incorrect mongo command
+  _.forOwn(config, (value, key) => {
+    if (isMongoCommand(key) && key !== 'mongoVersionCmd' && value) {
+      const basename = path.basename(value);
+      let defaultName = defaultCommandName[key];
+      if (os.platform() === 'win32') {
+        defaultName += '.exe';
+      }
+      if (basename !== defaultName) {
+        config[key] = undefined;
+      }
+    }
+  });
   return config;
 };
 
