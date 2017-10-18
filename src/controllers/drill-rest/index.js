@@ -99,6 +99,7 @@ class DrillRestController {
         console.log(`stderr: ${stderr}`);
       });
       this.bDrillStarted = true;
+      this.connectionAttempts = 0;
     }
     console.log('params:', params);
     const cParams = Object.assign({}, params);
@@ -220,11 +221,8 @@ class DrillRestController {
         json: true,
       });
       return reqPromise({
-        uri: '/storage/myplugin.json',
-        method: 'DELETE',
-        body: {
-          name: profile.alias
-        },
+        uri: '/storage/' + profile.alias + '/delete',
+        method: 'GET',
         json: true
       });
     }
@@ -255,13 +253,25 @@ class DrillRestController {
       if (!this.profileHash[params.alias] && !params.removeAll) {
         return Promise.reject('no profile found with the specified alias');
       } else if (params.removeAll) {
-        this.quitDrillProcess();
         this.bDrillStarted = false;
         this.connectionAttempts = 0;  // resetting this for starting up drill next time.
+        const removeProfilePromises = [];
+        for (const alias in this.profileHash) {
+          if ({}.hasOwnProperty.call(this.profileHash, alias)) {
+            const pRemove = this.removeProfile({alias}).then((result) => {
+              console.log('removing profile: ', result);
+            });
+            removeProfilePromises.push(pRemove);
+          }
+        }
         this.profileHash = {};
-        this.profileDBHash = {};
         this.connections = {};
-        return Promise.resolve(true);
+
+        Promise.all(removeProfilePromises).then((values) => {
+          console.log(values);
+          this.quitDrillProcess();
+          return Promise.resolve(true);
+        });
       }
 
       return new Promise((resolve, reject) => {
