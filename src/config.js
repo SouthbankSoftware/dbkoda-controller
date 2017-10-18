@@ -90,7 +90,7 @@ const applyPathToOtherCommands = (config) => {
     if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd') {
       const cmdName = key.replace('Cmd', '');
       if (os.platform() === 'win32') {
-        config[key] = mongoPath + '\\' + cmdName + '.exe';
+        config[key] = mongoPath + cmdName + '.exe';
       } else {
         config[key] = mongoPath + cmdName;
       }

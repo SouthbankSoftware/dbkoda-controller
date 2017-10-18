@@ -21,7 +21,7 @@
  * Created by joey on 9/8/17.
  */
 import '../../src/app';
-import {loadConfig, loadConfigFromYamlFile, loadCommands} from '../../src/config';
+import { loadConfig, loadConfigFromYamlFile, loadCommands } from '../../src/config';
 
 const os = require('os');
 const assert = require('assert');
@@ -140,6 +140,34 @@ describe('configure path tests', () => {
       assert.equal(config.mongorestoreCmd, 'c:/var/opt/mongorestore.exe');
       assert.equal(config.mongoimportCmd, 'c:/var/opt/mongoimport.exe');
       assert.equal(config.mongoexportCmd, 'c:/var/opt/mongoexport.exe');
+      process.env.CONFIG_PATH = oldPath;
+    }
+  });
+
+  it('test load command with space path on windows', () => {
+    if (os.platform() === 'win32') {
+      const oldPath = process.env.CONFIG_PATH;
+      process.env.CONFIG_PATH = path.join(__dirname, 'config_space.yml');
+      const config = loadCommands();
+      assert.equal(config.mongoCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongo.exe');
+      assert.equal(config.mongodumpCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongodump.exe');
+      assert.equal(config.mongorestoreCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongorestore.exe');
+      assert.equal(config.mongoimportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoimport.exe');
+      assert.equal(config.mongoexportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoexport.exe');
+      process.env.CONFIG_PATH = oldPath;
+    }
+  });
+
+  it('test load command with space path on windows1', () => {
+    if (os.platform() === 'win32') {
+      const oldPath = process.env.CONFIG_PATH;
+      process.env.CONFIG_PATH = path.join(__dirname, 'config_space1.yml');
+      const config = loadCommands();
+      assert.equal(config.mongoCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongo.exe');
+      assert.equal(config.mongodumpCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongodump.exe');
+      assert.equal(config.mongorestoreCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongorestore.exe');
+      assert.equal(config.mongoimportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoimport.exe');
+      assert.equal(config.mongoexportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoexport.exe');
       process.env.CONFIG_PATH = oldPath;
     }
   });
