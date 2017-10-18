@@ -31,11 +31,11 @@ const defaultCommandName = {
   mongorestoreCmd: 'mongorestore',
   mongoimportCmd: 'mongoimport',
   mongoexportCmd: 'mongoexport',
-}
+};
 
 const isMongoCommand = (cmd) => {
   return cmd && cmd.indexOf('mongo') >= 0;
-}
+};
 
 export const loadConfigFromYamlFile = (p) => {
   const config = {
