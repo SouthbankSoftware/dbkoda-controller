@@ -96,12 +96,19 @@ describe('configure path tests', () => {
   });
 
   it('load commands from file', () => {
-    const config = loadConfigFromYamlFile(path.join(__dirname, 'config_1.yml'));
+    const oldPath = process.env.CONFIG_PATH;
+    let config = loadConfigFromYamlFile(path.join(__dirname, 'config_1.yml'));
     assert.equal(config.mongoCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo' + extension);
     assert.equal(config.mongodumpCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongodump' + extension);
     assert.equal(config.mongorestoreCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongorestore' + extension);
     assert.equal(config.mongoimportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoimport' + extension);
     assert.equal(config.mongoexportCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongoexport' + extension);
+    config = loadConfig(config);
+    assert.equal(config.mongoVersionCmd, '/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo' + extension + ' --version');
+    process.env.CONFIG_PATH = path.join(__dirname, 'config_1.yml');
+    config = loadCommands();
+    assert.equal(config.mongoVersionCmd, '"/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo"' + extension + ' --version');
+    process.env.CONFIG_PATH = oldPath;
   });
 
   it('test load incorrect mongo command', () => {
@@ -126,6 +133,7 @@ describe('configure path tests', () => {
       assert.equal(config.mongorestoreCmd, '/var/opt/mongorestore');
       assert.equal(config.mongoimportCmd, '/var/opt/mongoimport');
       assert.equal(config.mongoexportCmd, '/var/opt/mongoexport');
+      assert.equal(config.mongoVersionCmd, '"/var/opt/mongod" --version');
       process.env.CONFIG_PATH = oldPath;
     }
   });
@@ -140,6 +148,7 @@ describe('configure path tests', () => {
       assert.equal(config.mongorestoreCmd, 'c:/var/opt/mongorestore.exe');
       assert.equal(config.mongoimportCmd, 'c:/var/opt/mongoimport.exe');
       assert.equal(config.mongoexportCmd, 'c:/var/opt/mongoexport.exe');
+      assert.equal(config.mongoVersionCmd, undefined);
       process.env.CONFIG_PATH = oldPath;
     }
   });

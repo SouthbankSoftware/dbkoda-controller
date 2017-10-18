@@ -148,8 +148,9 @@ export const loadCommands = () => {
       }
     });
   }
+  // reject incorrect mongo command
   _.forOwn(config, (value, key) => {
-    if (isMongoCommand(key) && value) {
+    if (isMongoCommand(key) && key !== 'mongoVersionCmd' && value) {
       const basename = path.basename(value);
       let defaultName = defaultCommandName[key];
       if (os.platform() === 'win32') {
