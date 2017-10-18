@@ -74,11 +74,12 @@ export const loadConfigFromYamlFile = (p) => {
 const getMongoPath = (mongoCmd) => {
   let mongoPath = '';
   if (mongoCmd) {
-    if (os.platform() === 'win32') {
-      mongoPath = mongoCmd.replace(/mongo.exe$/, '');
-    } else {
-      mongoPath = mongoCmd.replace(/mongo$/, '');
-    }
+    // if (os.platform() === 'win32') {
+    //   mongoPath = mongoCmd.replace(/mongo.exe$/, '');
+    // } else {
+    //   mongoPath = mongoCmd.replace(/mongo$/, '');
+    // }
+    mongoPath = path.dirname(mongoCmd);
   }
   return mongoPath;
 };

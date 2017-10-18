@@ -1,1 +1,1 @@
-mongoCmd: /var/opt/mongod.exe
+mongoCmd: c:\var\opt\mongod.exe

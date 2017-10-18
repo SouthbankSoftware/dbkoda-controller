@@ -117,21 +117,9 @@ describe('configure path tests', () => {
   });
 
   it('test load incorrect mongo command1', () => {
-    const oldPath = process.env.CONFIG_PATH;
-    process.env.CONFIG_PATH = path.join(__dirname, 'config_incorrect_mongocmd_name1.yml');
-    const config = loadCommands();
-    assert.equal(config.mongoCmd, undefined);
-    assert.equal(config.mongodumpCmd, undefined);
-    assert.equal(config.mongorestoreCmd, undefined);
-    assert.equal(config.mongoimportCmd, undefined);
-    assert.equal(config.mongoexportCmd, undefined);
-    process.env.CONFIG_PATH = oldPath;
-  });
-
-  it('test load incorrect mongo command on windows', () => {
-    // if (os.platform() === 'win32') {
+    if (os.platform() !== 'win32') {
       const oldPath = process.env.CONFIG_PATH;
-      process.env.CONFIG_PATH = path.join(__dirname, 'config_incorrect_mongocmd_name_win.yml');
+      process.env.CONFIG_PATH = path.join(__dirname, 'config_incorrect_mongocmd_name1.yml');
       const config = loadCommands();
       assert.equal(config.mongoCmd, undefined);
       assert.equal(config.mongodumpCmd, undefined);
@@ -139,6 +127,20 @@ describe('configure path tests', () => {
       assert.equal(config.mongoimportCmd, undefined);
       assert.equal(config.mongoexportCmd, undefined);
       process.env.CONFIG_PATH = oldPath;
-    // }
+    }
+  });
+
+  it('test load incorrect mongo command on windows', () => {
+    if (os.platform() === 'win32') {
+      const oldPath = process.env.CONFIG_PATH;
+      process.env.CONFIG_PATH = path.join(__dirname, 'config_incorrect_mongocmd_name_win.yml');
+      const config = loadCommands();
+      assert.equal(config.mongoCmd, undefined);
+      assert.equal(config.mongodumpCmd, 'c:/var/opt/mongodump.exe');
+      assert.equal(config.mongorestoreCmd, 'c:/var/opt/mongorestore.exe');
+      assert.equal(config.mongoimportCmd, 'c:/var/opt/mongoimport.exe');
+      assert.equal(config.mongoexportCmd, 'c:/var/opt/mongoexport.exe');
+      process.env.CONFIG_PATH = oldPath;
+    }
   });
 });
