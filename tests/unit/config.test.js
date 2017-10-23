@@ -21,7 +21,7 @@
  * Created by joey on 9/8/17.
  */
 import '../../src/app';
-import { loadConfig, loadConfigFromYamlFile, loadCommands } from '../../src/config';
+import { loadConfig, loadConfigFromYamlFile, loadCommands, getMongoPath } from '../../src/config';
 
 const os = require('os');
 const assert = require('assert');
@@ -179,6 +179,13 @@ describe('configure path tests', () => {
       assert.equal(config.mongoimportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoimport.exe');
       assert.equal(config.mongoexportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoexport.exe');
       process.env.CONFIG_PATH = oldPath;
+    }
+  });
+
+  it('test load mongo path', () => {
+    if (os.platform() === 'win32') {
+      const path = getMongoPath('mongo.exe');
+      assert.equal(path, '');
     }
   });
 });

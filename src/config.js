@@ -71,7 +71,7 @@ export const loadConfigFromYamlFile = (p) => {
   return config;
 };
 
-const getMongoPath = (mongoCmd) => {
+export const getMongoPath = (mongoCmd) => {
   let mongoPath = '';
   if (mongoCmd) {
     // if (os.platform() === 'win32') {
