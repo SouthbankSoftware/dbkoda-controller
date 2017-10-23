@@ -99,7 +99,6 @@ class DrillRestController {
         console.log(`stderr: ${stderr}`);
       });
       this.bDrillStarted = true;
-      this.connectionAttempts = 0;
     }
     console.log('params:', params);
     const cParams = Object.assign({}, params);
@@ -156,12 +155,15 @@ class DrillRestController {
           reject(badRequestError);
         }
       };
-      this.checkDrillConnectionStatus(cbConnectionResult);
+      this.checkDrillConnectionStatus(cbConnectionResult, true);
     });
   }
 
   // Function to ping the drill instance when it has started in the create function. Will try for 60 attempts.
-  checkDrillConnectionStatus(cbFuncResult) {
+  checkDrillConnectionStatus(cbFuncResult, bResetCount = false) {
+    if (bResetCount) {
+      this.connectionAttempts = 0;
+    }
     console.log('checkDrillConnectionStatus:', this.connectionAttempts);
     this.checkDrillConnection().then((result) => {
       cbFuncResult(result);
@@ -322,7 +324,7 @@ module.exports = function() {
   app.service('drill/rest/controller').before({
     // Users can not be created by external access
     create: hooks.disallow('external'),
-    // remove: hooks.disallow('external'),
+    remove: hooks.disallow('external'),
     // update: hooks.disallow('external'),
     // find: hooks.disallow('external'),
     get: hooks.disallow('external')
