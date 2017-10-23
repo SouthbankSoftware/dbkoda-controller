@@ -37,6 +37,72 @@ const isMongoCommand = (cmd) => {
   return cmd && cmd.indexOf('mongo') >= 0;
 };
 
+export const getMongoPath = (mongoCmd) => {
+  let mongoPath = '';
+  if (mongoCmd) {
+    // if (os.platform() === 'win32') {
+    //   mongoPath = mongoCmd.replace(/mongo.exe$/, '');
+    // } else {
+    //   mongoPath = mongoCmd.replace(/mongo$/, '');
+    // }
+    mongoPath = path.dirname(mongoCmd);
+    if (mongoPath !== '.') {
+      mongoPath += '/';
+    } else {
+      mongoPath = '';
+    }
+  }
+  return mongoPath;
+};
+
+const applyPathToOtherCommands = (config) => {
+  const mongoPath = getMongoPath(config.mongoCmd);
+  _.keys(config).map((key) => {
+    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd' && key !== 'telemetryEnabled') {
+      const cmdName = key.replace('Cmd', '');
+      if (os.platform() === 'win32') {
+        config[key] = mongoPath + cmdName + '.exe';
+      } else {
+        config[key] = mongoPath + cmdName;
+      }
+    }
+  });
+};
+
+export const loadConfig = (config) => {
+// check and figure out missing config
+  try {
+    if (!config.mongoCmd) {
+      if (os.platform() === 'win32') {
+        config.mongoCmd = 'mongo.exe';
+      } else {
+        config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
+        const tmp = config.mongoCmd.split('\n');
+        if (tmp.length > 0) {
+          config.mongoCmd = tmp[tmp.length - 1];
+        }
+      }
+    }
+    if (!config.mongoVersionCmd && config.mongoCmd) {
+      config.mongoVersionCmd = config.mongoCmd + ' --version';
+    }
+
+    applyPathToOtherCommands(config);
+  } catch (error) {
+    l.error(error.stack);
+    config.mongoCmd = null;
+  }
+  return config;
+};
+
+export const exportConfigToYamlFile = (p, config) => {
+  try {
+    fs.writeFileSync(p, yaml.safeDump(config));
+  } catch (error) {
+    l.error(error.stack);
+  }
+};
+
 export const loadConfigFromYamlFile = (p) => {
   const config = {
     mongoCmd: null,
@@ -71,72 +137,6 @@ export const loadConfigFromYamlFile = (p) => {
     } catch (_e) {
       // console.error(_e);
     } // eslint-disable-line no-empty
-  }
-  return config;
-};
-
-export const exportConfigToYamlFile = (p, config) => {
-  try {
-    fs.writeFileSync(p, yaml.safeDump(config));
-  } catch (error) {
-    l.error(error.stack);
-  }
-}
-
-export const getMongoPath = (mongoCmd) => {
-  let mongoPath = '';
-  if (mongoCmd) {
-    // if (os.platform() === 'win32') {
-    //   mongoPath = mongoCmd.replace(/mongo.exe$/, '');
-    // } else {
-    //   mongoPath = mongoCmd.replace(/mongo$/, '');
-    // }
-    mongoPath = path.dirname(mongoCmd);
-    if (mongoPath !== '.') {
-      mongoPath += '/';
-    } else {
-      mongoPath = '';
-    }
-  }
-  return mongoPath;
-};
-
-const applyPathToOtherCommands = (config) => {
-  const mongoPath = getMongoPath(config.mongoCmd);
-  _.keys(config).map((key) => {
-    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd'  && key !== 'telemetryEnabled') {
-      const cmdName = key.replace('Cmd', '');
-      if (os.platform() === 'win32') {
-        config[key] = mongoPath + cmdName + '.exe';
-      } else {
-        config[key] = mongoPath + cmdName;
-      }
-    }
-  });
-};
-
-export const loadConfig = (config) => {
-// check and figure out missing config
-  try {
-    if (!config.mongoCmd) {
-      if (os.platform() === 'win32') {
-        config.mongoCmd = 'mongo.exe';
-      } else {
-        config.mongoCmd = execSync('bash -lc \'which mongo\'', {encoding: 'utf8'}).trim();
-        const tmp = config.mongoCmd.split('\n');
-        if (tmp.length > 0) {
-          config.mongoCmd = tmp[tmp.length - 1];
-        }
-      }
-    }
-    if (!config.mongoVersionCmd && config.mongoCmd) {
-      config.mongoVersionCmd = config.mongoCmd + ' --version';
-    }
-
-    applyPathToOtherCommands(config);
-  } catch (error) {
-    l.error(error.stack);
-    config.mongoCmd = null;
   }
   return config;
 };
