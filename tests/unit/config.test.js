@@ -186,6 +186,9 @@ describe('configure path tests', () => {
     if (os.platform() === 'win32') {
       const path = getMongoPath('mongo.exe');
       assert.equal(path, '');
+    } else {
+      const path = getMongoPath('mongo');
+      assert.equal(path, '');
     }
   });
 });
