@@ -45,9 +45,13 @@ export const loadConfigFromYamlFile = (p) => {
     mongorestoreCmd: null,
     mongoimportCmd: null,
     mongoexportCmd: null,
-    drillCmd: null
+    drillCmd: null,
+    showWelcomePageAtStart: true,
+    telemetryEnabled: null,
   };
   if (!fs.existsSync(p)) {
+    loadConfig(config);
+    exportConfigToYamlFile(p, config);
     return config;
   }
   if (p) {
@@ -71,6 +75,14 @@ export const loadConfigFromYamlFile = (p) => {
   return config;
 };
 
+export const exportConfigToYamlFile = (p, config) => {
+  try {
+    fs.writeFileSync(p, yaml.safeDump(config));
+  } catch (error) {
+    l.error(error.stack);
+  }
+}
+
 export const getMongoPath = (mongoCmd) => {
   let mongoPath = '';
   if (mongoCmd) {
@@ -92,7 +104,7 @@ export const getMongoPath = (mongoCmd) => {
 const applyPathToOtherCommands = (config) => {
   const mongoPath = getMongoPath(config.mongoCmd);
   _.keys(config).map((key) => {
-    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd') {
+    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd'  && key !== 'telemetryEnabled') {
       const cmdName = key.replace('Cmd', '');
       if (os.platform() === 'win32') {
         config[key] = mongoPath + cmdName + '.exe';
