@@ -35,7 +35,6 @@ const findCommandParameters = (cmd) => {
 };
 
 class OSCommandsController extends EventEmitter {
-
   constructor() {
     super();
     this.requestQueue = [];
@@ -48,7 +47,11 @@ class OSCommandsController extends EventEmitter {
     if (cmds) {
       cmds.map(c => c && this.requestQueue.push({connect, cmd: c, shellId}));
     }
-    this.runCommandFromQueue();
+    try {
+      this.runCommandFromQueue();
+    } catch (err) {
+      log.error('get error on run os command ', err);
+    }
     return Promise.resolve({});
   }
 
@@ -69,31 +72,40 @@ class OSCommandsController extends EventEmitter {
     const params = findCommandParameters(cmd);
     const mongoCmd = configObj[params[0] + 'Cmd'] ? configObj[params[0] + 'Cmd'] : params[0];
     params.splice(0, 1);
-    const p = spawn(mongoCmd, params);
-    this.currentProcess = {process: p, cmd};
-    p.stdout.on('data', (data) => {
-      log.debug(`stdout: ${data}`);
-      this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, {id, shellId, output: data.toString('utf8')});
-    });
+    try {
+      const p = spawn(mongoCmd, params);
+      this.currentProcess = {process: p, cmd};
+      p.stdout.on('data', (data) => {
+        log.debug(`stdout: ${data}`);
+        this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, {id, shellId, output: data.toString('utf8')});
+      });
 
-    p.stderr.on('data', (data) => {
-      log.debug(`stderr: ${data}`);
-      this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, {id, shellId, output: data.toString('utf8')});
-    });
+      p.stderr.on('data', (data) => {
+        log.debug(`stderr: ${data}`);
+        this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, {id, shellId, output: data.toString('utf8')});
+      });
 
-    p.on('close', (code) => {
-      log.debug(`child process exited with code ${code}`);
-      if (this.requestQueue.length <= 0) {
-        this.emit(OSCommandsController.COMMAND_FINISH_EVENT, {
-          id,
-          shellId,
-          output: `child process exited with code ${code}`,
-          cmd,
-          code
-        });
-      }
-      this.runCommandFromQueue();
-    });
+      p.on('error', (d) => {
+        log.error('process exits', d);
+      });
+
+      p.on('close', (code) => {
+        log.debug(`child process exited with code ${code}`);
+        if (this.requestQueue.length <= 0) {
+          this.emit(OSCommandsController.COMMAND_FINISH_EVENT, {
+            id,
+            shellId,
+            output: `child process exited with code ${code}\n\r`,
+            cmd,
+            code
+          });
+        }
+        this.runCommandFromQueue();
+      });
+    } catch (err) {
+      log.error(err);
+      this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, {id, shellId, output: err.message});
+    }
   }
 
   killCurrentProcess() {
