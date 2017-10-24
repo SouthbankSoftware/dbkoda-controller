@@ -37,40 +37,6 @@ const isMongoCommand = (cmd) => {
   return cmd && cmd.indexOf('mongo') >= 0;
 };
 
-export const loadConfigFromYamlFile = (p) => {
-  const config = {
-    mongoCmd: null,
-    mongoVersionCmd: null,
-    mongodumpCmd: null,
-    mongorestoreCmd: null,
-    mongoimportCmd: null,
-    mongoexportCmd: null,
-    drillCmd: null
-  };
-  if (!fs.existsSync(p)) {
-    return config;
-  }
-  if (p) {
-    // overwrite using external config yaml file
-    try {
-      const userConfig = yaml.safeLoad(fs.readFileSync(p, 'utf8'));
-      _.assign(config, _.pick(userConfig, _.keys(config)));
-      if (os.platform() === 'win32') {
-        _.keys(config).map((key) => {
-          if (config[key] && key !== 'mongoVersionCmd' && key !== 'drillCmd') {
-            if (!config[key].match(new RegExp('.exe$', 'i'))) {
-              config[key] += '.exe';
-            }
-          }
-        });
-      }
-    } catch (_e) {
-      // console.error(_e);
-    } // eslint-disable-line no-empty
-  }
-  return config;
-};
-
 export const getMongoPath = (mongoCmd) => {
   let mongoPath = '';
   if (mongoCmd) {
@@ -92,7 +58,7 @@ export const getMongoPath = (mongoCmd) => {
 const applyPathToOtherCommands = (config) => {
   const mongoPath = getMongoPath(config.mongoCmd);
   _.keys(config).map((key) => {
-    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd') {
+    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd' && key !== 'telemetryEnabled') {
       const cmdName = key.replace('Cmd', '');
       if (os.platform() === 'win32') {
         config[key] = mongoPath + cmdName + '.exe';
@@ -125,6 +91,52 @@ export const loadConfig = (config) => {
   } catch (error) {
     l.error(error.stack);
     config.mongoCmd = null;
+  }
+  return config;
+};
+
+export const exportConfigToYamlFile = (p, config) => {
+  try {
+    fs.writeFileSync(p, yaml.safeDump(config));
+  } catch (error) {
+    l.error(error.stack);
+  }
+};
+
+export const loadConfigFromYamlFile = (p) => {
+  const config = {
+    mongoCmd: null,
+    mongoVersionCmd: null,
+    mongodumpCmd: null,
+    mongorestoreCmd: null,
+    mongoimportCmd: null,
+    mongoexportCmd: null,
+    drillCmd: null,
+    showWelcomePageAtStart: true,
+    telemetryEnabled: null,
+  };
+  if (!fs.existsSync(p)) {
+    loadConfig(config);
+    exportConfigToYamlFile(p, config);
+    return config;
+  }
+  if (p) {
+    // overwrite using external config yaml file
+    try {
+      const userConfig = yaml.safeLoad(fs.readFileSync(p, 'utf8'));
+      _.assign(config, _.pick(userConfig, _.keys(config)));
+      if (os.platform() === 'win32') {
+        _.keys(config).map((key) => {
+          if (config[key] && key !== 'mongoVersionCmd' && key !== 'drillCmd') {
+            if (!config[key].match(new RegExp('.exe$', 'i'))) {
+              config[key] += '.exe';
+            }
+          }
+        });
+      }
+    } catch (_e) {
+      // console.error(_e);
+    } // eslint-disable-line no-empty
   }
   return config;
 };

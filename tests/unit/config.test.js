@@ -27,6 +27,7 @@ const os = require('os');
 const assert = require('assert');
 const _ = require('lodash');
 const path = require('path');
+const fs = require('fs');
 
 const extension = os.platform() === 'win32' ? '.exe' : '';
 
@@ -69,14 +70,16 @@ describe('configure path tests', () => {
     assert.notEqual(config.mongoVersionCmd, null);
     if (os.platform() === 'win32') {
       _.keys(config).map((key) => {
-        if (key !== 'mongoVersionCmd' && key !== 'drillCmd') {
+        if (key !== 'mongoVersionCmd' && key !== 'drillCmd' &&
+          key !== 'showWelcomePageAtStart' && key !== 'telemetryEnabled') {
           assert.equal(config[key].match(new RegExp('.exe$')) !== null, true);
         }
       });
     } else {
       _.keys(config).map((key) => {
         const cmdName = key.replace('Cmd', '');
-        if (key !== 'mongoVersionCmd' && key !== 'drillCmd') {
+        if (key !== 'mongoVersionCmd' && key !== 'drillCmd' &&
+          key !== 'showWelcomePageAtStart' && key !== 'telemetryEnabled') {
           assert.equal(config[key], '/opt/mongo/bin/' + cmdName);
         }
       });
@@ -92,7 +95,8 @@ describe('configure path tests', () => {
 
   it('load none existed file', () => {
     const config = loadConfigFromYamlFile('xxxxx');
-    assert.equal(config.mongoCmd, null);
+    assert.equal(config.mongoCmd, config.mongoCmd); // File should now be written as passed in
+    fs.unlinkSync('xxxxx');
   });
 
   it('load commands from file', () => {
