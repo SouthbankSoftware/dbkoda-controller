@@ -71,9 +71,7 @@ module.exports = function() {
 
   console.log('IS_JAVA', global.IS_JAVA);
   if (global.IS_JAVA) {
-    const drillRestController = require('../controllers/drill-rest');
     const drill = require('./drill');
-    app.configure(drillRestController);
     app.configure(drill);
   }
 

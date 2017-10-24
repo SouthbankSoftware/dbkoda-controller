@@ -23,6 +23,7 @@ const hooks = require('./hooks');
 class DrillService {
   constructor(options) {
     this.options = options || {};
+    this.bControllerInit = false;
     this.docs = {
       create: {
         description: 'Create a new connection',
@@ -73,11 +74,24 @@ class DrillService {
       },
     };
   }
-  setup(app) {
-    this.app = app;
-    this.controller = app.service('drill/rest/controller');
+  // setup(app) {
+  //   this.app = app;
+  //   this.controller = app.service('drill/rest/controller');
+  // }
+  initController() {
+    if (this.options.app_ref) {
+      const drillRestController = require('../../controllers/drill-rest');
+      this.options.app_ref.configure(drillRestController);
+      this.controller = this.options.app_ref.service('drill/rest/controller');
+      this.bControllerInit = true;
+    }
   }
   create(params) {
+    console.log('bControllerInit 1', this.bControllerInit);
+    if (!this.bControllerInit) {
+      this.initController();
+      console.log('bControllerInit 2', this.bControllerInit);
+    }
     l.info('create apache drill connection ', params);
     return this.controller.create(params);
   }
@@ -94,7 +108,7 @@ module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires
-  const service = new DrillService();
+  const service = new DrillService({app_ref: app});
   app.use('/drill', service);
 
   // Get our initialize service to that we can bind hooks
