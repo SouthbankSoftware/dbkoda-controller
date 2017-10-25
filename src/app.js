@@ -20,7 +20,7 @@
 
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-06-09T11:51:26+10:00
+ * @Last modified time: 2017-10-25T14:45:46+11:00
  */
 
 import moment from 'moment';
@@ -54,9 +54,11 @@ function checkJavaVersion(callback) {
   }
   if (spawn.stderr) {
     const data = spawn.stderr.toString().split('\n')[0];
-    const javaVersion = new RegExp('java version').test(data) ? data.split(' ')[2].replace(/"/g, '') : false;
+    const javaVersion = new RegExp('java version').test(data)
+      ? data.split(' ')[2].replace(/"/g, '')
+      : false;
     if (javaVersion != false) {
-        return callback(null, javaVersion);
+      return callback(null, javaVersion);
     }
     return callback(new Error('JAVA is not found in the path.'), null);
   }
@@ -163,7 +165,6 @@ app
     primus(
       {
         transformer: 'websockets',
-        timeout: false,
       },
       (primus) => {
         primus.library();
