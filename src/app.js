@@ -37,8 +37,6 @@ import primus from 'feathers-primus';
 import swagger from 'feathers-swagger';
 import sh from 'shelljs';
 
-require('babel-polyfill');
-
 const app = feathers();
 
 // feathers-configuration 0.3.x to 0.4.x API change, which now relies on node-config
@@ -170,6 +168,7 @@ app
       (primus) => {
         primus.library();
         const libPath = path.join(__dirname, '../public/dist/primus.js');
+        l.info(libPath);
         sh.mkdir('-p', path.dirname(libPath));
         primus.save(libPath);
       },
