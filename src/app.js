@@ -35,6 +35,7 @@ import rest from 'feathers-rest';
 import bodyParser from 'body-parser';
 import primus from 'feathers-primus';
 import swagger from 'feathers-swagger';
+import sh from 'shelljs';
 
 require('babel-polyfill');
 
@@ -168,7 +169,9 @@ app
       },
       (primus) => {
         primus.library();
-        primus.save(path.join(__dirname, '../public/dist/primus.js'));
+        const libPath = path.join(__dirname, '../public/dist/primus.js');
+        sh.mkdir('-p', path.dirname(libPath));
+        primus.save(libPath);
       },
     ),
   )
