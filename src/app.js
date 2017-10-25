@@ -168,7 +168,6 @@ app
       (primus) => {
         primus.library();
         const libPath = path.join(__dirname, '../public/dist/primus.js');
-        l.info(libPath);
         sh.mkdir('-p', path.dirname(libPath));
         primus.save(libPath);
       },
