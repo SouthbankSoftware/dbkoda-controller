@@ -153,7 +153,7 @@ export const loadCommands = () => {
   }
   if (os.platform() === 'win32') {
     _.forOwn(config, (value, key) => {
-      if (value) {
+      if (value && value.replace) {
         config[key] = value.replace(/\\/g, '/');
       }
     });
