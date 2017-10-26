@@ -39,14 +39,7 @@ const jdbcApiInst = new JdbcApi();
  */
 class DrillRestController {
   constructor(options) {
-    this.options = options || {
-      connectTimeoutMS: 30000,
-      socketTimeoutMS: 30000,
-      // retry to connect for 30 times
-      reconnectTries: 30,
-      // wait 1 second before retrying
-      reconnectInterval: 1000,
-    };
+    this.options = options || {};
     this.profileHash = {};  // will store the profiles which have been added to Drill Instance
     this.connections = {};
 
@@ -93,7 +86,9 @@ class DrillRestController {
       this.drillInstance = exec(drillCmdStr, drillOptions, (error, stdout, stderr) => {
         if (error) {
           console.error(`exec error: ${error}`);
-          return;
+          const err = new Error('Drill Exec Failed');
+          err.code = 'DRILL_EXEC_FAILED';
+          throw err;
         }
         console.log(`stdout: ${stdout}`);
         console.log(`stderr: ${stderr}`);
