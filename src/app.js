@@ -46,34 +46,7 @@ app.configure(require('feathers-configuration')());
 global.IS_PROD = process.env.NODE_ENV === 'production';
 global.UAT = process.env.UAT === 'true';
 
-function checkJavaVersion(callback) {
-  const spawn = require('child_process').spawnSync('java', ['-version']);
-  if (spawn.error) {
-    return callback(spawn.error, null);
-  }
-  if (spawn.stderr) {
-    const data = spawn.stderr.toString().split('\n')[0];
-    const javaVersion = new RegExp('java version').test(data)
-      ? data.split(' ')[2].replace(/"/g, '')
-      : false;
-    if (javaVersion != false) {
-      return callback(null, javaVersion);
-    }
-    return callback(new Error('JAVA is not found in the path.'), null);
-  }
-}
-
-checkJavaVersion((err, ver) => {
-  if (err) {
-    console.log(err.message);
-    global.IS_JAVA = false;
-  } else {
-    console.log('JAVA VERSION: ', ver);
-    global.IS_JAVA = true;
-  }
-});
-
-// config winston
+// config winston. The logger should be configured first
 (() => {
   const commonOptions = {
     colorize: 'all',
@@ -134,8 +107,36 @@ checkJavaVersion((err, ver) => {
 
   process.on('uncaughtException', (err) => {
     log.error(err.stack);
+    throw err;
   });
 })();
+
+function checkJavaVersion(callback) {
+  const spawn = require('child_process').spawnSync('java', ['-version']);
+  if (spawn.error) {
+    return callback(spawn.error, null);
+  }
+  if (spawn.stderr) {
+    const data = spawn.stderr.toString().split('\n')[0];
+    const javaVersion = new RegExp('java version').test(data)
+      ? data.split(' ')[2].replace(/"/g, '')
+      : false;
+    if (javaVersion != false) {
+      return callback(null, javaVersion);
+    }
+    return callback(new Error('JAVA is not found in the path.'), null);
+  }
+}
+
+checkJavaVersion((err, ver) => {
+  if (err) {
+    console.log(err.message);
+    global.IS_JAVA = false;
+  } else {
+    console.log('JAVA VERSION: ', ver);
+    global.IS_JAVA = true;
+  }
+});
 
 // require here so code from this point can use winston logger
 const middleware = require('./middleware');
