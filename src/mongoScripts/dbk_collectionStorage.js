@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-10-28T22:32:16+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -30,7 +33,7 @@
 
 dbk_Cs = {};
 
-// Increment the totals for a specific element 
+// Increment the totals for a specific element
 dbk_Cs.incSize = function(index, size) {
   if (typeof dbk_Cs.sizes[index] === "undefined") {
     dbk_Cs.sizes[index] = size;
@@ -39,8 +42,8 @@ dbk_Cs.incSize = function(index, size) {
   }
 };
 
-// This is the recursive function to size a given 
-// subset of the sample 
+// This is the recursive function to size a given
+// subset of the sample
 dbk_Cs.sizeSample = function(sample, parentId) {
   //print("parentId=" + parentId+ " "+typeof parentId);
   //print (sample);
@@ -53,7 +56,7 @@ dbk_Cs.sizeSample = function(sample, parentId) {
   }
 };
 
-// Size a single element 
+// Size a single element
 dbk_Cs.sizeElem = function(doc, parentId) {
   if (typeof doc === "object" && doc !== null) {
     dbk_Cs.incSize(parentId, Object.bsonsize(doc));
@@ -68,7 +71,7 @@ dbk_Cs.sizeElem = function(doc, parentId) {
 };
 
 // Take a sample of the collection and work out the sizes for each sub
-// element 
+// element
 dbk_Cs.collectionSize = function(dbName, collectionName, sampleSize) {
   dbk_Cs.sizes = {};
   var collection = db.getSiblingDB(dbName).getCollection(collectionName); // eslint-disable-line
@@ -79,7 +82,13 @@ dbk_Cs.collectionSize = function(dbName, collectionName, sampleSize) {
   }
   var sample = collection.aggregate([sampleClause],{allowDiskUse: true});
 
-  dbk_Cs.sizeSample(sample.toArray(), ["total"]);
+  var sampleArray = sample.toArray();
+
+  if (sampleArray.length === 0) {
+    return [{name: "Other", size: totalSize}];
+  } else {
+    dbk_Cs.sizeSample(sampleArray, ["total"]);
+  }
 
   output = dbk_Cs.sizes;
   var sampleTotal = output["total"];
@@ -90,7 +99,7 @@ dbk_Cs.collectionSize = function(dbName, collectionName, sampleSize) {
   return dbk_Cs.convertJsonToHierarchy(output)[0].children;
 };
 
-// Next 3 functions convert to format wanted by the D3 starburst control 
+// Next 3 functions convert to format wanted by the D3 starburst control
 dbk_Cs.convertJsonToHierarchy = function(jsObj) {
   var res = [];
   var resObj = {};
@@ -137,8 +146,8 @@ dbk_Cs.addOtherSum = function(obj) {
     }
 
     if (obj.name === "total") {
-      // We need "other" at the top level to make sure the chart doesn't 
-      // show the wrong size for the total data segment 
+      // We need "other" at the top level to make sure the chart doesn't
+      // show the wrong size for the total data segment
       obj.children.push({ name: "Other", size: obj.size - childSum });
       obj.size = 0;
     } else {
