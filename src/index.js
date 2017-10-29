@@ -23,7 +23,6 @@
  * @Last modified time: 2017-06-08T18:41:03+10:00
  */
 
-import 'babel-polyfill';
 import app from './app';
 
 const port = app.get('port');
