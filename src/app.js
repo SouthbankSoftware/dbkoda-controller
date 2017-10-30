@@ -113,7 +113,7 @@ global.UAT = process.env.UAT === 'true';
   });
 })();
 
-function checkJavaVersion(callback) {
+/* function checkJavaVersion(callback) {
   const spawn = require('child_process').spawnSync('java', ['-version']);
   if (spawn.error) {
     return callback(spawn.error, null);
@@ -138,7 +138,7 @@ checkJavaVersion((err, ver) => {
     console.log('JAVA VERSION: ', ver);
     global.IS_JAVA = true;
   }
-});
+}); */
 
 // require here so code from this point can use winston logger
 const middleware = require('./middleware');

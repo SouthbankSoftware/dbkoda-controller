@@ -21,7 +21,7 @@
  * Created by Wahaj on 19/10/17.
  */
 
-const assert = require('assert');
+/* const assert = require('assert');
 const app = require('../../../../src/app');
 
 describe('Drill service', () => {
@@ -29,4 +29,4 @@ describe('Drill service', () => {
       const drill = app.service('drill');
       assert.ok(drill);
     });
-});
+}); */

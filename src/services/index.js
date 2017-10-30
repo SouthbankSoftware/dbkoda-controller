@@ -69,11 +69,11 @@ module.exports = function() {
   app.configure(driverService);
 
 
-  console.log('IS_JAVA', global.IS_JAVA);
-  if (global.IS_JAVA) {
-    const drill = require('./drill');
-    app.configure(drill);
-  }
+  // console.log('IS_JAVA', global.IS_JAVA);
+  // if (global.IS_JAVA) {
+  //   const drill = require('./drill');
+  //   app.configure(drill);
+  // }
 
   if (process.env.NODE_ENV !== 'production') {
     const monitor = require('./monitor');

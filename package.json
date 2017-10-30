@@ -133,8 +133,5 @@
     "source-map-support": "^0.4.11",
     "strip-comments": "^0.4.4",
     "test-utils": "^1.0.21"
-  },
-  "optionalDependencies": {
-    "jdbc": "^0.5.1"
   }
 }
