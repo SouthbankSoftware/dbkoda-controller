@@ -23,7 +23,9 @@ import os from 'os';
 import archiver from 'archiver';
 import fs from 'fs';
 import _ from 'lodash';
+import { loadCommands } from '../../config';
 
+const execSync = require('child_process').execSync;
 const hooks = require('./hooks');
 
 class SupportBundleService {
@@ -46,71 +48,137 @@ class SupportBundleService {
 
   _bundleFiles(bundlePath, filePaths) {
     return new Promise((resolve, reject) => {
-      l.info('Creating new bundle at:', bundlePath);
+      try {
+        l.info('Creating new bundle at:', bundlePath);
 
-      const output = fs.createWriteStream(bundlePath);
-      const archive = archiver('zip', {
-        zlib: { level: 7 }, // Sets compression level
-      });
+        const output = fs.createWriteStream(bundlePath);
+        const archive = archiver('zip', {
+          zlib: { level: 7 }, // Sets compression level
+        });
 
-      // listen for all archive data to be written.
-      output.on('close', () => {
-        l.info(archive.pointer() + ' total byes');
-        l.info(
-          'archiver has been finalized and the output file descriptor has closed.',
-        );
-        resolve(bundlePath);
-      });
+        // listen for all archive data to be written.
+        output.on('close', () => {
+          l.info(archive.pointer() + ' total byes');
+          l.info(
+            'archiver has been finalized and the output file descriptor has closed.',
+          );
+          resolve(bundlePath);
+        });
 
-      // good practice to catch warnings
-      archive.on('warning', (err) => {
-        if (err.code === 'ENOENT') {
-          l.warn(err);
-        } else {
+        // good practice to catch warnings
+        archive.on('warning', (err) => {
+          if (err.code === 'ENOENT') {
+            l.warn(err);
+          } else {
+            reject(err);
+          }
+        });
+
+        archive.on('error', (err) => {
           reject(err);
+        });
+
+        archive.pipe(output);
+
+        // Append stateStore.
+        if (fs.existsSync(filePaths.statePath)) {
+          l.info('Appending State Store...');
+          archive.append(fs.createReadStream(filePaths.statePath), {
+            name: 'stateStore.json',
+          });
         }
-      });
 
-      archive.on('error', (err) => {
-        reject(err);
-      });
+        // Append config.yml
+        if (fs.existsSync(filePaths.configPath)) {
+          l.info('Appending Config...');
+          archive.append(fs.createReadStream(filePaths.configPath), {
+            name: 'config.yml',
+          });
+        }
 
-      archive.pipe(output);
+        // Append controller log.
+        if (fs.existsSync(filePaths.controllerLogPath)) {
+          l.info('Appending Controller Log...');
+          archive.append(fs.createReadStream(filePaths.controllerLogPath), {
+            name: 'controllerLog.txt',
+          });
+        }
 
-      // Append stateStore.
-      if (fs.existsSync(filePaths.statePath)) {
-        l.info('Appending State Store...');
-        archive.append(fs.createReadStream(filePaths.statePath), {
-          name: 'stateStore.json',
-        });
+        // Append dbKoda log.
+        if (filePaths.dbKodaLogPath && fs.existsSync(filePaths.dbKodaLogPath)) {
+          l.info('Appending App Log...');
+          archive.append(fs.createReadStream(filePaths.dbKodaLogPath), {
+            name: 'applicationLog.txt',
+          });
+        }
+
+        // Get OS and Mongo Version.
+        if (filePaths.dbKodaLogPath && fs.existsSync(filePaths.dbKodaLogPath)) {
+          l.info('Appending OS and Mongo Version...');
+          // Get OS:
+          const osType = os.platform();
+          // Get OS version:
+          const osRelease = os.release();
+          // Get Mongo Version.
+          let mongoVersion = 'Undetermined';
+          try {
+            const configObj = loadCommands();
+
+            if (!configObj.mongoVersionCmd) {
+              log.error('unkonwn version');
+              mongoVersion = 'UNKNOWN';
+            } else {
+              const output = execSync(configObj.mongoVersionCmd, {
+                encoding: 'utf8',
+              });
+              mongoVersion = output;
+              const mongoVStr = output.split('\n');
+              if (mongoVStr && mongoVStr.length > 0) {
+                if (mongoVStr[0].indexOf('MongoDB shell version v') >= 0) {
+                  mongoVersion = mongoVStr[0]
+                    .replace('MongoDB shell version v', '')
+                    .trim();
+                }
+                if (mongoVStr[0].indexOf('MongoDB shell version:') >= 0) {
+                  mongoVersion = mongoVStr[0]
+                    .replace('MongoDB shell version:', '')
+                    .trim();
+                }
+                mongoVersion = mongoVStr[0];
+              }
+            }
+          } catch (e) {
+            l.error('Unable to get Mongo version due to error: ', e);
+            mongoVersion = 'UNKNOWN';
+          }
+
+          l.info(
+            'System info Found: { "osType": "' +
+              osType +
+              '", "osRelease": "' +
+              osRelease +
+              '", "mongoShellVersion": "' +
+              mongoVersion.replace('MongoDB shell version v', '') +
+              '"}',
+          );
+
+          archive.append(
+            '{ "osType": "' +
+              osType +
+              '", "osRelease": "' +
+              osRelease +
+              '", "mongoShellVersion": "' +
+              mongoVersion.replace('MongoDB shell version v', '') +
+              '"}',
+            { name: 'systemInfo.json' },
+          );
+        }
+
+        // Finalize the archive
+        archive.finalize();
+      } catch (e) {
+        reject(e);
       }
-
-      // Append config.yml
-      if (fs.existsSync(filePaths.configPath)) {
-        l.info('Appending Config...');
-        archive.append(fs.createReadStream(filePaths.configPath), {
-          name: 'config.yml',
-        });
-      }
-
-      // Append controller log.
-      if (fs.existsSync(filePaths.controllerLogPath)) {
-        l.info('Appending Controller Log...');
-        archive.append(fs.createReadStream(filePaths.controllerLogPath), {
-          name: 'controllerLog.txt',
-        });
-      }
-
-      // Append dbKoda log.
-      if (filePaths.dbKodaLogPath && fs.existsSync(filePaths.dbKodaLogPath)) {
-        l.info('Appending App Log...');
-        archive.append(fs.createReadStream(filePaths.dbKodaLogPath), {
-          name: 'applicationLog.txt',
-        });
-      }
-
-      // Finalize the archive
-      archive.finalize();
     });
   }
 
