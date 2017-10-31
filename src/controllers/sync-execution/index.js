@@ -33,7 +33,6 @@ const errors = require('feathers-errors');
  * this controller is used to handle auto complete for mongo shell
  */
 class SyncExecutionController {
-
   setup(app) {
     this.emitter = new EventEmitter();
     this.requestQueue = [];
@@ -102,9 +101,13 @@ class SyncExecutionController {
       log.debug('execution ended ', shellOutputs.join('\n'));
       shell.removeAllListeners(MongoShell.SYNC_OUTPUT_EVENT);
       shell.removeAllListeners(MongoShell.SYNC_EXECUTE_END);
-      let output = shellOutputs.join('\n') + data;
+      const filterThreeDot = shellOutputs.map((o) => {
+        return o.replace(/^[\s]*[\.]*/, '');  // eslint-disable-line
+      });
+      let output = filterThreeDot.join('\n') + data;
       log.debug('all sync output ', output);
-      output = output.replace(MongoShell.prompt, '').replace(commands, '');
+      const commandStr = commands.replace(/[\s|\n|\r]+/g, '');
+      output = output.replace(MongoShell.prompt, '').replace(/[\s|\n|\r]+/g, '').replace(commandStr, '');
       if (responseType === 'json' || responseType === 'explain') {
         output = output.replace(/\n/g, '').replace(/\r/g, '');
         output = output.replace(/ObjectId\("([a-zA-Z0-9]*)"\)/g, '"ObjectId(\'$1\')"');
