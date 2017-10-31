@@ -93,8 +93,19 @@ class SyncExecutionController {
     this.requestQueue = newQueue;
   }
 
+  formatCommand(commands) { // eslint-disable-line
+    if (commands.indexOf('\n') >= 0) {
+      const formatted = commands.split('\n').map((cmd) => {
+        return cmd.replace(/\/\/.*/, '');
+      });
+      return formatted.join(' ');
+    }
+    return commands;
+  }
+
   runSyncCommandOnShell(req) {
     const { shell, commands, resolve, responseType } = req;
+    const formatetedCmds = this.formatCommand(commands);
     const shellOutputs = [];
     shell.on(MongoShell.SYNC_OUTPUT_EVENT, this.outputListener.bind(this, shellOutputs));
     const syncExecutEnd = (data) => {
@@ -106,8 +117,14 @@ class SyncExecutionController {
       });
       let output = filterThreeDot.join('\n') + data;
       log.debug('all sync output ', output);
-      const commandStr = commands.replace(/[\s|\n|\r]+/g, '');
-      output = output.replace(MongoShell.prompt, '').replace(/[\s|\n|\r]+/g, '').replace(commandStr, '');
+      const commandStr = formatetedCmds.replace(/[\s|\n|\r]+/g, '');
+      log.debug('command:', commandStr);
+      let filterOutput = output.replace(MongoShell.prompt, '').replace(/[\s|\n|\r]+/g, '');
+      log.debug('filtered output', filterOutput);
+      while (filterOutput.indexOf(commandStr) >= 0) {
+        filterOutput = filterOutput.replace(commandStr, '');
+      }
+      output = filterOutput;
       if (responseType === 'json' || responseType === 'explain') {
         output = output.replace(/\n/g, '').replace(/\r/g, '');
         output = output.replace(/ObjectId\("([a-zA-Z0-9]*)"\)/g, '"ObjectId(\'$1\')"');
@@ -130,11 +147,11 @@ class SyncExecutionController {
       }
       this
         .emitter
-        .emit('command::finished', commands);
+        .emit('command::finished', formatetedCmds);
     };
     shell.on(MongoShell.SYNC_EXECUTE_END, syncExecutEnd.bind(this));
-    this.currentCommand = { shell, commands, resolve, responseType };
-    shell.writeSyncCommand(commands);
+    this.currentCommand = { shell, formatetedCmds, resolve, responseType };
+    shell.writeSyncCommand(formatetedCmds);
   }
 
   /**
@@ -192,7 +209,6 @@ class SyncExecutionController {
 
   outputListener(shellOutputs, data) { // eslint-disable-line
     shellOutputs.push(data);
-    // this.output += data + '\n';
   }
 }
 
