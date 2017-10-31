@@ -197,12 +197,12 @@ class MongoConnectionController {
             log.error('create mongo shell failed:', err);
             if (err.code === 'MONGO_BINARY_UNDETECTED') {
               throw new errors.GeneralError(
-                'Create shell connection failed. Cannot detect mongo binary.<br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda/tree/hot-fix_DBKODA-2#config\')">this doc</a> for details)',
+                'Creation of shell connection failed. Unable to detect  your mongo binary.<br/><br/>Please make sure the Mongo shell is in your path, or define path to mongo shell in the Preferences Panel.(Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)',
               );
             } else if (err.responseCode === 'MONGO_BINARY_CORRUPTED') {
               log.error('Corrupted mongo binary');
               throw new errors.GeneralError(
-                'Create shell connection failed. Mongo binary might be corrupted.<br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://github.com/SouthbankSoftware/dbkoda/tree/hot-fix_DBKODA-2#config\')">this doc</a> for details)',
+                'Create shell connection failed. Mongo binary might be corrupted.<br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)',
               );
             } else if (err.responseCode === 'FAILED_LAUNCH_MONGO_SHELL') {
               throw new errors.GeneralError(
