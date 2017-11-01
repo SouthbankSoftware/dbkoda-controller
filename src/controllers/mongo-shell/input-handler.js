@@ -146,12 +146,12 @@ const csiStateHandler = {
   },
   'h': () => { // set mode
   },
-  'm': () => {  // set color
+  'm': () => { // set color
   },
   'l': () => {}, // reset mode
   'A': () => {}, // cursor up
   'B': () => {}, // cursor down
-  'C': () => {},  // cursorForward
+  'C': () => {}, // cursorForward
   'D': () => {}, // cursorBackward
   'E': () => {}, // cursorNextLine
   'F': () => {}, // cursorPrecedingLine
