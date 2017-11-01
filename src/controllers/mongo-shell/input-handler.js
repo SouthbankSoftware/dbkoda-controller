@@ -94,7 +94,7 @@ const cursorCharAbsolute = (parser, params) => {
   if (parser.buffers.length > parser.bufferY) {
     // if the x cursor is greater than the current line length, append space
     const currentLine = parser.buffers[parser.bufferY];
-    while (currentLine.data && currentLine.data.length < parser.bufferX) {
+    while (currentLine && currentLine.data && currentLine.data.length < parser.bufferX) {
       currentLine.data += ' ';
     }
   }
@@ -113,6 +113,24 @@ const cursorCharAbsolute = (parser, params) => {
  *     Ps = 2  -> Selective Erase All.
  */
 const eraseInDisplay = (parser, params) => {
+  for (let i = parser.bufferY; i < parser.buffers.length; i += 1) {
+    const currentLine = parser.buffers[i];
+    switch (params[0]) {
+      case 0:
+        // erase right
+        currentLine.data = currentLine.data.substring(0, parser.bufferX);
+        break;
+      case 1:
+        // erase left
+        currentLine.data = currentLine.data.substring(parser.bufferX + 1);
+        break;
+      default:
+        log.error('unrecognize parameter for J ', params);
+    }
+  }
+};
+
+const eraseInLine = (parser, params) => {
   const currentLine = parser.buffers[parser.bufferY];
   if (!currentLine) {
     return;
@@ -142,16 +160,25 @@ const csiStateHandler = {
     eraseInDisplay(parser, params);
   },
   'K': (parser, params) => {
-    eraseInDisplay(parser, params);
+    eraseInLine(parser, params);
   },
   'h': () => { // set mode
   },
-  'm': () => {  // set color
+  'm': () => { // set color
   },
   'l': () => {}, // reset mode
-  'A': () => {}, // cursor up
+  'A': (parser, params) => { // cursor up
+    let num = 0;
+    if (params && params.length > 0) {
+      num = params[0];
+    }
+    parser.bufferY -= num;
+    if (parser.bufferY < 0) {
+      parser.bufferY = 0;
+    }
+    },
   'B': () => {}, // cursor down
-  'C': () => {},  // cursorForward
+  'C': () => {}, // cursorForward
   'D': () => {}, // cursorBackward
   'E': () => {}, // cursorNextLine
   'F': () => {}, // cursorPrecedingLine
