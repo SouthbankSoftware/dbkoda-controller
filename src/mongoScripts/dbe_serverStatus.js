@@ -36,16 +36,19 @@ dbeSS.serverStatistics = function () {
   var serverStats = dbeSS.flattenServerStatus(db.serverStatus()).stats; // eslint-disable-line
   var uptime = serverStats.uptime;
   Object.keys(serverStats).forEach(function(stat) {
+    //print(stat); 
     value = serverStats[stat];
     rate = '';
     if (typeof value === 'number') {
       rate = (value / uptime).toFixed(4);
     }
-    output.statistics.push({
-      'statistic': stat,
-      'value': value,
-      'ratePs':rate
-    });
+    if (!stat.match(/_mongo/)) {
+       output.statistics.push({
+         'statistic': stat,
+         'value': value,
+         'ratePs':rate
+       });
+    }
   });
   return (output);
 };
