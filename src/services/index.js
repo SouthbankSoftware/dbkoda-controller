@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-09-22T10:56:04+10:00
+ * @Last modified time: 2017-11-03T13:50:25+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -41,6 +41,7 @@ import treeAction from './tree-actions';
 import osCommandsService from './os-commands';
 import supportBundleService from './support-bundle';
 import driverService from './driver';
+import mongoCmdValidator from './mongo-cmd-validator';
 
 module.exports = function() {
   const app = this;
@@ -67,4 +68,5 @@ module.exports = function() {
   app.configure(osCommandsService);
   app.configure(supportBundleService);
   app.configure(driverService);
+  app.configure(mongoCmdValidator);
 };
