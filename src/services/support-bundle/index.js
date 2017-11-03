@@ -192,11 +192,27 @@ class SupportBundleService {
         '.dbKoda',
         'stateStore.json',
       );
-      const bundlePath = path.resolve(
+      let isBundlePathValid = false;
+      let bundleNumber = 1;
+      let bundlePath = path.resolve(
         os.homedir(),
         '.dbKoda',
         'supportBundle.zip',
       );
+
+      while (!isBundlePathValid) {
+        if (fs.existsSync(bundlePath)) {
+          l.info('Support bundle already exists.');
+          bundlePath = path.resolve(
+            os.homedir(),
+            '.dbKoda',
+            'supportBundle-' + bundleNumber + '.zip',
+          );
+          bundleNumber += 1;
+        } else {
+          isBundlePathValid = true;
+        }
+      }
 
       l.info('Creating new support bundle (dev mode).');
       l.info('The following paths will be added to a support bundle: ');
