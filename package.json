@@ -3,19 +3,14 @@
   "gitName": "dbkoda-controller",
   "fullName": "dbKoda Controller",
   "description": "dbKoda Controller built with state of the art Feathers stack",
-  "version": "0.8.0-beta.1",
+  "version": "0.8.0",
   "author": {
     "name": "Southbank Software",
     "email": "developer@southbanksoftware.com",
     "url": "http://southbanksoftware.com"
   },
   "main": "lib/",
-  "keywords": [
-    "feathers",
-    "mongodb",
-    "shell",
-    "api"
-  ],
+  "keywords": ["feathers", "mongodb", "shell", "api"],
   "engines": {
     "node": ">= 7.2.1"
   },
@@ -26,29 +21,38 @@
     "dev:build": "yarn run build -- --source-maps",
     "dev:cbuild": "yarn run clean && yarn run dev:build",
     "dev:watch": "nodemon --watch src --exec \"yarn dev\"",
-    "dev:chrome": "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222 --no-first-run --user-data-dir=/tmp/chrome-dev-profile",
+    "dev:chrome":
+      "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222 --no-first-run --user-data-dir=/tmp/chrome-dev-profile",
     "start": "node lib/",
     "debug": "node --inspect-brk .",
     "clean": "rimraf lib controller-dev.log",
-    "build": "babel --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
-    "build:sourcemaps": "babel --ignore mongoScripts --source-maps -d lib/ src/",
+    "build":
+      "babel --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
+    "build:sourcemaps":
+      "babel --ignore mongoScripts --source-maps -d lib/ src/",
     "test": "yarn flow && yarn run eslint && yarn run istanbul",
     "test:dev": "yarn run istanbul && yarn flow && yarn run eslint",
     "rtest": "yarn run istanbul",
     "eslint": "eslint --ignore-pattern src/mongoScripts src/. tests/.",
     "mocha": "rimraf data && yarn run test:unit && yarn run test:integration",
-    "test:integration": "NODE_PATH=./src/ NODE_ENV=test nyc mocha tests/integration/ --opts mocha.opts -t 20000",
-    "test:unit": "NODE_PATH=./src/ NODE_ENV=test nyc mocha tests/unit/ --opts mocha.opts",
-    "test:integration:win": "mocha tests/integration/ --opts mocha.opts -t 20000",
+    "test:integration":
+      "NODE_PATH=./src/ NODE_ENV=test nyc mocha tests/integration/ --opts mocha.opts -t 20000",
+    "test:unit":
+      "NODE_PATH=./src/ NODE_ENV=test nyc mocha tests/unit/ --opts mocha.opts",
+    "test:integration:win":
+      "mocha tests/integration/ --opts mocha.opts -t 20000",
     "test:unit:win": "mocha tests/unit/ --opts mocha.opts",
     "test:win": "yarn test:integration:win && yarn test:unit:win",
-    "coverage": "yarn run istanbul && open -b com.google.chrome coverage/lcov-report/index.html",
-    "istanbul": "rimraf coverage data && NODE_PATH=./src/ NODE_ENV=test istanbul cover _mocha tests/unit tests/integration -- -t 20000 --opts mocha.opts",
+    "coverage":
+      "yarn run istanbul && open -b com.google.chrome coverage/lcov-report/index.html",
+    "istanbul":
+      "rimraf coverage data && NODE_PATH=./src/ NODE_ENV=test istanbul cover _mocha tests/unit tests/integration -- -t 20000 --opts mocha.opts",
     "docs": "yarn run esdoc && open -b com.google.chrome ./docs/index.html",
     "esdoc": "rimraf docs && esdoc -c .esdoc.json",
     "flow": "flow",
     "flow:install": "flow-typed install --overwrite --skip",
-    "cienvy:dev:watch": "nodemon --watch .cienvy/src --exec \"yarn cienvy:dev\"",
+    "cienvy:dev:watch":
+      "nodemon --watch .cienvy/src --exec \"yarn cienvy:dev\"",
     "cienvy:dev": "yarn run cienvy:clean && yarn run cienvy:dev:build",
     "cienvy:dev:build": "yarn run cienvy:build -- --source-maps",
     "cienvy:clean": "rimraf .cienvy/lib",
