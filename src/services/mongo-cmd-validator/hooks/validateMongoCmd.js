@@ -37,7 +37,7 @@ export default _options => (hook) => {
     const { mongoCmdPath } = item;
 
     try {
-      const output = execSync(mongoCmdPath, { encoding: 'utf8' });
+      const output = execSync(`"${mongoCmdPath}" --version`, { encoding: 'utf8' });
       const mongoVStr = output.split('\n');
       let version;
       if (mongoVStr && mongoVStr.length > 0) {
