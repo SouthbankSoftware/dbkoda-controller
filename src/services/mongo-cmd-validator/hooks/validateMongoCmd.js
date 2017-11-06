@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T11:09:38+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-03T13:58:41+11:00
+ * @Last modified time: 2017-11-06T12:09:31+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -45,8 +45,6 @@ export default _options => (hook) => {
           version = mongoVStr[0].replace('MongoDB shell version v', '').trim();
         } else if (mongoVStr[0].indexOf('MongoDB shell version:') >= 0) {
           version = mongoVStr[0].replace('MongoDB shell version:', '').trim();
-        } else {
-          version = mongoVStr[0];
         }
       }
       if (version) {
