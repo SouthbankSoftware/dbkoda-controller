@@ -27,8 +27,7 @@
 
 var dbeSS = {};
 
-
-dbeSS.serverStatistics = function () {
+dbeSS.serverStatistics = function() {
   var output = {};
   var value;
   var rate;
@@ -36,45 +35,108 @@ dbeSS.serverStatistics = function () {
   var serverStats = dbeSS.flattenServerStatus(db.serverStatus()).stats; // eslint-disable-line
   var uptime = serverStats.uptime;
   Object.keys(serverStats).forEach(function(stat) {
-    //print(stat); 
+    //print(stat);
     value = serverStats[stat];
-    rate = '';
-    if (typeof value === 'number') {
+    rate = "";
+    if (typeof value === "number") {
       rate = (value / uptime).toFixed(4);
+    } else {
     }
+
     if (!stat.match(/_mongo/)) {
-       output.statistics.push({
-         'statistic': stat,
-         'value': value,
-         'ratePs':rate
-       });
+      output.statistics.push({
+        statistic: stat,
+        value: value,
+        ratePs: rate
+      });
     }
   });
-  return (output);
+  return output;
 };
 
-dbeSS.flattenServerStatus = function (dbServerStatus) {
+dbeSS.flattenServerStatus = function(dbServerStatus) {
   var flattenedServerStatus = {};
   flattenedServerStatus.stats = {};
 
   function internalflattenServerStatus(serverStatus, rootTerm) {
-    var prefix = '';
+    var prefix = "";
     if (arguments.length > 1) {
-      prefix = rootTerm + '.';
+      prefix = rootTerm + ".";
     }
     Object.getOwnPropertyNames(serverStatus).forEach(function(key) {
-      var value = serverStatus[key];
-      var valtype = typeof value;
-      var fullkey = prefix + key;
-      if (valtype == 'object') {
-        // recurse into nested objects
-        internalflattenServerStatus(value, prefix + key);
-      } else {
-        /* No more nesting */
-        flattenedServerStatus.stats[fullkey] = value;
+      if (key !== "_mongo") {
+        var value = serverStatus[key];
+        if (value.constructor === NumberLong) {
+          value = value.toNumber();
+        }
+        var valtype = typeof value;
+        var fullkey = prefix + key;
+        print(key, value, valtype, fullkey);
+        if (valtype == "object" /*& value.constructor !== NumberLong*/) {
+          // recurse into nested objects
+          internalflattenServerStatus(value, prefix + key);
+        } else {
+          /* No more nesting */
+          flattenedServerStatus.stats[fullkey] = value;
+        }
       }
     });
   }
   internalflattenServerStatus(dbServerStatus);
   return flattenedServerStatus;
+};
+
+dbeSS.mStat = function(repeat, sleepTime) {
+  for (var count = 0; count > repeat; count += 1) {
+    sleep(sleepTime);
+  }
+};
+
+dbeSS.convertStat = function(serverStat) {
+  var returnStat = {};
+  serverStat.statistics.forEach(function(stat) {
+    returnStat[stat.statistic] = stat.value;
+  });
+  return returnStat;
+};
+
+dbeSS.statDelta = function(instat1, instat2) {
+  var stat1 = dbeSS.convertStat(instat1);
+  var stat2 = dbeSS.convertStat(instat2);
+  var delta;
+  var rate;
+  var statDelta = {};
+  statDelta.timeDelta = stat2.uptime - stat1.uptime;
+  print("timedelta", statDelta.timeDelta);
+  Object.keys(stat2).forEach(function(key) {
+    // print(key,typeof stat2[key]);
+    if (typeof stat2[key] === "number") {
+      delta = stat2[key] - stat1[key];
+      rate = delta / statDelta.timeDelta;
+    } else {
+      delta = null;
+      rate = null;
+    }
+    statDelta[key] = {
+      lastValue: stat2[key],
+      firstValue: stat1[key],
+      delta: delta,
+      rate: rate
+    };
+  });
+  return statDelta;
+};
+
+dbeSS.report = function(sleepSeconds) {
+  // TODO: Statistic names change over versions
+  var data = {};
+  var start = dbeSS.serverStatistics();
+  sleep(sleepSeconds*1000);
+  var deltas = dbeSS.statDelta(start, dbeSS.serverStatistics());
+  print("Network");
+  print("--------------");
+  printjson(deltas["network.bytesIn"]);
+  data.netIn = Math.round(deltas["network.bytesIn"].rate / 1048576 * 2) / 100;
+  print("MBIn/sec: " + data.netIn);
+  return data;
 };
