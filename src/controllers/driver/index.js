@@ -48,6 +48,7 @@ export default class Driver extends EventEmitter {
     // console.log = evalLog;
     // console.error = evalLog;
     try {
+      this.emit(Driver.OUTPUT, '\nExecuting NodeJS Native Code. \n');
       eval(driverCmds); // eslint-disable-line
     } catch (err) {
       log.error('failed to run commands ', err);

@@ -26,7 +26,6 @@
 const hooks = require('./hooks');
 
 class InspectorService {
-
   constructor(options) {
     this.options = options || {};
     this.docs = {
@@ -49,7 +48,6 @@ class InspectorService {
     l.info('inspect mongo instance ', id);
     return this.controller.inspectMongo(id);
   }
-
 }
 
 module.exports = function () {

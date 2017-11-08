@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T09:43:34+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-03T13:49:37+11:00
+ * @Last modified time: 2017-11-03T13:49:24+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,15 +28,7 @@
  import errors from 'feathers-errors';
  import hooks from './hooks';
 
- export class Aggregator {
-   constructor(_options) {
-     this.events = ['result'];
-   }
-
-   setup(app, _path) {
-     this.mongoConnection = app.service('mongo/connection/controller');
-   }
-
+ export class MongoCmdValidator {
    find(_params) {
      throw new errors.NotImplemented(
        'Request should have been processed by hooks'
@@ -79,10 +71,10 @@
    const app = this;
 
    // Initialize our service with any options it requires
-   app.use('/aggregators', new Aggregator());
+   app.use('/mongo-cmd-validators', new MongoCmdValidator());
 
    // Get our initialize service to that we can bind hooks
-   const service = app.service('/aggregators');
+   const service = app.service('/mongo-cmd-validators');
 
    // Set up our before hooks
    service.before(hooks.before);
