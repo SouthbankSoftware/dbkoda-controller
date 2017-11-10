@@ -27,6 +27,7 @@ import mongoInspectorController from '../controllers/inspector';
 import mongoAutoCompleteController from '../controllers/auto-complete';
 import lintingController from '../controllers/linter';
 import syncExecutionController from '../controllers/sync-execution';
+import remoteExecutionController from '../controllers/remote-execution';
 import mongoShell from './mongo-shell';
 import mongoConnection from './mongo-connection';
 import mongoInspector from './mongo-inspector';
@@ -42,6 +43,7 @@ import osCommandsService from './os-commands';
 import supportBundleService from './support-bundle';
 import driverService from './driver';
 import mongoCmdValidator from './mongo-cmd-validator';
+import remoteExecService from './remote-execution';
 
 module.exports = function() {
   const app = this;
@@ -51,6 +53,7 @@ module.exports = function() {
   app.configure(mongoAutoCompleteController);
   app.configure(lintingController);
   app.configure(syncExecutionController);
+  app.configure(remoteExecutionController);
 
 
   app.configure(mongoShell);
@@ -69,4 +72,5 @@ module.exports = function() {
   app.configure(supportBundleService);
   app.configure(driverService);
   app.configure(mongoCmdValidator);
+  app.configure(remoteExecService);
 };
