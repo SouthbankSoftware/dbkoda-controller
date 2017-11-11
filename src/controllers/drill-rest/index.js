@@ -40,7 +40,7 @@ const jdbcApiInst = new JdbcApi();
 class DrillRestController {
   constructor(options) {
     this.options = options || {};
-    this.profileHash = {};  // will store the profiles which have been added to Drill Instance
+    this.profileHash = {}; // will store the profiles which have been added to Drill Instance
     this.connections = {};
 
     this.bDrillStarted = false;
@@ -251,7 +251,7 @@ class DrillRestController {
         return Promise.reject('no profile found with the specified alias');
       } else if (params.removeAll) {
         this.bDrillStarted = false;
-        this.connectionAttempts = 0;  // resetting this for starting up drill next time.
+        this.connectionAttempts = 0; // resetting this for starting up drill next time.
         const removeProfilePromises = [];
         for (const alias in this.profileHash) {
           if ({}.hasOwnProperty.call(this.profileHash, alias)) {

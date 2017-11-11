@@ -329,6 +329,7 @@ class MongoConnectionController {
    * create mongo shell connection
    */
   createMongoShell(db, conn, dbVersion) {
+    console.log('conn=', conn);
     const id = conn.id ? conn.id : uuid.v1();
     const shellId = conn.shellId ? conn.shellId : uuid.v1();
     const that = this;
@@ -480,6 +481,7 @@ class MongoConnectionController {
       // in connection object have higher priority than these defined in url
       parser = mongoUri.parse('mongodb://' + matches[3]);
       connectObject = {
+        id: connection.id,
         url: 'mongodb://' + matches[3],
         username: connection.username || matches[1],
         password: connection.password || matches[2],
