@@ -142,6 +142,10 @@ export const loadConfigFromYamlFile = (p) => {
 };
 
 export const loadCommands = () => {
+  const profilesPath = path.resolve(os.homedir(), '.dbKoda', 'profiles.yml');
+  if (!fs.existsSync(profilesPath)) {
+    fs.writeFileSync(profilesPath, '');
+  }
   let configPath = process.env.CONFIG_PATH;
   if (!configPath) {
     configPath = path.resolve(os.homedir(), '.dbKoda', 'config.yml');
