@@ -110,7 +110,8 @@
     "strip-ansi": "^3.0.1",
     "winston": "^2.3.0",
     "winston-daily-rotate-file": "^1.4.6",
-    "ws": "^3.2.0"
+    "ws": "^3.2.0",
+    "ssh2": "^0.5.5"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",

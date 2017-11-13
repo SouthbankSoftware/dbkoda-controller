@@ -23,6 +23,7 @@ const hooks = require('./hooks');
 class RemoteExecService {
   constructor(options) {
     this.options = options || {};
+    this.events = ['ssh-shell-output', 'ssh-execution-end'];
     this.docs = {
       create: {
         description: 'create new ssh connection',
