@@ -73,4 +73,10 @@ module.exports = function() {
   app.configure(driverService);
   app.configure(mongoCmdValidator);
   app.configure(remoteExecService);
+
+  console.log('IS_JAVA', global.IS_JAVA);
+  if (global.IS_JAVA) {
+    const drill = require('./drill');
+    app.configure(drill);
+  }
 };
