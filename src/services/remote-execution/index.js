@@ -72,8 +72,8 @@ class RemoteExecService {
     this.app = app;
     this.controller = app.service('ssh/remote-execution/controller');
   }
-  create(params) {
-    return this.controller.connect(params);
+  create(data) {
+    return this.controller.connect(data);
   }
   update(id, params) {
     return this.controller.execute(id, params);

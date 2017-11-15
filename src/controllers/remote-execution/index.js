@@ -1,3 +1,5 @@
+import { clearTimeout } from 'timers';
+
 /*
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -27,6 +29,7 @@ class RemoteExecController {
   constructor(options) {
     this.options = options || {};
     this.connections = {};
+    this.dataReceivedTimer = null;
   }
 
   setup(app) {
@@ -39,51 +42,74 @@ class RemoteExecController {
       const client = new SshClient();
       client
         .on('ready', () => {
-          const id = uuid.v1();
-          this.connections[id] = client;
+          const id = (params.id) ? params.id : uuid.v1();
+          this.connections[id] = {client};
           console.log('Client :: ready');
-          resolve({ status: 'SUCCESS', id });
+
+          client.shell(false, {
+            pty: true
+          }, (err, stream) => {
+            if (err) {
+              return reject(err);
+            }
+            stream.setEncoding('utf8');
+            this.connections[id].stream = stream;
+            resolve({ status: 'SUCCESS', id });
+          });
         })
         .on('error', (err) => {
-          reject(new errors.BadRequest(err.message));
+          reject(new errors.BadRequest('Client Error: ' + err.message));
         })
         .connect(_.omit(params, 'cwd'));
     });
   }
+  processData(id, data, resolve) {
+    if (this.connections[id].dataReceivedTimer) {
+      clearTimeout(this.connections[id].dataReceivedTimer);
+    }
+    if (this.connections[id].dataBuffer) {
+      this.connections[id].dataBuffer += data;
+    } else {
+      this.connections[id].dataBuffer = data;
+    }
+    this.connections[id].dataReceivedTimer = setTimeout(() => {
+      this.remoteExecService.emit('ssh-shell-output', { id, data });
+      console.log('DataBuffer: ', this.connections[id].dataBuffer);
+      resolve({ status: 'SUCCESS', id});
+    }, 1000);
+    return this.connections[id].dataReceivedTimer;
+  }
   execute(id, params) {
     const that = this;
     return new Promise((resolve, reject) => {
-      if (this.connections[id]) {
-        const client = this.connections[id];
+      if (this.connections[id] && this.connections[id].client) {
+        const stream = this.connections[id].stream;
         let cmd = '';
         cmd = params.cmd;
         if (params.cwd) {
           cmd = `cd ${this.options.cwd}; ${cmd}`;
         }
-        client.shell({ rows: params.rows, cols: params.cols }, (err, stream) => {
-          if (err) {
-            return reject(err);
-          }
-          // stream.setEncoding('utf8');
-          stream.on('data', (data) => {
-            console.log('STDOUT: ' + data.toString());
-            that.remoteExecService.emit('ssh-shell-output', { id, data });
-          });
-          stream.stderr.on('data', function(data) {
-            console.log('STDERR: ' + data);
-          });
-        
-          stream.on('close', (code, signal) => {
-            console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
-            if (code !== 0) {
-              return reject(code);
-            }
-            resolve({ status: 'SUCCESS', id });
-          });
-          
-          stream.end(cmd + '\r');
-          // stream.end('powershell\r' + cmd + '\r\r\r\rexit\r');
+        if (params.rows && params.cols) {
+          stream.setWindow(params.rows, params.cols);
+        }
+        stream.on('data', (data) => {
+          that.processData(id, data, resolve);
         });
+        stream.on('finish', () => {
+          console.log('Stream Finished');
+        });
+        stream.stderr.on('data', (data) => {
+          console.log('STDERR: ' + data);
+        });
+
+        stream.on('close', (code, signal) => {
+          console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
+          if (code !== 0) {
+            return reject(code);
+          }
+        });
+
+        stream.write(cmd + '\n');
       } else {
         reject(new errors.BadRequest('Execute: Connection not found.'));
       }
@@ -93,7 +119,7 @@ class RemoteExecController {
   remove(id) {
     return new Promise((resolve, reject) => {
       if (this.connections[id]) {
-        this.connections[id].end();     // client.end() function to terminate ssh shell
+        this.connections[id].client.end();     // client.end() function to terminate ssh shell
         delete this.connections[id];
         resolve({ status: 'SUCCESS', id });
       } else {
