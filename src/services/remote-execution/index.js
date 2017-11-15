@@ -78,6 +78,9 @@ class RemoteExecService {
   update(id, params) {
     return this.controller.execute(id, params);
   }
+  patch(id, params) {
+    return this.controller.updateWindow(id, params);
+  }
   remove(id) {
     return this.controller.remove(id);
   }

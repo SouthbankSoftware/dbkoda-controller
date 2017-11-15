@@ -89,10 +89,11 @@ class RemoteExecController {
     } else {
       this.connections[id].dataBuffer = data;
     }
+    this.remoteExecService.emit('ssh-shell-output', { id, data });
 
     this.connections[id].dataReceivedTimer = setTimeout(() => {
       const result = this.connections[id].dataBuffer.replace(this.lastCmd, '').replace(this.lastCmd, '');
-      this.remoteExecService.emit('ssh-shell-output', { id, data: result });
+      // this.remoteExecService.emit('ssh-shell-output', { id, data: result });
       console.log('DataBuffer: ', result);
       if (this.executeResolve) {
         this.executeResolve({ status: 'SUCCESS', id, data: result});
@@ -104,16 +105,13 @@ class RemoteExecController {
     const that = this;
     this.executeResolve = null;
     return new Promise((resolve, reject) => {
-      if (this.connections[id] && this.connections[id].client) {
+      if (this.connections[id] && this.connections[id].stream) {
         that.connections[id].dataBuffer = null;
         const stream = this.connections[id].stream;
         let cmd = '';
         cmd = params.cmd;
         if (params.cwd) {
           cmd = `cd ${this.options.cwd}; ${cmd}`;
-        }
-        if (params.rows && params.cols) {
-          stream.setWindow(params.rows, params.cols);
         }
         this.lastCmd = cmd + '\n';
         stream.write(this.lastCmd);
@@ -123,7 +121,19 @@ class RemoteExecController {
       }
     });
   }
-
+  updateWindow(id, params) {
+    return new Promise((resolve, reject) => {
+      if (this.connections[id] && this.connections[id].stream) {
+        if (params.rows && params.cols) {
+          this.connections[id].stream.setWindow(params.rows, params.cols);
+        }
+      } else {
+        reject(
+          new errors.BadRequest('Delete Connection: Connection not found.'),
+        );
+      }
+    });
+  }
   remove(id) {
     return new Promise((resolve, reject) => {
       if (this.connections[id]) {
