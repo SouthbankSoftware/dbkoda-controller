@@ -96,12 +96,12 @@ class DrillRestController {
       this.bDrillStarted = true;
     }
     console.log('params:', params);
-    const cParams = Object.assign({}, params);
+    const cParams = Object.assign({database: params.db}, params);
     let badRequestError;
     return new Promise((resolve, reject) => {
       const cbConnectionResult = (result) => {
         if (result && result.status == 'Running!') {
-          if (this.profileHash[cParams.alias] == null) {
+          if (!this.profileHash[cParams.alias] || !this.profileHash[cParams.db]) {
             const reqPromise = request.defaults({
               baseUrl: drillRestApi.controllerUrl,
             });
@@ -114,11 +114,9 @@ class DrillRestController {
               log.info('result profile:', resultProfile);
               const profile = {};
               profile.alias = cParams.alias;
-              profile.output = JSON.stringify(resultProfile);
-              profile.DBHash = {};
+              profile.id = cParams.id;
               this.profileHash[profile.alias] = profile;
-              // resolveJdbcConnForProfile(profile, cParams.db);
-              resolve({id: resultProfile.id});
+              resolve({id: cParams.id});
             }).catch((err) => {
                 l.error('ProfileAddError: failed to add profile via Drill Rest API', err.message);
                 badRequestError = new errors.BadRequest(err.message);
@@ -202,25 +200,6 @@ class DrillRestController {
     return null;
   }
 
-  // Function to create a JDBC instance which will be used for query purpose
-  // createJdbcConnection(profileAlias) {
-  //   return new Promise((resolve, reject) => {
-  //     const conObj = {
-  //       url: 'jdbc:drill:drillbit=localhost:31010;schema=' + profileAlias,
-  //       minpoolsize: 5,
-  //       maxpoolsize: 10,
-  //     };
-  //     drillJdbc.getJdbcInstance(conObj, (err, jdbcCon) => {
-  //       if (err) {
-  //         l.error(err);
-  //         reject(err);
-  //       } else {
-  //         resolve(jdbcCon);
-  //       }
-  //     });
-  //   });
-  // }
-
   remove(params) {
     try {
       if (!this.profileHash[params.alias] && !params.removeAll) {
@@ -262,22 +241,31 @@ class DrillRestController {
     }
   }
 
-  // getData(id, params) {
-  //   const jdbcCon = this.connections[id];
-  //   if (jdbcCon) {
-  //     jdbcApiInst.setup(jdbcCon.connection);
-  //     const queryArray = params.queries; // ['use ' + jdbcCon.db].concat(params.queries);
-  //     return new Promise((resolve, reject) => {
-  //       jdbcApiInst.queryMultiple(queryArray).then((resultQueries) => {
-  //         // const firstRes = resultQueries.shift();
-  //         // console.log(JSON.stringify(firstRes));
-  //         resolve(resultQueries);
-  //       }).catch((err) => {
-  //         reject(err);
-  //       });
-  //     });
-  //   }
-  // }
+  getData(id, params) {
+    const reqPromise = request.defaults({
+      baseUrl: drillRestApi.controllerUrl,
+      json: true,
+    });
+    return new Promise((resolve, reject) => {
+      try {
+        reqPromise({
+          uri: `/drill/executing/${id}/${params.schema}`,
+          method: 'POST',
+          form: {sql: params.queries.join('\n')},
+          json: true
+        }).then((res) => {
+          log.info('execute sql return ', res);
+          resolve(res);
+        }).catch((err) => {
+          log.error('executing sql failed', err);
+          reject(err);
+        });
+      } catch (err) {
+        log.error('request failed ', err);
+        reject(err);
+      }
+    });
+  }
 
   quitDrillProcess() {
     console.log('this.bDrillStarted:', this.bDrillStarted);
