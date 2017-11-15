@@ -31,6 +31,7 @@ class RemoteExecController {
 
   setup(app) {
     this.app = app;
+    this.remoteExecService = app.service('/ssh-remote-execution');
   }
 
   connect(params) {
@@ -40,6 +41,7 @@ class RemoteExecController {
         .on('ready', () => {
           const id = uuid.v1();
           this.connections[id] = client;
+          console.log('Client :: ready');
           resolve({ status: 'SUCCESS', id });
         })
         .on('error', (err) => {
@@ -48,33 +50,39 @@ class RemoteExecController {
         .connect(_.omit(params, 'cwd'));
     });
   }
-
   execute(id, params) {
+    const that = this;
     return new Promise((resolve, reject) => {
       if (this.connections[id]) {
         const client = this.connections[id];
         let cmd = '';
-        client.shell({ rows: 100, cols: 100 }, (err, stream) => {
+        cmd = params.cmd;
+        if (params.cwd) {
+          cmd = `cd ${this.options.cwd}; ${cmd}`;
+        }
+        client.shell({ rows: params.rows, cols: params.cols }, (err, stream) => {
           if (err) {
             return reject(err);
           }
-          stream.setEncoding('utf8');
-          const headerDelimiter = '__START__';
+          // stream.setEncoding('utf8');
           stream.on('data', (data) => {
-              console.log(data);
+            console.log('STDOUT: ' + data.toString());
+            that.remoteExecService.emit('ssh-shell-output', { id, data });
           });
-          stream.on('close', (code) => {
+          stream.stderr.on('data', function(data) {
+            console.log('STDERR: ' + data);
+          });
+        
+          stream.on('close', (code, signal) => {
+            console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
             if (code !== 0) {
               return reject(code);
             }
-            resolve();
+            resolve({ status: 'SUCCESS', id });
           });
-        //   resolve(stream);
-          if (params.cwd) {
-            cmd = `cd ${this.options.cwd}; ${cmd}`;
-          }
-          cmd = `export LANG=en_AU.UTF-8; echo ${headerDelimiter}; bash -c 'set -e; ${params.cmd}'; exit $?`;
-          stream.end(cmd + '\n');
+          
+          stream.end(cmd + '\r');
+          // stream.end('powershell\r' + cmd + '\r\r\r\rexit\r');
         });
       } else {
         reject(new errors.BadRequest('Execute: Connection not found.'));
@@ -84,13 +92,15 @@ class RemoteExecController {
 
   remove(id) {
     return new Promise((resolve, reject) => {
-        if (this.connections[id]) {
-            this.connections[id].end();
-            delete this.connections[id];
-            resolve({status: 'SUCCESS', id});
-        } else {
-            reject(new errors.BadRequest('Delete Connection: Connection not found.'));
-        }
+      if (this.connections[id]) {
+        this.connections[id].end();     // client.end() function to terminate ssh shell
+        delete this.connections[id];
+        resolve({ status: 'SUCCESS', id });
+      } else {
+        reject(
+          new errors.BadRequest('Delete Connection: Connection not found.'),
+        );
+      }
     });
   }
 }
