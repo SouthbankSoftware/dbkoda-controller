@@ -28,12 +28,9 @@ const hooks = require('feathers-hooks-common');
 const request = require('request-promise');
 const os = require('os');
 const _ = require('lodash');
-// const drillJdbc = require('./jdbc-drill');
-// const JdbcApi = require('./jdbc-api');
 
 const drillRestApi = {url: 'http://localhost:8047', controllerUrl: 'http://localhost:3031/api/v0/'};
 
-// const jdbcApiInst = new JdbcApi();
 /**
  * Mongo instance connection controller
  */
@@ -86,9 +83,9 @@ class DrillRestController {
       this.drillInstance = exec(drillCmdStr, drillOptions, (error, stdout, stderr) => {
         if (error) {
           console.error(`exec error: ${error}`);
-          const err = new Error('Drill Exec Failed');
-          err.code = 'DRILL_EXEC_FAILED';
-          throw err;
+          // const err = new Error('Drill Exec Failed');
+          // err.code = 'DRILL_EXEC_FAILED';
+          // throw err;
         }
         console.log(`stdout: ${stdout}`);
         console.log(`stderr: ${stderr}`);
