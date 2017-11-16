@@ -56,13 +56,13 @@ class RemoteExecController {
             }
             stream.setEncoding('utf8');
             stream.on('data', (data) => {
-              that.processData(id, data, resolve);
+              that.processData(id, data);
             });
             stream.on('finish', () => {
               console.log('Stream Finished');
             });
             stream.stderr.on('data', (data) => {
-              that.processData(id, data, resolve);
+              that.processData(id, data);
             });
             stream.on('close', (code, signal) => {
               console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
@@ -80,26 +80,28 @@ class RemoteExecController {
         .connect(_.omit(params, 'cwd'));
     });
   }
-  processData(id, data, resolve) {
-    if (this.connections[id].dataReceivedTimer) {
-      clearTimeout(this.connections[id].dataReceivedTimer);
-    }
-    if (this.connections[id].dataBuffer) {
-      this.connections[id].dataBuffer += data.toString();
+  processData(id, data) {
+    console.log('this.lastCmd:', this.lastCmd);
+    if (this.lastCmd === null) {
+      this.remoteExecService.emit('ssh-shell-output', { id, data });
     } else {
-      this.connections[id].dataBuffer = data.toString();
+      if (this.connections[id].dataReceivedTimer) {
+        clearTimeout(this.connections[id].dataReceivedTimer);
+      }
+      if (this.connections[id].dataBuffer) {
+        this.connections[id].dataBuffer += data.toString();
+      } else {
+        this.connections[id].dataBuffer = data.toString();
+      }
+      this.connections[id].dataReceivedTimer = setTimeout(() => {
+        const result = this.connections[id].dataBuffer.replace(this.lastCmd, '').replace(this.lastCmd, '');
+        // this.remoteExecService.emit('ssh-shell-output', { id, data: result }); // No need to emit data to this service in case of sync execution.
+        console.log('DataBuffer: ', result);
+        if (this.executeResolve) {
+          this.executeResolve({ status: 'SUCCESS', id, data: result});
+        }
+      }, 1000);
     }
-    this.remoteExecService.emit('ssh-shell-output', { id, data });
-
-    this.connections[id].dataReceivedTimer = setTimeout(() => {
-      const result = this.connections[id].dataBuffer;
-      // this.remoteExecService.emit('ssh-shell-output', { id, data: result });
-      console.log('DataBuffer: ', result);
-      // if (this.executeResolve) {
-      //   this.executeResolve({ status: 'SUCCESS', id, data: result});
-      // }
-    }, 1000);
-    return this.connections[id].dataReceivedTimer;
   }
   execute(id, params) {
     const that = this;
@@ -113,11 +115,15 @@ class RemoteExecController {
         if (params.cwd) {
           cmd = `cd ${this.options.cwd}; ${cmd}`;
         }
-        // this.lastCmd = cmd + '\n';
-        
-        this.executeResolve = resolve;
-        stream.write(cmd);
-        resolve({ status: 'SUCCESS', id, data: cmd});
+        if (params.syncExecute) {
+          this.lastCmd = cmd + '\n';
+          this.executeResolve = resolve;
+          stream.write(this.lastCmd);
+        } else {
+          this.lastCmd = null;
+          stream.write(cmd);
+          resolve({ status: 'SUCCESS', id, data: cmd});
+        }
       } else {
         reject(new errors.BadRequest('Execute: Connection not found.'));
       }
