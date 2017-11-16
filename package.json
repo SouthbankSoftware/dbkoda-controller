@@ -10,7 +10,12 @@
     "url": "http://southbanksoftware.com"
   },
   "main": "lib/",
-  "keywords": ["feathers", "mongodb", "shell", "api"],
+  "keywords": [
+    "feathers",
+    "mongodb",
+    "shell",
+    "api"
+  ],
   "engines": {
     "node": ">= 7.2.1"
   },
@@ -18,41 +23,31 @@
     "postinstall": "yarn run clean && yarn run build",
     "dev": "yarn run dev:cbuild && yarn start --",
     "dev:install": "yarn install --ignore-scripts",
-    "dev:build": "yarn run build -- --source-maps",
+    "dev:build": "babel --ignore mongoScripts --source-maps -d lib/ src/",
     "dev:cbuild": "yarn run clean && yarn run dev:build",
     "dev:watch": "nodemon --watch src --exec \"yarn dev\"",
-    "dev:chrome":
-      "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222 --no-first-run --user-data-dir=/tmp/chrome-dev-profile",
+    "dev:chrome": "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222 --no-first-run --user-data-dir=/tmp/chrome-dev-profile",
     "start": "node lib/",
     "debug": "node --inspect-brk .",
     "clean": "rimraf lib controller-dev.log",
-    "build":
-      "babel --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
-    "build:sourcemaps":
-      "babel --ignore mongoScripts --source-maps -d lib/ src/",
+    "build": "babel --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
     "test": "yarn flow && yarn run eslint && yarn run istanbul",
     "test:dev": "yarn run istanbul && yarn flow && yarn run eslint",
     "rtest": "yarn run istanbul",
     "eslint": "eslint --ignore-pattern src/mongoScripts src/. tests/.",
     "mocha": "rimraf data && yarn run test:unit && yarn run test:integration",
-    "test:integration":
-      "NODE_PATH=./src/ NODE_ENV=test nyc mocha tests/integration/ --opts mocha.opts -t 20000",
-    "test:unit":
-      "NODE_PATH=./src/ NODE_ENV=test nyc mocha tests/unit/ --opts mocha.opts",
-    "test:integration:win":
-      "mocha tests/integration/ --opts mocha.opts -t 20000",
+    "test:integration": "NODE_PATH=./src/ NODE_ENV=test nyc mocha tests/integration/ --opts mocha.opts -t 20000",
+    "test:unit": "NODE_PATH=./src/ NODE_ENV=test nyc mocha tests/unit/ --opts mocha.opts",
+    "test:integration:win": "mocha tests/integration/ --opts mocha.opts -t 20000",
     "test:unit:win": "mocha tests/unit/ --opts mocha.opts",
     "test:win": "yarn test:integration:win && yarn test:unit:win",
-    "coverage":
-      "yarn run istanbul && open -b com.google.chrome coverage/lcov-report/index.html",
-    "istanbul":
-      "rimraf coverage data && NODE_PATH=./src/ NODE_ENV=test istanbul cover _mocha tests/unit tests/integration -- -t 20000 --opts mocha.opts",
+    "coverage": "yarn run istanbul && open -b com.google.chrome coverage/lcov-report/index.html",
+    "istanbul": "rimraf coverage data && NODE_PATH=./src/ NODE_ENV=test istanbul cover _mocha tests/unit tests/integration -- -t 20000 --opts mocha.opts",
     "docs": "yarn run esdoc && open -b com.google.chrome ./docs/index.html",
     "esdoc": "rimraf docs && esdoc -c .esdoc.json",
     "flow": "flow",
     "flow:install": "flow-typed install --overwrite --skip",
-    "cienvy:dev:watch":
-      "nodemon --watch .cienvy/src --exec \"yarn cienvy:dev\"",
+    "cienvy:dev:watch": "nodemon --watch .cienvy/src --exec \"yarn cienvy:dev\"",
     "cienvy:dev": "yarn run cienvy:clean && yarn run cienvy:dev:build",
     "cienvy:dev:build": "yarn run cienvy:build -- --source-maps",
     "cienvy:clean": "rimraf .cienvy/lib",
@@ -70,6 +65,7 @@
   "homepage": "https://github.com/SouthbankSoftware/dbkoda-controller#readme",
   "dependencies": {
     "ajv": "^5.0.0",
+    "ajv-keywords": "^2.1.1",
     "archiver": "^2.0.3",
     "babel-polyfill": "^6.26.0",
     "body-parser": "^1.15.2",
@@ -106,12 +102,12 @@
     "rss-parser": "^2.7.0",
     "serve-favicon": "^2.3.2",
     "shelljs": "^0.7.6",
+    "ssh2": "^0.5.5",
     "string-argv": "^0.0.2",
     "strip-ansi": "^3.0.1",
     "winston": "^2.3.0",
     "winston-daily-rotate-file": "^1.4.6",
-    "ws": "^3.2.0",
-    "ssh2": "^0.5.5"
+    "ws": "^3.2.0"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
@@ -119,6 +115,7 @@
     "babel-eslint": "^7.1.1",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-root-import": "^5.0.0",
+    "babel-plugin-transform-export-extensions": "^6.22.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-preset-flow": "^6.23.0",
