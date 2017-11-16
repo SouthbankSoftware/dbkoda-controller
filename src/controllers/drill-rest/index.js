@@ -51,6 +51,20 @@ class DrillRestController {
     this.app = app;
   }
 
+  launchJavaControllProcess(drillPath) {
+    const cmd = `java -Dloader.path ${drillPath}/jars/jdbc-driver/drill-jdbc-all-1.11.0.jar -jar dbkoda-java-controller-0.1.0.jar`;
+    exec(cmd, {
+      encoding: 'utf8',
+      timeout: 0,
+      maxBuffer: 200 * 1024,
+      killSignal: 'SIGTERM',
+      cwd: drillPath + '/bin',
+      env: null
+    }, (error, stdout, stderr) => {
+
+    });
+  }
+
   /**
    * create connections for mongodb instance
    */
@@ -98,6 +112,8 @@ class DrillRestController {
     return new Promise((resolve, reject) => {
       const cbConnectionResult = (result) => {
         if (result && result.status == 'Running!') {
+          // run java controller
+          this.launchJavaControllProcess(configObj.drillCmd);
           if (!this.profileHash[cParams.alias] || !this.profileHash[cParams.db]) {
             const reqPromise = request.defaults({
               baseUrl: drillRestApi.controllerUrl,
@@ -115,10 +131,10 @@ class DrillRestController {
               this.profileHash[profile.alias] = profile;
               resolve({id: cParams.id});
             }).catch((err) => {
-                l.error('ProfileAddError: failed to add profile via Drill Rest API', err.message);
-                badRequestError = new errors.BadRequest(err.message);
-                reject(badRequestError);
-              });
+              l.error('ProfileAddError: failed to add profile via Drill Rest API', err.message);
+              badRequestError = new errors.BadRequest(err.message);
+              reject(badRequestError);
+            });
           } else {
             // resolveJdbcConnForProfile(this.profileHash[cParams.alias], cParams.db);
             resolve({id: this.profileHash[cParams.alias].id});
