@@ -56,12 +56,14 @@ class RemoteExecController {
             }
             stream.setEncoding('utf8');
             stream.on('data', (data) => {
+              console.log('Stream :: data :', data);
               that.processData(id, data);
             });
             stream.on('finish', () => {
-              console.log('Stream Finished');
+              console.log('Stream :: finish');
             });
             stream.stderr.on('data', (data) => {
+              console.log('Stream :: strerr :: Data :', data);
               that.processData(id, data);
             });
             stream.on('close', (code, signal) => {
@@ -81,7 +83,6 @@ class RemoteExecController {
     });
   }
   processData(id, data) {
-    console.log('this.lastCmd:', this.lastCmd);
     if (this.lastCmd === null) {
       this.remoteExecService.emit('ssh-shell-output', { id, data });
     } else {
