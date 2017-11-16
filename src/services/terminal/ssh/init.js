@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T10:55:12+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-16T16:51:29+11:00
+ * @Last modified time: 2017-11-17T10:20:30+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -25,12 +25,18 @@
  */
 
 import { Client } from 'ssh2';
+import fs from 'fs';
 
 export default (context, item) => {
-  const { _id, username, password, host, port } = item;
+  const { _id, username, password, host, port, privateKey: privateKeyPath, passphrase } = item;
   const { service } = context;
 
   const client = new Client();
+  let privateKey;
+
+  if (privateKeyPath) {
+    privateKey = fs.readFileSync(privateKeyPath);
+  }
 
   client
     .on('ready', () => {
@@ -71,11 +77,16 @@ export default (context, item) => {
         terminal.stream = stream;
       });
     })
+    .on('error', (error) => {
+      l.error(`SSH Terminal ${_id} error`, error);
+    })
     .connect({
       username,
       password,
       host,
       port,
+      privateKey,
+      passphrase,
     });
 
   return { client };

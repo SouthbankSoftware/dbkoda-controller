@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T09:43:34+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-16T17:36:42+11:00
+ * @Last modified time: 2017-11-17T10:11:56+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -52,6 +52,12 @@ const createSchema = {
     port: {
       type: 'number',
     },
+    privateKey: {
+      type: 'string',
+    },
+    passphrase: {
+      type: 'string',
+    },
   },
   required: ['_id', 'type'],
   additionalProperties: false,
@@ -63,7 +69,7 @@ const createSchema = {
         },
       },
       then: {
-        required: ['username', 'password', 'host', 'port'],
+        required: ['username', 'host', 'port'],
       },
     },
   ],
