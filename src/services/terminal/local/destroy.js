@@ -1,8 +1,9 @@
 /**
- * @Author: guiguan
- * @Date:   2017-09-22T11:09:38+10:00
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2017-11-16T16:38:15+11:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-17T17:07:49+11:00
+ * @Last modified time: 2017-11-17T17:23:46+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -23,23 +24,9 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import processItems from '~/hooks/processItems';
-import _ from 'lodash';
-import requireOperator from '../requireOperator';
+export default (context, item) => {
+  const { _id } = item;
+  const { terminals } = context.service;
 
-export default () =>
-  processItems((context, item) => {
-    const { _id, type, debug } = item;
-    const { terminals } = context.service;
-
-    // if the terminal with the given ID already exists, do nothing
-    if (terminals.has(_id)) {
-      l.debug(`SSH Terminal ${_id} already exists`);
-      return { new: false };
-    }
-
-    const terminal = requireOperator(type, 'init')(context, item);
-    terminals.set(_id, _.assign(terminal, { _id, type, debug }));
-
-    return { new: true };
-  });
+  terminals.get(_id).ptyProcess.kill();
+};
