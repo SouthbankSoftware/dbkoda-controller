@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T10:55:12+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-17T17:37:12+11:00
+ * @Last modified time: 2017-11-17T18:00:29+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -32,7 +32,7 @@ export default (context, item) => {
   const { service } = context;
 
   const ptyProcess = pty.spawn(process.platform === 'win32' ? 'powershell.exe' : 'bash', [], {
-    name: 'xterm-color',
+    name: 'xterm',
     cols: (size && size.cols) || 80,
     rows: (size && size.rows) || 24,
     cwd: process.env.HOME,
