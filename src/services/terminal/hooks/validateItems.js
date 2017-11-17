@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T09:43:34+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-17T10:11:56+11:00
+ * @Last modified time: 2017-11-17T10:35:26+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -27,6 +27,19 @@ import _ from 'lodash';
 import ajv from '~/helpers/ajv';
 import { validateSchema } from 'feathers-hooks-common';
 import terminalTypes from '../terminalTypes';
+
+const sizeSchema = {
+  type: 'object',
+  properties: {
+    cols: {
+      type: 'number',
+    },
+    rows: {
+      type: 'number',
+    },
+  },
+  required: ['cols', 'rows'],
+};
 
 const createSchema = {
   properties: {
@@ -58,6 +71,7 @@ const createSchema = {
     passphrase: {
       type: 'string',
     },
+    size: sizeSchema,
   },
   required: ['_id', 'type'],
   additionalProperties: false,
@@ -83,18 +97,7 @@ const patchSchema = {
     cmd: {
       type: 'string',
     },
-    size: {
-      type: 'object',
-      properties: {
-        cols: {
-          type: 'number',
-        },
-        rows: {
-          type: 'number',
-        },
-      },
-      required: ['cols', 'rows'],
-    },
+    size: sizeSchema,
     debug: {
       type: 'boolean',
     },
