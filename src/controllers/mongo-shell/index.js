@@ -243,6 +243,7 @@ class MongoShell extends EventEmitter {
     if (!this.executing) {
       this.previousOutput = data;
       this.emitOutput(data + MongoShell.enter);
+      this.parser.clearBuffer();
       return;
     }
     this.parser.clearBuffer();
