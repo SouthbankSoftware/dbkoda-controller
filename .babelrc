@@ -5,6 +5,7 @@
   ],
   "plugins": [
     "transform-object-rest-spread",
+    "transform-export-extensions",
     "add-module-exports",
     ["babel-plugin-root-import", [{
       "rootPathPrefix": "~",
