@@ -29,7 +29,7 @@
 /*  eslint object-shorthand: 0 */
 /*  eslint vars-on-top: 0 */
 
-var dbkInx={};
+var dbkInx = {};
 
 dbkInx.suggestIndexKeys = function(explainPlan) {
   //
@@ -58,7 +58,9 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
         checkInputStage(inputStage, depth + 1);
       });
     }
-    if (step.stage === 'COLLSCAN') { // Create index for COLLSCAN
+    print(step.stage);
+    if (step.stage === 'COLLSCAN') {
+      // Create index for COLLSCAN
       var filter = step.filter;
       var filterKeys = Object.keys(filter);
       if (filterKeys[0] === '$and' || filterKeys[0] === '$or') {
@@ -79,7 +81,8 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
         var attr = filterKeys[0];
         indexEntries[attr] = 1;
       }
-    } else if (step.stage === 'SORT') { // Create index for SORT
+    } else if (step.stage === 'SORT') {
+      // Create index for SORT
       Object.keys(step.sortPattern).forEach(function(key) {
         indexEntries[key] = step.sortPattern[key];
       });
@@ -87,4 +90,28 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   };
   checkInputStage(explainPlan, 1);
   return indexEntries;
+};
+
+dbkInx.adviseAllCachedPlans = function() {
+  db.getCollectionNames().forEach(function(collectionName) { // eslint-disable-line
+    dbkInx.adviseCachedCollectionPlans(collectionName);
+  });
+};
+
+dbkInx.adviseCachedCollectionPlans = function(collectionName) {
+  var planCache = db.getCollection(collectionName).getPlanCache();// eslint-disable-line
+  planCache.listQueryShapes().forEach(function(shape) {
+    planCache.getPlansByQuery(shape).forEach(function(plan) {
+      var indexKeys = dbkInx.suggestIndexKeys(plan.reason.stats);// eslint-disable-line
+      // printjson(indexKeys); // eslint-disable-line
+    });
+  });
+};
+
+dbkInx.adviseProfileQueries = function() {
+  db.system.profile.find({op:'query'}).forEach(function(profile) {// eslint-disable-line
+    // printjson(profile.query);
+    // var indexKeys = dbkInx.suggestIndexKeys(profile.execStats);
+    // printjson(indexKeys);
+  });
 };
