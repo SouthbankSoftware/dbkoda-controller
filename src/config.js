@@ -113,7 +113,7 @@ export const loadConfigFromYamlFile = (p) => {
     mongoexportCmd: null,
     drillCmd: null,
     showWelcomePageAtStart: true,
-    telemetryEnabled: null,
+    telemetryEnabled: true,
   };
   if (!fs.existsSync(p)) {
     loadConfig(config);

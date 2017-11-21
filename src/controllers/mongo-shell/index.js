@@ -50,6 +50,7 @@ class MongoShell extends EventEmitter {
     this.parser = new Parser();
     this.autoComplete = false;
     this.shellVersion = this.getShellVersion();
+    this.commandQueue = [];
     l.debug(`Shell version: ${this.shellVersion}`);
   }
 
@@ -231,11 +232,14 @@ class MongoShell extends EventEmitter {
       this.executing = false;
       this.emit(MongoShell.SYNC_EXECUTE_END, '');
     } else if (this.executing) {
-      this.prevExecutionTime = 0;
-      this.executing = false;
-      this.emitOutput(MongoShell.prompt + MongoShell.enter);
-      this.emit(MongoShell.EXECUTE_END);
-      this.emitBufferedOutput();
+      const cmd = this.runCommandFromQueue();
+      if (!cmd) {
+        this.prevExecutionTime = 0;
+        this.executing = false;
+        this.emitOutput(MongoShell.prompt + MongoShell.enter);
+        this.emit(MongoShell.EXECUTE_END);
+        this.emitBufferedOutput();
+      }
     }
   }
 
@@ -243,13 +247,17 @@ class MongoShell extends EventEmitter {
     if (!this.executing) {
       this.previousOutput = data;
       this.emitOutput(data + MongoShell.enter);
+      this.parser.clearBuffer();
       return;
     }
-    this.parser.clearBuffer();
-    this.prevExecutionTime = 0;
-    this.executing = false;
-    this.emit(MongoShell.EXECUTE_END);
-    this.writeToShell(MongoShell.enter + MongoShell.enter);
+    const cmd = this.runCommandFromQueue();
+    if (!cmd) {
+      this.parser.clearBuffer();
+      this.prevExecutionTime = 0;
+      this.executing = false;
+      this.emit(MongoShell.EXECUTE_END);
+      this.writeToShell(MongoShell.enter + MongoShell.enter);
+    }
   }
 
   readParserOutput(data) {
@@ -374,6 +382,7 @@ class MongoShell extends EventEmitter {
   }
 
   write(data) {
+    this.commandQueue = [];
     if (!data) {
       // got an empty command request
       this.emit(MongoShell.EXECUTE_END, MongoShell.prompt + MongoShell.enter);
@@ -401,7 +410,26 @@ class MongoShell extends EventEmitter {
       }
     });
     const combinedCmd = cmdQueue.join('');
-    this.writeToShell(combinedCmd);
+    if (combinedCmd.length > 500) {
+      let temparray;
+      const chunk = 5;
+      while (cmdQueue.length > 0) {
+        temparray = cmdQueue.splice(0, chunk);
+        this.commandQueue.push(temparray.join(''));
+      }
+      this.runCommandFromQueue();
+    } else {
+      this.writeToShell(combinedCmd);
+    }
+  }
+
+  runCommandFromQueue() {
+    const cmd = this.commandQueue.shift();
+    if (cmd) {
+      this.writeToShell(cmd);
+      return true;
+    }
+    return false;
   }
 
   /**

@@ -79,7 +79,7 @@ class Parser extends EventEmitter {
 
   /**
    * parse the data from pty output.
-   * only god and Joey know how it works. please don't make any change
+   * only God and Joey know how it works. please don't make any change
    * @param data
    */
   parse(data) {
