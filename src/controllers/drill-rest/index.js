@@ -60,7 +60,7 @@ class DrillRestController {
       killSignal: 'SIGTERM',
       cwd: drillPath + '/bin',
       env: null
-    }, (error, stdout, _) => {
+    }, (_) => {
 
     });
   }
@@ -112,8 +112,7 @@ class DrillRestController {
     return new Promise((resolve, reject) => {
       const cbConnectionResult = (result) => {
         if (result && result.status == 'Running!') {
-          // run java controller
-          this.launchJavaControllProcess(configObj.drillCmd);
+          // TODO: run java controller
           if (!this.profileHash[cParams.alias] || !this.profileHash[cParams.db]) {
             const reqPromise = request.defaults({
               baseUrl: drillRestApi.controllerUrl,
