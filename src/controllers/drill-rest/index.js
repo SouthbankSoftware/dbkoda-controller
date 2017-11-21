@@ -60,7 +60,7 @@ class DrillRestController {
       killSignal: 'SIGTERM',
       cwd: drillPath + '/bin',
       env: null
-    }, (error, stdout, stderr) => {
+    }, (error, stdout, _) => {
 
     });
   }
