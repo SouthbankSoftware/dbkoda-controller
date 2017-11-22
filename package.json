@@ -22,6 +22,7 @@
   "scripts": {
     "postinstall": "yarn run clean && yarn run build",
     "dev": "yarn run dev:cbuild && yarn start --",
+    "build:sourcemaps": "babel --ignore mongoScripts --source-maps -d lib/ src/",
     "dev:install": "yarn install --ignore-scripts",
     "dev:build": "babel --ignore mongoScripts --source-maps -d lib/ src/ && node bin/combineJavascripts.js",
     "dev:cbuild": "yarn run clean && yarn run dev:build",
