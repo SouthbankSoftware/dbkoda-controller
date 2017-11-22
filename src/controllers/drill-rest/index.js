@@ -41,7 +41,9 @@ class DrillRestController {
     this.connections = {};
 
     this.bDrillStarted = false;
+    this.bDrillControllerStarted = false;
     this.drillInstance;
+    this.drillControllerInstance;
     this.connectionAttempts = 0;
 
     this.checkDrillConnectionStatus = this.checkDrillConnectionStatus.bind(this);
@@ -51,9 +53,10 @@ class DrillRestController {
     this.app = app;
   }
 
-  launchJavaControllProcess(drillPath) {
-    const cmd = `java -Dloader.path ${drillPath}/jars/jdbc-driver/drill-jdbc-all-1.11.0.jar -jar dbkoda-java-controller-0.1.0.jar`;
-    exec(cmd, {
+  launchJavaControllProcess(drillPath, drillControllerPath) {
+    const cmd = `java -Dloader.path=${drillPath}/jars/jdbc-driver/drill-jdbc-all-1.11.0.jar -jar ${drillControllerPath}`;
+    console.log('Drill Controller Command:', cmd);
+    this.drillControllerInstance = exec(cmd, {
       encoding: 'utf8',
       timeout: 0,
       maxBuffer: 200 * 1024,
@@ -111,8 +114,13 @@ class DrillRestController {
     let badRequestError;
     return new Promise((resolve, reject) => {
       const cbConnectionResult = (result) => {
+        console.log(result);
         if (result && result.status == 'Running!') {
           // TODO: run java controller
+          if (!this.bDrillControllerStarted) {
+            this.launchJavaControllProcess(configObj.drillCmd, configObj.drillControllerCmd);
+            this.bDrillControllerStarted = true;
+          }
           if (!this.profileHash[cParams.alias] || !this.profileHash[cParams.db]) {
             const reqPromise = request.defaults({
               baseUrl: drillRestApi.controllerUrl,
@@ -155,6 +163,7 @@ class DrillRestController {
     }
     console.log('checkDrillConnectionStatus:', this.connectionAttempts);
     this.checkDrillConnection().then((result) => {
+      console.log('checkDrillConnectionStatus, result:', result);
       cbFuncResult(result);
     }).catch((err) => {
       l.info('Ping drill instance till it comes online, Attempt: ' + this.connectionAttempts, err.message);
@@ -217,7 +226,6 @@ class DrillRestController {
       if (!this.profileHash[params.alias] && !params.removeAll) {
         return Promise.reject('no profile found with the specified alias');
       } else if (params.removeAll) {
-        this.bDrillStarted = false;
         this.connectionAttempts = 0; // resetting this for starting up drill next time.
         const removeProfilePromises = [];
         for (const alias in this.profileHash) {
@@ -281,8 +289,13 @@ class DrillRestController {
 
   quitDrillProcess() {
     console.log('this.bDrillStarted:', this.bDrillStarted);
+    this.bDrillStarted = false;
+    this.bDrillControllerStarted = false;
     if (this.drillInstance) {
       this.drillInstance.kill('SIGTERM');
+    }
+    if (this.drillControllerInstance) {
+      this.drillControllerInstance.kill('SIGTERM');
     }
   }
 }

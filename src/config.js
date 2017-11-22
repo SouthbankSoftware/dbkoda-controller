@@ -58,7 +58,7 @@ export const getMongoPath = (mongoCmd) => {
 const applyPathToOtherCommands = (config) => {
   const mongoPath = getMongoPath(config.mongoCmd);
   _.keys(config).map((key) => {
-    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd' && key !== 'telemetryEnabled') {
+    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd' && key !== 'drillControllerCmd' && key !== 'telemetryEnabled') {
       const cmdName = key.replace('Cmd', '');
       if (os.platform() === 'win32') {
         config[key] = mongoPath + cmdName + '.exe';
@@ -112,6 +112,7 @@ export const loadConfigFromYamlFile = (p) => {
     mongoimportCmd: null,
     mongoexportCmd: null,
     drillCmd: null,
+    drillControllerCmd: null,
     showWelcomePageAtStart: true,
     telemetryEnabled: true,
   };
@@ -127,7 +128,7 @@ export const loadConfigFromYamlFile = (p) => {
       _.assign(config, _.pick(userConfig, _.keys(config)));
       if (os.platform() === 'win32') {
         _.keys(config).map((key) => {
-          if (config[key] && key !== 'mongoVersionCmd' && key !== 'drillCmd') {
+          if (config[key] && key !== 'mongoVersionCmd' && key !== 'drillCmd' && key !== 'drillControllerCmd') {
             if (!config[key].match(new RegExp('.exe$', 'i'))) {
               config[key] += '.exe';
             }
