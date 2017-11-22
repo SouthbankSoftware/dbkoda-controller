@@ -53,7 +53,7 @@ dbeOps.printCurrentOps = function(printZeroSecs, printInternalProcess) {
                 secs = currentOp.secs_running;
             }
             var myop = currentOp.op;
-            let query = {};
+            var query = {};
             if ('query' in currentOp) {
               query = JSON.stringify(currentOp.query);
             } else if ('command' in currentOp) {
