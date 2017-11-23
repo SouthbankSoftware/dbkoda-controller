@@ -48,11 +48,6 @@
     "esdoc": "rimraf docs && esdoc -c .esdoc.json",
     "flow": "flow",
     "flow:install": "flow-typed install --overwrite --skip",
-    "cienvy:dev:watch": "nodemon --watch .cienvy/src --exec \"yarn cienvy:dev\"",
-    "cienvy:dev": "yarn run cienvy:clean && yarn run cienvy:dev:build",
-    "cienvy:dev:build": "yarn run cienvy:build -- --source-maps",
-    "cienvy:clean": "rimraf .cienvy/lib",
-    "cienvy:build": "BABEL_ENV=cienvy babel -d .cienvy/lib .cienvy/src"
   },
   "repository": {
     "type": "git",
