@@ -1,7 +1,7 @@
 /**
  * Created by joey on 14/8/17
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-23T17:02:53+11:00
+ * @Last modified time: 2017-11-23T17:11:10+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -40,7 +40,7 @@ describe('test pty parser', () => {
     const parser = new Parser();
     let escapeCode = String.fromCharCode(27, 91) + 'J'; // [J
     parser.buffers = [];
-    parser.buffers.push(Buffer.from('abc123'));
+    parser.buffers.push(new Buffer('abc123')); // eslint-disable-line no-buffer-constructor
     parser.bufferX = 3;
     parser.parse(escapeCode);
     assert.equal(parser.bufferX, 3);
@@ -50,7 +50,7 @@ describe('test pty parser', () => {
 
     escapeCode = String.fromCharCode(27, 91) + '1J'; // [1J
     parser.buffers = [];
-    parser.buffers.push(Buffer.from('abc123'));
+    parser.buffers.push(new Buffer('abc123')); // eslint-disable-line no-buffer-constructor
     parser.bufferX = 3;
     parser.parse(escapeCode);
     assert.equal(parser.bufferX, 3);
@@ -63,7 +63,7 @@ describe('test pty parser', () => {
     const parser = new Parser();
     const escapeCode = String.fromCharCode(27, 91) + 'K'; // [K
     parser.buffers = [];
-    parser.buffers.push(Buffer.from('abc123'));
+    parser.buffers.push(new Buffer('abc123')); // eslint-disable-line no-buffer-constructor
     parser.bufferX = 3;
     parser.parse(escapeCode);
     assert.equal(parser.bufferX, 3);

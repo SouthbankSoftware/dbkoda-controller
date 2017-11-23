@@ -1,7 +1,7 @@
 /**
  * Created by joey on 14/8/17
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-23T16:51:32+11:00
+ * @Last modified time: 2017-11-23T17:10:26+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -39,7 +39,7 @@ normalStateHandler[escapeSequence.CR] = (parser) => {
 normalStateHandler[escapeSequence.LF] = (parser) => {
   parser.bufferX = 0;
   parser.bufferY += 1;
-  parser.buffers.push(Buffer.alloc());
+  parser.buffers.push(new Buffer()); // eslint-disable-line no-buffer-constructor
 };
 
 normalStateHandler[escapeSequence.ESC] = (parser) => {
