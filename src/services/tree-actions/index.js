@@ -1,4 +1,8 @@
-/*
+/**
+ * Created by joey on 7/7/17
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-11-23T16:59:35+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,16 +21,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * Created by joey on 7/7/17.
- */
 
 const errors = require('feathers-errors');
 const hooks = require('./hooks');
 const { executeTreeActions } = require('../../controllers/tree-actions');
 
 class TreeActionService {
-
   constructor(options) {
     this.options = options || {};
     this.events = ['shell-output', 'mongo-execution-end'];
@@ -34,23 +34,27 @@ class TreeActionService {
       description: 'This service is used to run tree actions commands',
       put: {
         description: 'run mongo commands through shell sync',
-        parameters: [{
-          in: 'path',
-          required: true,
-          name: 'id',
-          type: 'string'
-        }, {
-          in: 'query',
-          required: true,
-          name: 'type',
-          type: 'string'
-        }, {
-          in: 'query',
-          required: true,
-          name: 'parameters',
-          type: 'string'
-        }]
-      }
+        parameters: [
+          {
+            in: 'path',
+            required: true,
+            name: 'id',
+            type: 'string',
+          },
+          {
+            in: 'query',
+            required: true,
+            name: 'type',
+            type: 'string',
+          },
+          {
+            in: 'query',
+            required: true,
+            name: 'parameters',
+            type: 'string',
+          },
+        ],
+      },
     };
   }
 
@@ -68,7 +72,7 @@ class TreeActionService {
   }
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires

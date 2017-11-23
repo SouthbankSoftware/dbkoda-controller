@@ -1,4 +1,8 @@
-/*
+/**
+ * Created by joey on 15/8/17
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-11-23T16:19:22+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,15 +21,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * Created by joey on 15/8/17.
- */
 
 class Buffer {
-
   constructor(d = '', c = false) {
     this.data = d;
-    this.cached = c;  // whether this line is cached or not
+    this.cached = c; // whether this line is cached or not
   }
 }
 

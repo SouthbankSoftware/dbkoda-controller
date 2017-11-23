@@ -1,4 +1,8 @@
-/*
+/**
+ * Created by joey on 29/6/17
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-11-23T16:59:07+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,12 +21,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * Created by joey on 29/6/17.
- */
 
 /* eslint-disable class-methods-use-this */
-
 
 const prom = require('prom-client');
 const hooks = require('./hooks');
@@ -33,16 +33,15 @@ const register = new Registry();
 
 collectDefaultMetrics({ register });
 class Monitor {
-
   find(_) {
     const metrics = prom.register.metrics();
     return new Promise((resolve) => {
-      resolve({text: metrics});
+      resolve({ text: metrics });
     });
   }
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires
@@ -51,7 +50,7 @@ module.exports = function () {
     res.format({
       'text/plain': function() {
         res.end(`${res.data.text}`);
-      }
+      },
     });
   });
 

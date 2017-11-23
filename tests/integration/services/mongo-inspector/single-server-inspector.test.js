@@ -1,24 +1,42 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-04-18T11:24:13+10:00
+ * @Last modified time: 2017-11-23T17:01:17+11:00
+ *
+ * dbKoda - a modern, open source code editor, for MongoDB.
+ * Copyright (C) 2017-2018 Southbank Software
+ *
+ * This file is part of dbKoda.
+ *
+ * dbKoda is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * dbKoda is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 const assert = require('assert');
 const _ = require('lodash');
-const {launchSingleInstance, killMongoInstance, generateMongoData} = require('test-utils');
+const { launchSingleInstance, killMongoInstance, generateMongoData } = require('test-utils');
 const {
   connection,
   inspector,
   TIMEOUT,
   syncExecution,
   getRandomPort,
-  MLAUNCH_TIMEOUT
+  MLAUNCH_TIMEOUT,
 } = require('../commons');
 
 const port = getRandomPort();
 
 describe('single server inspector test', () => {
-  before(function (done) {
+  before(function(done) {
     this.timeout(TIMEOUT * 3);
     launchSingleInstance(port);
     _.times(3, (i) => {
@@ -31,7 +49,7 @@ describe('single server inspector test', () => {
     setTimeout(() => done(), MLAUNCH_TIMEOUT);
   });
 
-  after(function () {
+  after(function() {
     this.timeout(TIMEOUT * 3);
     killMongoInstance(port);
   });
@@ -62,10 +80,11 @@ describe('single server inspector test', () => {
             return item.text === 'Databases';
           });
           assert.equal(dbs[0].text, 'Databases');
-          const inspectedDbs = (dbs[0].children = dbs[0].children.filter((db) => {
+          dbs[0].children = dbs[0].children.filter((db) => {
             console.log('@@@@ ', db);
             return db.text.indexOf('db') >= 0;
-          }));
+          });
+          const inspectedDbs = dbs[0].children;
           return inspectedDbs;
         })
         .then((dbs) => {
@@ -76,7 +95,8 @@ describe('single server inspector test', () => {
             assert.equal(db.children.length >= 3, true);
           });
           return connection.remove(connectionId);
-        }).then(() => resolve())
+        })
+        .then(() => resolve())
         .catch((e) => {
           reject(e);
         });
@@ -86,54 +106,60 @@ describe('single server inspector test', () => {
   it('test database and collection returned in order', () => {
     let id;
     return new Promise((resolve, reject) => {
-      connection.create(
-        {},
-        {
-          query: {
-            url: 'mongodb://localhost:' + port + '/test1',
+      connection
+        .create(
+          {},
+          {
+            query: {
+              url: 'mongodb://localhost:' + port + '/test1',
+            },
           },
-        },
-      ).then((v) => {
-        id = v.id;
-        return Promise.all([syncExecution.update(v.id, {
-          shellId: v.shellId,
-          commands: 'db.createCollection(\'aaaa\');',
-          responseType: 'text',
-        }),
-          syncExecution.update(v.id, {
-            shellId: v.shellId,
-            commands: 'db.createCollection(\'bbbb\');',
-            responseType: 'text',
-          })
-        ]);
-      }).then((b) => {
-        console.log('create collections ', b);
-        return inspector.get(id);
-      }).then((v) => {
-        const dbs = v.result.filter((item) => {
-          console.log('item.children = ', item);
-          item.children = item.children.filter((child) => {
-            return child.text.indexOf('db') === 0 || child.text === 'test1';
+        )
+        .then((v) => {
+          id = v.id;
+          return Promise.all([
+            syncExecution.update(v.id, {
+              shellId: v.shellId,
+              commands: "db.createCollection('aaaa');",
+              responseType: 'text',
+            }),
+            syncExecution.update(v.id, {
+              shellId: v.shellId,
+              commands: "db.createCollection('bbbb');",
+              responseType: 'text',
+            }),
+          ]);
+        })
+        .then((b) => {
+          console.log('create collections ', b);
+          return inspector.get(id);
+        })
+        .then((v) => {
+          const dbs = v.result.filter((item) => {
+            console.log('item.children = ', item);
+            item.children = item.children.filter((child) => {
+              return child.text.indexOf('db') === 0 || child.text === 'test1';
+            });
+            return item.text === 'Databases';
           });
-          return item.text === 'Databases';
+          console.log('get dbs ', dbs);
+          assert.equal(true, dbs[0].children.length == 4);
+          assert.equal('db0', dbs[0].children[0].text);
+          assert.equal('db1', dbs[0].children[1].text);
+          assert.equal('db2', dbs[0].children[2].text);
+          assert.equal('test1', dbs[0].children[3].text);
+          const cls = dbs[0].children.filter((db) => {
+            return db.text === 'test1';
+          });
+          console.log('get collections ', cls[0]);
+          assert.equal(cls[0].children.length >= 2, true);
+          assert.equal('aaaa', cls[0].children[0].text);
+          assert.equal('bbbb', cls[0].children[1].text);
+          resolve();
+        })
+        .catch((err) => {
+          reject(err);
         });
-        console.log('get dbs ', dbs);
-        assert.equal(true, dbs[0].children.length == 4);
-        assert.equal('db0', dbs[0].children[0].text);
-        assert.equal('db1', dbs[0].children[1].text);
-        assert.equal('db2', dbs[0].children[2].text);
-        assert.equal('test1', dbs[0].children[3].text);
-        const cls = dbs[0].children.filter((db) => {
-          return db.text === 'test1';
-        });
-        console.log('get collections ', cls[0]);
-        assert.equal(cls[0].children.length >= 2, true);
-        assert.equal('aaaa', cls[0].children[0].text);
-        assert.equal('bbbb', cls[0].children[1].text);
-        resolve();
-      }).catch((err) => {
-        reject(err);
-      });
     });
   }).timeout(TIMEOUT);
 });

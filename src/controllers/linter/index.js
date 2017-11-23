@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-11-23T16:18:03+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,18 +21,13 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-06-08T17:56:36+10:00
- */
-
 const mongodb = require('mongodb');
 const errors = require('feathers-errors');
 const _ = require('lodash');
 const hooks = require('feathers-hooks-common');
-const linter = require('eslint').linter;
-const SourceCode = require('eslint').SourceCode;
-const CLIEngine = require('eslint').CLIEngine;
+const { linter } = require('eslint');
+const { SourceCode } = require('eslint');
+const { CLIEngine } = require('eslint');
 
 /**
  * this controller is used to handle auto complete for mongo shell

@@ -1,4 +1,9 @@
-/*
+/**
+ * Mongo connection object
+ *
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-11-23T16:18:49+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,11 +23,7 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * mongo connection object
- */
 class MongoConnection {
-
   constructor(id, driver, status, conn, dbVersion, shellVersion) {
     this.id = id;
     this.driver = driver;
