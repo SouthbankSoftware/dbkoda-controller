@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T10:55:12+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-17T10:44:58+11:00
+ * @Last modified time: 2017-11-24T17:40:01+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -51,40 +51,48 @@ export default (context, item) => {
     .on('ready', () => {
       l.debug(`Created SSH Terminal ${_id}`);
 
-      client.shell({ ...size, term: 'xterm' }, (err, stream) => {
-        if (err) {
-          l.error(`SSH Terminal ${_id} error`, err);
-          return;
-        }
-
-        const terminal = service.terminals.get(_id);
-        const onData = (payload) => {
-          if (terminal.debug) {
-            l.debug(`SSH Terminal ${_id}: ${JSON.stringify(payload)}`);
+      client.shell(
+        { ...size, term: 'xterm' },
+        {
+          env: {
+            LANG: 'en_AU.UTF-8',
+          },
+        },
+        (err, stream) => {
+          if (err) {
+            l.error(`SSH Terminal ${_id} error`, err);
+            return;
           }
-          service.emit('data', { _id, payload });
-        };
 
-        if (!terminal) {
-          l.error(`SSH Terminal ${_id} doesn't exist`);
-          return;
-        }
+          const terminal = service.terminals.get(_id);
+          const onData = (payload) => {
+            if (terminal.debug) {
+              l.debug(`SSH Terminal ${_id}: ${JSON.stringify(payload)}`);
+            }
+            service.emit('data', { _id, payload });
+          };
 
-        stream.setEncoding('utf8');
-        stream
-          .on('close', () => {
-            l.warn(`SSH Terminal ${_id} stream closed`);
+          if (!terminal) {
+            l.error(`SSH Terminal ${_id} doesn't exist`);
+            return;
+          }
 
-            client.end();
-          })
-          .on('data', onData)
-          .stderr.on('data', onData)
-          .on('error', (error) => {
-            l.error(`SSH Terminal ${_id} stream error`, error);
-          });
+          stream.setEncoding('utf8');
+          stream
+            .on('close', () => {
+              l.warn(`SSH Terminal ${_id} stream closed`);
 
-        terminal.stream = stream;
-      });
+              client.end();
+            })
+            .on('data', onData)
+            .stderr.on('data', onData)
+            .on('error', (error) => {
+              l.error(`SSH Terminal ${_id} stream error`, error);
+            });
+
+          terminal.stream = stream;
+        },
+      );
     })
     .on('error', (error) => {
       l.error(`SSH Terminal ${_id} error`, error);
