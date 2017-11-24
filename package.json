@@ -14,10 +14,11 @@
     "feathers",
     "mongodb",
     "shell",
-    "api"
+    "api",
+    "xterm"
   ],
   "engines": {
-    "node": ">= 7.2.1"
+    "node": ">= 8.9.1"
   },
   "scripts": {
     "postinstall": "yarn run clean && yarn run build",

@@ -1,4 +1,8 @@
-/*
+/**
+ * Created by joey on 9/8/17
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-11-24T11:54:54+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,9 +21,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * Created by joey on 9/8/17.
- */
+
 import '../../src/app';
 import { loadConfig, loadConfigFromYamlFile, loadCommands, getMongoPath } from '../../src/config';
 
@@ -30,6 +32,14 @@ const path = require('path');
 const fs = require('fs');
 
 const extension = os.platform() === 'win32' ? '.exe' : '';
+
+function recoverConfigPath(oldPath: ?string) {
+  if (!oldPath) {
+    delete process.env.CONFIG_PATH;
+  } else {
+    process.env.CONFIG_PATH = oldPath;
+  }
+}
 
 describe('configure path tests', () => {
   it('load path without configure file', () => {
@@ -112,7 +122,7 @@ describe('configure path tests', () => {
     process.env.CONFIG_PATH = path.join(__dirname, 'config_1.yml');
     config = loadCommands();
     assert.equal(config.mongoVersionCmd, '"/Users/user1/tools/mongodb-osx-x86_64-3.4.9/bin/mongo' + extension + '" --version');
-    process.env.CONFIG_PATH = oldPath;
+    recoverConfigPath(oldPath);
   });
 
   it('test load incorrect mongo command', () => {
@@ -124,7 +134,7 @@ describe('configure path tests', () => {
     assert.equal(config.mongorestoreCmd, undefined);
     assert.equal(config.mongoimportCmd, undefined);
     assert.equal(config.mongoexportCmd, '/var/opt/mongoexport' + extension);
-    process.env.CONFIG_PATH = oldPath;
+    recoverConfigPath(oldPath);
   });
 
   it('test load incorrect mongo command1', () => {
@@ -138,7 +148,7 @@ describe('configure path tests', () => {
       assert.equal(config.mongoimportCmd, '/var/opt/mongoimport');
       assert.equal(config.mongoexportCmd, '/var/opt/mongoexport');
       assert.equal(config.mongoVersionCmd, '"/var/opt/mongod" --version');
-      process.env.CONFIG_PATH = oldPath;
+      recoverConfigPath(oldPath);
     }
   });
 
@@ -153,7 +163,7 @@ describe('configure path tests', () => {
       assert.equal(config.mongoimportCmd, 'c:/var/opt/mongoimport.exe');
       assert.equal(config.mongoexportCmd, 'c:/var/opt/mongoexport.exe');
       assert.equal(config.mongoVersionCmd, '"c:/var/opt/mongod.exe" --version');
-      process.env.CONFIG_PATH = oldPath;
+      recoverConfigPath(oldPath);
     }
   });
 
@@ -168,7 +178,7 @@ describe('configure path tests', () => {
       assert.equal(config.mongoimportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoimport.exe');
       assert.equal(config.mongoexportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoexport.exe');
       assert.equal(config.mongoVersionCmd, '"c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongo.exe" --version');
-      process.env.CONFIG_PATH = oldPath;
+      recoverConfigPath(oldPath);
     }
   });
 
@@ -182,7 +192,7 @@ describe('configure path tests', () => {
       assert.equal(config.mongorestoreCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongorestore.exe');
       assert.equal(config.mongoimportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoimport.exe');
       assert.equal(config.mongoexportCmd, 'c:/Program Files/mongo/mongodb-win32-x86_64-2008plus-ssl-3.2.16-23-g32c4fbb/bin/mongoexport.exe');
-      process.env.CONFIG_PATH = oldPath;
+      recoverConfigPath(oldPath);
     }
   });
 
