@@ -48,6 +48,14 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   // var indexKeys=dbkIdx.suggestIndexKeys(explainDoc.queryPlanner.winningPlan);
   // db.Sakila_films.createIndex(indexKeys);
   var indexEntries = {};
+  var existingIndexEntries = {};
+
+  var addIndexEntries = function() {
+    // For SORT or FETCH, add any index patterns from prev steps
+    Object.keys(existingIndexEntries).forEach(function(iKey) {
+      indexEntries[iKey] = existingIndexEntries[iKey];
+    });
+  };
 
   var checkInputStage = function(step, depth) {
     if ('inputStage' in step) {
@@ -59,29 +67,49 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
       });
     }
     print(step.stage);
-    if (step.stage === 'COLLSCAN') {
-      // Create index for COLLSCAN
-      var filter = step.filter;
-      var filterKeys = Object.keys(filter);
-      if (filterKeys[0] === '$and' || filterKeys[0] === '$or') {
-        // TODO: Ideally should create more than one index for OR
-        var andFilters;
-        if (filterKeys[0] === '$and') {
-          andFilters = filter.$and;
-        } else {
-          andFilters = [];
-          andFilters.push(filter.$or[0]); // Only first OR condition in index
-        }
-        andFilters.forEach(function(afilter) {
-          Object.keys(afilter).forEach(function(akey) {
-            indexEntries[akey] = 1;
-          });
+    if (step.stage === 'AND_SORTED') {
+      addIndexEntries();
+    } else if (step.stage === 'OR') {
+      // create seperate index recomendations for each step of the OR.
+      // BUT - do we need to since there must be indexes already, right?
+      printjson('OR recomendations'); // eslint-disable-line
+      if ('inputStages' in step) {
+        step.inputStages.forEach(function(inputStage) {
+          printjson(dbkInx.suggestIndexKeys(inputStage)); // eslint-disable-line
         });
-      } else {
-        var attr = filterKeys[0];
-        indexEntries[attr] = 1;
       }
+    } else if (step.stage === 'COLLSCAN' || step.stage === 'FETCH') {
+      // Create index for COLLSCAN or FETCH
+      addIndexEntries(); // only neccessary for FETCH but no harm done
+      if ('filter' in step) {
+        var filter = step.filter;
+        var filterKeys = Object.keys(filter);
+        if (filterKeys[0] === '$and' || filterKeys[0] === '$or') {
+          // TODO: Ideally should create more than one index for OR
+          var andFilters;
+          if (filterKeys[0] === '$and') {
+            andFilters = filter.$and;
+          } else {
+            andFilters = [];
+            andFilters.push(filter.$or[0]); // Only first OR condition in index
+          }
+          andFilters.forEach(function(afilter) {
+            Object.keys(afilter).forEach(function(akey) {
+              indexEntries[akey] = 1;
+            });
+          });
+        } else {
+          var attr = filterKeys[0];
+          indexEntries[attr] = 1;
+        }
+      }
+    } else if (step.stage === 'IXSCAN') {
+      Object.keys(step.keyPattern).forEach(function(pattern) {
+        existingIndexEntries[pattern] = 1;
+      });
     } else if (step.stage === 'SORT') {
+      // Add any previous index steps
+      addIndexEntries();
       // Create index for SORT
       Object.keys(step.sortPattern).forEach(function(key) {
         indexEntries[key] = step.sortPattern[key];
@@ -94,24 +122,75 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
 
 dbkInx.adviseAllCachedPlans = function() {
   db.getCollectionNames().forEach(function(collectionName) { // eslint-disable-line
+    // eslint-disable-line
     dbkInx.adviseCachedCollectionPlans(collectionName);
   });
 };
 
 dbkInx.adviseCachedCollectionPlans = function(collectionName) {
-  var planCache = db.getCollection(collectionName).getPlanCache();// eslint-disable-line
+  var planCache = db.getCollection(collectionName).getPlanCache(); // eslint-disable-line
   planCache.listQueryShapes().forEach(function(shape) {
     planCache.getPlansByQuery(shape).forEach(function(plan) {
-      var indexKeys = dbkInx.suggestIndexKeys(plan.reason.stats);// eslint-disable-line
+      var indexKeys = dbkInx.suggestIndexKeys(plan.reason.stats); // eslint-disable-line
       // printjson(indexKeys); // eslint-disable-line
     });
   });
 };
 
 dbkInx.adviseProfileQueries = function() {
-  db.system.profile.find({op:'query'}).forEach(function(profile) {// eslint-disable-line
-    // printjson(profile.query);
-    // var indexKeys = dbkInx.suggestIndexKeys(profile.execStats);
-    // printjson(indexKeys);
+  db.system.profile // eslint-disable-line
+    .find({
+      op: 'query'
+    })
+    .forEach(function(profile) { // eslint-disable-line
+      // eslint-disable-line
+      // printjson(profile.query);
+      // var indexKeys = dbkInx.suggestIndexKeys(profile.execStats);
+      // printjson(indexKeys);
+    });
+};
+
+dbkInx.testPlans = function() {
+  db.Sakila_films.dropIndexes(); // eslint-disable-line
+
+  var explain = db.Sakila_films // eslint-disable-line
+    .explain()
+    .find({ Category: 'Documentary', Rating: 'PG' })
+    .sort({ Length: 1 })
+    .next();
+  printjson(dbkInx.suggestIndexKeys(explain.queryPlanner.winningPlan)); // eslint-disable-line
+
+  db.Sakila_films.createIndex({ Category: 1 }); // eslint-disable-line
+
+  var explain = db.Sakila_films // eslint-disable-line
+    .explain()
+    .find({ Category: 'Documentary', Rating: 'PG' })
+    .sort({ Length: 1 })
+    .next();
+  printjson(dbkInx.suggestIndexKeys(explain.queryPlanner.winningPlan)); // eslint-disable-line
+
+  db.Sakila_films.createIndex({ Rating: 1 }); // eslint-disable-line
+
+  var explain = db.Sakila_films // eslint-disable-line
+    .explain()
+    .find({ Category: 'Documentary', Rating: 'PG' })
+    .sort({ Length: 1 })
+    .next();
+  printjson(dbkInx.suggestIndexKeys(explain.queryPlanner.winningPlan)); // eslint-disable-line
+  explain.queryPlanner.rejectedPlans.forEach(function(plan) {
+    printjson(dbkInx.suggestIndexKeys(plan)); // eslint-disable-line
   });
+
+  var explain = db.Sakila_films // eslint-disable-line
+    .explain()
+    .find({ Category: 'Documentary', Rating: 'PG' })
+    .next();
+  printjson(dbkInx.suggestIndexKeys(explain.queryPlanner.winningPlan)); // eslint-disable-line
+  var explain = db.Sakila_films // eslint-disable-line
+    .explain()
+    .find({ $or: [{ Rating: 'PG' }, { Category: 'Family' }] })
+    .next();
+  printjson(dbkInx.suggestIndexKeys(explain.queryPlanner.winningPlan)); // eslint-disable-line
+
+  db.Sakila_films.dropIndexes(); // eslint-disable-line
 };
