@@ -71,7 +71,7 @@ class Parser extends EventEmitter {
     if (this.buffers.length > 0) {
       if (this.buffers[0].data === 'dbKoda>') {
         this.emit('command-ended');
-      } else if (this.buffers[0].data === '... ') {
+      } else if (this.buffers[0].data.trim() === '...') {
         this.emit('incomplete-command-ended', '... ');
       }
     }
