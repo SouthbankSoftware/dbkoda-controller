@@ -409,7 +409,7 @@ class MongoShell extends EventEmitter {
         }
       }
     });
-    let sep = '';
+    const sep = '';
     const combinedCmd = cmdQueue.join(sep);
     if (combinedCmd.length > 500) {
       let temparray;
