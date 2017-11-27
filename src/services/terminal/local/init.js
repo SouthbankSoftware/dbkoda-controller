@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T10:55:12+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-27T11:28:02+11:00
+ * @Last modified time: 2017-11-27T13:55:14+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -61,7 +61,7 @@ export default (context, item) => {
 
   const onData = (payload) => {
     const terminal = service.terminals.get(_id);
-    if (terminal.debug) {
+    if (terminal && terminal.debug) {
       l.debug(`Local Terminal ${_id}: ${JSON.stringify(payload)}`);
     }
     service.emit('data', { _id, payload });
