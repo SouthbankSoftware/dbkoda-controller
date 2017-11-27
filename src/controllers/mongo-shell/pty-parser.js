@@ -26,6 +26,7 @@ const ParseState = require('./parser-state');
 const {escapedStateHandler, csiStateHandler, csiStateParameterHandler, normalStateHandler} = require('./input-handler');
 const Buffer = require('./buffer');
 const PytOptions = require('./pty-options');
+const os = require('os');
 
 /* eslint no-fallthrough : 0 */
 
@@ -59,7 +60,23 @@ class Parser extends EventEmitter {
     this.parse(data);
     let cached = null;
     if (this.buffers.length > 0) {
-      cached = this.buffers.pop();
+      if (os.platform() === 'win32') {
+        // find the last line from bottom
+        let i = this.buffers.length - 1;
+        for (; i >= 0; i -= 1) {
+          if (this.buffers[i].data) {
+            break;
+          }
+        }
+        if (this.buffers[i].data.match(/dbKoda>$/)) {
+          cached = this.buffers[i];
+          this.buffers.splice(i, this.buffers.length - i);
+        } else {
+          cached = this.buffers.pop();
+        }
+      } else {
+        cached = this.buffers.pop();
+      }
       this.buffers.map((buffer) => {
         this.emit('data', buffer.data);
       });
@@ -69,7 +86,7 @@ class Parser extends EventEmitter {
     this.bufferY = this.buffers.length - 1 >= 0 ? this.buffers.length - 1 : 0;
     // check whether the last line in the buffer is prompt
     if (this.buffers.length > 0) {
-      if (this.buffers[0].data === 'dbKoda>') {
+      if (this.buffers[0].data && this.buffers[0].data.match(/dbKoda>$/)) {
         this.emit('command-ended');
       } else if (this.buffers[0].data.trim() === '...') {
         this.emit('incomplete-command-ended', '... ');
