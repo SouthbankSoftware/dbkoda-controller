@@ -22,7 +22,7 @@
   },
   "scripts": {
     "postinstall": "yarn run clean && yarn run build",
-    "dev": "yarn run dev:cbuild && yarn start --",
+    "dev": "yarn run dev:cbuild && yarn start",
     "dev:install": "yarn install --ignore-scripts",
     "dev:build": "babel --ignore mongoScripts --source-maps -d lib/ src/ && node bin/combineJavascripts.js",
     "dev:cbuild": "yarn run clean && yarn run dev:build",
@@ -43,7 +43,7 @@
     "test:unit:win": "mocha tests/unit/ --opts mocha.opts",
     "test:win": "yarn test:integration:win && yarn test:unit:win",
     "coverage": "yarn run istanbul && open -b com.google.chrome coverage/lcov-report/index.html",
-    "istanbul": "rimraf coverage data && NODE_PATH=./src/ NODE_ENV=test istanbul cover _mocha tests/unit tests/integration -- -t 20000 --opts mocha.opts",
+    "istanbul": "rimraf coverage data && NODE_PATH=./src/ NODE_ENV=test istanbul cover _mocha tests/unit tests/integration -t 20000 --opts mocha.opts",
     "docs": "yarn run esdoc && open -b com.google.chrome ./docs/index.html",
     "esdoc": "rimraf docs && esdoc -c .esdoc.json",
     "flow": "flow",
