@@ -37,7 +37,7 @@
 
 var dbkInx = {};
 
-dbkInx.debug = false;
+dbkInx.debug = true;
 
 dbkInx.quick_explain = function(explainPlan) {
   var stepNo = 1;
@@ -131,7 +131,7 @@ dbkInx.adviseProfileQueries = function() {
 dbkInx.createKeys = function(collection, indexes) {
   printjson(indexes);
   indexes.forEach(function(index) {
-    // db.getCollection(collection).createIndex(index);
+     db.getCollection(collection).createIndex(index);
   });
   print('..... Allindexes');
   db.getCollection(collection).getIndexes().forEach(function(indx) {
@@ -191,6 +191,19 @@ dbkInx.testPlans = function() {
         ]
       }).
       sort({ Length: 1 }).
+      next();
+    // printjson(explain); // eslint-disable-line
+    // printjson(explain.queryPlanner.winningPlan);
+    dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
+        explain = db.Sakila_films.
+      explain().
+      find({
+        $or: [
+          { Rating: 'PG', 'Rental Duration': '6' },
+          { Category: 'Family', 'Rental Duration': '6' }
+        ]
+      }).
+      sort({ Length: -1, Rating:1}).
       next();
     // printjson(explain); // eslint-disable-line
     // printjson(explain.queryPlanner.winningPlan);
@@ -287,5 +300,17 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   // printjson(baseIndexes);
   checkInputStage(explainPlan.queryPlanner.winningPlan, 1);
 
+  var dbName = explainPlan.queryPlanner.namespace.split('.')[0];
+  var collectionName = explainPlan.queryPlanner.namespace.split('.')[1];
+  var indexes = db.getSiblingDB(dbName).getCollection(collectionName).getIndexes();
+  var existingIndexes = [];
+  for (var idx = 0; idx < indKeys.length; idx += 1) {
+    indexes.forEach(function(idx) {
+      if (idx.key === indKeys[idx]) {
+        if (debug) print('Index already exists ', indKeys[idx]);
+        indKeys;
+      }
+    });
+  }
   return indKeys;
 };
