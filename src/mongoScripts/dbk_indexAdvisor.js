@@ -34,10 +34,12 @@
 /*  eslint no-plusplus: 0 */
 /* eslint no-unused-vars: 0 */
 /* eslint prefer-destructuring: 0 */
+/* eslint no-restricted-globals: 0 */
+/* eslint block-scoped-var: 0 */
 
 var dbkInx = {};
 
-dbkInx.debug = true;
+dbkInx.debug = false;
 
 dbkInx.quick_explain = function(explainPlan) {
   var stepNo = 1;
@@ -116,7 +118,7 @@ dbkInx.adviseCachedCollectionPlans = function(collectionName) {
 };
 
 dbkInx.adviseProfileQueries = function() {
-  db.system.profile; // eslint-disable-line
+  db.system.profile. // eslint-disable-line
   find({
     op: 'query'
   }).forEach(function(profile) {
@@ -129,14 +131,17 @@ dbkInx.adviseProfileQueries = function() {
 };
 
 dbkInx.createKeys = function(collection, indexes) {
-  printjson(indexes);
+  // printjson(indexes);
   indexes.forEach(function(index) {
-     db.getCollection(collection).createIndex(index);
+    var result = db.getCollection(collection).createIndex(index);
+    if (dbkInx.debug) printjson(result);
   });
-  print('..... Allindexes');
-  db.getCollection(collection).getIndexes().forEach(function(indx) {
-    printjson(indx.key);
-  });
+  if (dbkInx.debug) {
+    print('..... Allindexes');
+    db.getCollection(collection).getIndexes().forEach(function(indx) {
+      printjson(indx.key);
+    });
+  }
 };
 
 dbkInx.testPlans = function() {
@@ -195,7 +200,7 @@ dbkInx.testPlans = function() {
     // printjson(explain); // eslint-disable-line
     // printjson(explain.queryPlanner.winningPlan);
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
-        explain = db.Sakila_films.
+    explain = db.Sakila_films.
       explain().
       find({
         $or: [
@@ -203,13 +208,16 @@ dbkInx.testPlans = function() {
           { Category: 'Family', 'Rental Duration': '6' }
         ]
       }).
-      sort({ Length: -1, Rating:1}).
+      sort({ Length: -1, Rating: 1 }).
       next();
     // printjson(explain); // eslint-disable-line
     // printjson(explain.queryPlanner.winningPlan);
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
+    // Second time through there should be no better index available.
+    dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
   }
-  db.Sakila_films.dropIndexes(); // eslint-disable-line
+
+  // db.Sakila_films.dropIndexes(); // eslint-disable-line
 };
 
 dbkInx.suggestIndexKeys = function(explainPlan) {
@@ -236,7 +244,9 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   var indKeys = []; // Global for the filter recusive routine
   indKeys[0] = {};
 
-  if (dbkInx.debug) { print(dbkInx.quick_explain(explainPlan.queryPlanner.winningPlan)); } // Print explain summary if debug
+  if (dbkInx.debug) {
+    print(dbkInx.quick_explain(explainPlan.queryPlanner.winningPlan));
+  } // Print explain summary if debug
 
   // Function to generate indexes to match a given filter
   filterParser = function(filter) {
@@ -300,17 +310,52 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   // printjson(baseIndexes);
   checkInputStage(explainPlan.queryPlanner.winningPlan, 1);
 
+  if (dbkInx.debug) {
+    print('Suggested Indexes');
+    printjson(indKeys);
+  }
+
+  // Check for existing indexes
   var dbName = explainPlan.queryPlanner.namespace.split('.')[0];
   var collectionName = explainPlan.queryPlanner.namespace.split('.')[1];
-  var indexes = db.getSiblingDB(dbName).getCollection(collectionName).getIndexes();
+  var indexes = db.
+    getSiblingDB(dbName).
+    getCollection(collectionName).
+    getIndexes();
   var existingIndexes = [];
   for (var idx = 0; idx < indKeys.length; idx += 1) {
-    indexes.forEach(function(idx) {
-      if (idx.key === indKeys[idx]) {
-        if (debug) print('Index already exists ', indKeys[idx]);
-        indKeys;
+    indexes.forEach(function(existingIndex) {
+      if (dbkInx.debug) {
+        print('====Checking for index match');
+        printjson(existingIndex.key);
+        printjson(indKeys[idx]);
+      }
+      if (JSON.stringify(existingIndex.key) === JSON.stringify(indKeys[idx])) {
+        existingIndexes.push(idx);
+        if (dbkInx.debug) {
+          print('====Index already exists');
+        }
       }
     });
   }
-  return indKeys;
+
+  var advisedIndexes = [];
+  for (var idx = 0; idx < indKeys.length; idx += 1) {  //eslint-disable-line
+    if (!(idx in existingIndexes)) {
+      advisedIndexes.push(indKeys[idx]);
+    }
+  }
+  if (dbkInx.debug) {
+    print(
+      'was ',
+      indKeys.length,
+      ' indexes ',
+      advisedIndexes.length,
+      ' not existing'
+    );
+    printjson(existingIndexes);
+    printjson(indKeys);
+  }
+
+  return advisedIndexes;
 };

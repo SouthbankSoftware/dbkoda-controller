@@ -87,7 +87,7 @@ dbeSS.flattenServerStatus = function(dbServerStatus) {
 };
 
 dbeSS.mStat = function(repeat, sleepTime) {
-  for (var count = 0; count > repeat; count += 1) {
+  for (var count = 0; count < repeat; count += 1) {
     sleep(sleepTime); // eslint-disable-line
   }
 };
