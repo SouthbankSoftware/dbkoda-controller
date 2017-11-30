@@ -413,7 +413,7 @@ class MongoShell extends EventEmitter {
     const combinedCmd = cmdQueue.join(sep);
     if (combinedCmd.length > 500) {
       let temparray;
-      const chunk = 10;
+      const chunk = 1;
       while (cmdQueue.length > 0) {
         temparray = cmdQueue.splice(0, chunk);
         const joinCmd = (temparray.join(sep));
