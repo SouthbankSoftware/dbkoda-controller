@@ -22,7 +22,7 @@
 
 import {loadCommands} from '../../config';
 
-const exec = require('child_process').exec;
+const { exec } = require('child_process');
 const errors = require('feathers-errors');
 const hooks = require('feathers-hooks-common');
 const request = require('request-promise');
@@ -47,6 +47,7 @@ class DrillRestController {
     this.connectionAttempts = 0;
 
     this.checkDrillConnectionStatus = this.checkDrillConnectionStatus.bind(this);
+    this.checkDrillCtrlConnectionStatus = this.checkDrillCtrlConnectionStatus.bind(this);
   }
 
   setup(app) {
@@ -113,14 +114,9 @@ class DrillRestController {
     const cParams = Object.assign({database: params.db}, params);
     let badRequestError;
     return new Promise((resolve, reject) => {
-      const cbConnectionResult = (result) => {
+      const cbDrillControllerResult = (result) => {
         console.log(result);
-        if (result && result.status == 'Running!') {
-          // TODO: run java controller
-          if (!this.bDrillControllerStarted) {
-            this.launchJavaControllProcess(configObj.drillCmd, configObj.drillControllerCmd);
-            this.bDrillControllerStarted = true;
-          }
+        if (result) {
           if (!this.profileHash[cParams.alias] || !this.profileHash[cParams.db]) {
             const reqPromise = request.defaults({
               baseUrl: drillRestApi.controllerUrl,
@@ -147,12 +143,58 @@ class DrillRestController {
             resolve({id: this.profileHash[cParams.alias].id});
           }
         } else {
+          l.error('ConnectionFailed: unable to connect to drill controller interface');
+          badRequestError = new errors.BadRequest('ConnectionFailed: unable to connect to drill controller interface');
+          reject(badRequestError);
+        }
+      };
+      const cbDrillConnectionResult = (result) => {
+        console.log(result);
+        if (result && result.status == 'Running!') {
+          if (!this.bDrillControllerStarted) {
+            this.launchJavaControllProcess(configObj.drillCmd, configObj.drillControllerCmd);
+            this.bDrillControllerStarted = true;
+            this.checkDrillCtrlConnectionStatus(cbDrillControllerResult, true);
+          }
+        } else {
           l.error('ConnectionFailed: unable to connect to drill interface');
           badRequestError = new errors.BadRequest('ConnectionFailed: unable to connect to drill interface');
           reject(badRequestError);
         }
       };
-      this.checkDrillConnectionStatus(cbConnectionResult, true);
+      this.checkDrillConnectionStatus(cbDrillConnectionResult, true);
+    });
+  }
+
+  // Function to ping the drill controller instance when it has started in the create function. Will try for 60 attempts.
+  checkDrillCtrlConnectionStatus(cbFuncResult, bResetCount = false) {
+    if (bResetCount) {
+      this.connectionAttempts = 0;
+    }
+    console.log('checkDrillControllerConnectionStatus:', this.connectionAttempts);
+    this.checkDrillControllerConnection().then((result) => {
+      console.log('checkDrillConnectionStatus, result:', result);
+      cbFuncResult(result);
+    }).catch((err) => {
+      l.info('Ping drill controller instance till it comes online, Attempt: ' + this.connectionAttempts, err.message);
+      if (this.connectionAttempts < 60) {
+        this.connectionAttempts += 1;
+        _.delay(this.checkDrillCtrlConnectionStatus, 1000, cbFuncResult);
+      } else {
+        cbFuncResult(null);
+      }
+    });
+  }
+
+  // Rest api call to check if the Drill Instance is running based on Request Promise
+  checkDrillControllerConnection() {
+    const reqPromise = request.defaults({
+      baseUrl: drillRestApi.controllerUrl,
+      json: true,
+    });
+    return reqPromise({
+      uri: '/drill/profiles',
+      method: 'GET',
     });
   }
 
@@ -224,7 +266,7 @@ class DrillRestController {
   remove(params) {
     try {
       if (!this.profileHash[params.alias] && !params.removeAll) {
-        return Promise.reject('no profile found with the specified alias');
+        return Promise.reject(new errors.BadRequest('no profile found with the specified alias'));
       } else if (params.removeAll) {
         this.connectionAttempts = 0; // resetting this for starting up drill next time.
         const removeProfilePromises = [];
@@ -257,7 +299,7 @@ class DrillRestController {
       });
     } catch (err) {
       l.error('get error', err);
-      return Promise.reject('Failed to remove connection.');
+      return Promise.reject(new errors.GeneralError('Failed to remove connection.'));
     }
   }
 
