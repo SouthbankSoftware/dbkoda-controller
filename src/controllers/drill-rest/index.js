@@ -22,7 +22,7 @@
 
 import {loadCommands} from '../../config';
 
-const { exec } = require('child_process');
+const exec = require('child_process').exec;
 const errors = require('feathers-errors');
 const hooks = require('feathers-hooks-common');
 const request = require('request-promise');
@@ -47,26 +47,43 @@ class DrillRestController {
     this.connectionAttempts = 0;
 
     this.checkDrillConnectionStatus = this.checkDrillConnectionStatus.bind(this);
-    this.checkDrillCtrlConnectionStatus = this.checkDrillCtrlConnectionStatus.bind(this);
   }
 
   setup(app) {
     this.app = app;
   }
 
-  launchJavaControllProcess(drillPath, drillControllerPath) {
+  async launchJavaControllProcess(drillPath, drillControllerPath) {
     const cmd = `java -Dloader.path=${drillPath}/jars/jdbc-driver/drill-jdbc-all-1.11.0.jar -jar ${drillControllerPath}`;
     console.log('Drill Controller Command:', cmd);
-    this.drillControllerInstance = exec(cmd, {
-      encoding: 'utf8',
-      timeout: 0,
-      maxBuffer: 200 * 1024,
-      killSignal: 'SIGTERM',
-      cwd: drillPath + '/bin',
-      env: null
-    }, (_) => {
-
-    });
+    try {
+      let success = false;
+      const prom = new Promise(async (resolve, reject) => {
+        this.drillControllerInstance = await exec(cmd, {
+          encoding: 'utf8',
+          timeout: 0,
+          maxBuffer: 200 * 1024,
+          killSignal: 'SIGTERM',
+          cwd: drillPath,
+          env: null
+        }, (err) => {
+          log.error('failed to launch java controller ', err);
+        });
+        this.checkDrillConnectionStatus((result) => {
+          log.info('check java controller status:', result);
+          if (result && result.status === 'Running!') {
+            success = true;
+            resolve();
+          } else {
+            reject();
+          }
+        }, true, `${drillRestApi.controllerUrl}/drill/status`);
+      });
+      await prom;
+      return success;
+    } catch (err) {
+      log.error(err);
+    }
   }
 
   /**
@@ -114,47 +131,42 @@ class DrillRestController {
     const cParams = Object.assign({database: params.db}, params);
     let badRequestError;
     return new Promise((resolve, reject) => {
-      const cbDrillControllerResult = (result) => {
+      const cbConnectionResult = async (result) => {
         console.log(result);
-        if (result) {
+        if (result && result.status == 'Running!') {
+          if (!this.bDrillControllerStarted) {
+            this.bDrillControllerStarted = await this.launchJavaControllProcess(configObj.drillCmd, configObj.drillControllerCmd);
+          }
+        }
+        if (this.bDrillControllerStarted) {
           if (!this.profileHash[cParams.alias] || !this.profileHash[cParams.db]) {
             const reqPromise = request.defaults({
               baseUrl: drillRestApi.controllerUrl,
             });
-            reqPromise({
-              uri: '/drill',
-              method: 'POST',
-              body: cParams,
-              json: true
-            }).then((resultProfile) => {
-              log.info('result profile:', resultProfile);
-              const profile = {};
-              profile.alias = cParams.alias;
-              profile.id = cParams.id;
-              this.profileHash[profile.alias] = profile;
-              resolve({id: cParams.id});
-            }).catch((err) => {
-              l.error('ProfileAddError: failed to add profile via Drill Rest API', err.message);
-              badRequestError = new errors.BadRequest(err.message);
-              reject(badRequestError);
-            });
+            try {
+              reqPromise({
+                uri: '/drill',
+                method: 'POST',
+                body: cParams,
+                json: true
+              }).then((resultProfile) => {
+                log.info('result profile:', resultProfile);
+                const profile = {};
+                profile.alias = cParams.alias;
+                profile.id = cParams.id;
+                this.profileHash[profile.alias] = profile;
+                resolve({id: cParams.id});
+              }).catch((err) => {
+                l.error('ProfileAddError: failed to add profile via Drill Rest API', err.message);
+                badRequestError = new errors.BadRequest(err.message);
+                reject(badRequestError);
+              });
+            } catch (err) {
+              log.error(err);
+            }
           } else {
             // resolveJdbcConnForProfile(this.profileHash[cParams.alias], cParams.db);
             resolve({id: this.profileHash[cParams.alias].id});
-          }
-        } else {
-          l.error('ConnectionFailed: unable to connect to drill controller interface');
-          badRequestError = new errors.BadRequest('ConnectionFailed: unable to connect to drill controller interface');
-          reject(badRequestError);
-        }
-      };
-      const cbDrillConnectionResult = (result) => {
-        console.log(result);
-        if (result && result.status == 'Running!') {
-          if (!this.bDrillControllerStarted) {
-            this.launchJavaControllProcess(configObj.drillCmd, configObj.drillControllerCmd);
-            this.bDrillControllerStarted = true;
-            this.checkDrillCtrlConnectionStatus(cbDrillControllerResult, true);
           }
         } else {
           l.error('ConnectionFailed: unable to connect to drill interface');
@@ -162,56 +174,24 @@ class DrillRestController {
           reject(badRequestError);
         }
       };
-      this.checkDrillConnectionStatus(cbDrillConnectionResult, true);
-    });
-  }
-
-  // Function to ping the drill controller instance when it has started in the create function. Will try for 60 attempts.
-  checkDrillCtrlConnectionStatus(cbFuncResult, bResetCount = false) {
-    if (bResetCount) {
-      this.connectionAttempts = 0;
-    }
-    console.log('checkDrillControllerConnectionStatus:', this.connectionAttempts);
-    this.checkDrillControllerConnection().then((result) => {
-      console.log('checkDrillConnectionStatus, result:', result);
-      cbFuncResult(result);
-    }).catch((err) => {
-      l.info('Ping drill controller instance till it comes online, Attempt: ' + this.connectionAttempts, err.message);
-      if (this.connectionAttempts < 60) {
-        this.connectionAttempts += 1;
-        _.delay(this.checkDrillCtrlConnectionStatus, 1000, cbFuncResult);
-      } else {
-        cbFuncResult(null);
-      }
-    });
-  }
-
-  // Rest api call to check if the Drill Instance is running based on Request Promise
-  checkDrillControllerConnection() {
-    const reqPromise = request.defaults({
-      baseUrl: drillRestApi.controllerUrl,
-      json: true,
-    });
-    return reqPromise({
-      uri: '/drill/profiles',
-      method: 'GET',
+      this.checkDrillConnectionStatus(cbConnectionResult, true);
     });
   }
 
   // Function to ping the drill instance when it has started in the create function. Will try for 60 attempts.
-  checkDrillConnectionStatus(cbFuncResult, bResetCount = false) {
+  checkDrillConnectionStatus(cbFuncResult, bResetCount = false, url = `${drillRestApi.url}/status.json`) {
     if (bResetCount) {
       this.connectionAttempts = 0;
     }
-    console.log('checkDrillConnectionStatus:', this.connectionAttempts);
-    this.checkDrillConnection().then((result) => {
-      console.log('checkDrillConnectionStatus, result:', result);
+    log.info('checkDrillConnectionStatus:', this.connectionAttempts, ' ', url);
+    this.checkDrillConnection(url).then((result) => {
+      log.info('checkDrillConnectionStatus, result:', result);
       cbFuncResult(result);
     }).catch((err) => {
-      l.info('Ping drill instance till it comes online, Attempt: ' + this.connectionAttempts, err.message);
+      log.info('Ping drill instance till it comes online, Attempt: ' + this.connectionAttempts, err.message);
       if (this.connectionAttempts < 60) {
         this.connectionAttempts += 1;
-        _.delay(this.checkDrillConnectionStatus, 1000, cbFuncResult);
+        _.delay(this.checkDrillConnectionStatus, 1000, cbFuncResult, false, url);
       } else {
         cbFuncResult(null);
       }
@@ -219,13 +199,13 @@ class DrillRestController {
   }
 
   // Rest api call to check if the Drill Instance is running based on Request Promise
-  checkDrillConnection() {
+  checkDrillConnection(url) {
     const reqPromise = request.defaults({
-      baseUrl: drillRestApi.url,
+      baseUrl: url,
       json: true,
     });
     return reqPromise({
-      uri: '/status.json',
+      uri: '',
       method: 'GET',
     });
   }
@@ -266,7 +246,7 @@ class DrillRestController {
   remove(params) {
     try {
       if (!this.profileHash[params.alias] && !params.removeAll) {
-        return Promise.reject(new errors.BadRequest('no profile found with the specified alias'));
+        return Promise.reject('no profile found with the specified alias');
       } else if (params.removeAll) {
         this.connectionAttempts = 0; // resetting this for starting up drill next time.
         const removeProfilePromises = [];
@@ -299,7 +279,7 @@ class DrillRestController {
       });
     } catch (err) {
       l.error('get error', err);
-      return Promise.reject(new errors.GeneralError('Failed to remove connection.'));
+      return Promise.reject('Failed to remove connection.');
     }
   }
 

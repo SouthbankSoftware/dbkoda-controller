@@ -149,67 +149,67 @@ dbkInx.testPlans = function() {
   for (var i = 1; i <= 1; i++) {
     if (dbkInx.debug) print(1);
     var explain = db.Sakila_films.
-      explain().
-      find({ Category: 'Documentary', Rating: 'PG' }).
-      sort({ Length: 1 }).
-      next();
+    explain().
+    find({ Category: 'Documentary', Rating: 'PG' }).
+    sort({ Length: 1 }).
+    next();
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
 
     db.Sakila_films.createIndex({ Category: 1 }); // eslint-disable-line
     if (dbkInx.debug) print(2);
     explain = db.Sakila_films.
-      explain().
-      find({ Category: 'Documentary', Rating: 'PG' }).
-      sort({ Length: 1 }).
-      next();
+    explain().
+    find({ Category: 'Documentary', Rating: 'PG' }).
+    sort({ Length: 1 }).
+    next();
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
 
     db.Sakila_films.createIndex({ Rating: 1 }); // eslint-disable-line
     if (dbkInx.debug) print(3);
     explain = db.Sakila_films.
-      explain().
-      find({ Category: 'Documentary', Rating: 'PG' }).
-      sort({ Length: 1 }).
-      next();
+    explain().
+    find({ Category: 'Documentary', Rating: 'PG' }).
+    sort({ Length: 1 }).
+    next();
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
     // print('ITERATING THROUGH ALL PLANS');
 
     explain = db.Sakila_films.
-      explain().
-      find({ Category: 'Documentary', Rating: 'PG' }).
-      next();
+    explain().
+    find({ Category: 'Documentary', Rating: 'PG' }).
+    next();
     // printjson(dbkInx.suggestIndexKeys(explain.queryPlanner.winningPlan)); // eslint-disable-line
     explain = db.Sakila_films.
-      explain().
-      find({ $or: [{ Rating: 'PG' }, { Category: 'Family' }] }).
-      next();
+    explain().
+    find({ $or: [{ Rating: 'PG' }, { Category: 'Family' }] }).
+    next();
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
     db.Sakila_films.createIndex({ Rating: 1 }); // eslint-disable-line
     db.Sakila_films.createIndex({ Category: 1 }); // eslint-disable-line
     if (dbkInx.debug) print(5);
     explain = db.Sakila_films.
-      explain().
-      find({
-        $or: [
-          { Rating: 'PG', 'Rental Duration': '6' },
-          { Category: 'Family', 'Rental Duration': '6' }
-        ]
-      }).
-      sort({ Length: 1 }).
-      next();
+    explain().
+    find({
+      $or: [
+        { Rating: 'PG', 'Rental Duration': '6' },
+        { Category: 'Family', 'Rental Duration': '6' }
+      ]
+    }).
+    sort({ Length: 1 }).
+    next();
     // printjson(explain); // eslint-disable-line
     // printjson(explain.queryPlanner.winningPlan);
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
     explain = db.Sakila_films.
-      explain().
-      find({
-        $or: [
-          { Rating: 'PG', 'Rental Duration': '6' },
-          { Category: 'Family', 'Rental Duration': '6' }
-        ]
-      }).
-      sort({ Length: -1, Rating: 1 }).
-      next();
+    explain().
+    find({
+      $or: [
+        { Rating: 'PG', 'Rental Duration': '6' },
+        { Category: 'Family', 'Rental Duration': '6' }
+      ]
+    }).
+    sort({ Length: -1, Rating: 1 }).
+    next();
     // printjson(explain); // eslint-disable-line
     // printjson(explain.queryPlanner.winningPlan);
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
@@ -319,9 +319,9 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   var dbName = explainPlan.queryPlanner.namespace.split('.')[0];
   var collectionName = explainPlan.queryPlanner.namespace.split('.')[1];
   var indexes = db.
-    getSiblingDB(dbName).
-    getCollection(collectionName).
-    getIndexes();
+  getSiblingDB(dbName).
+  getCollection(collectionName).
+  getIndexes();
   var existingIndexes = [];
   for (var idx = 0; idx < indKeys.length; idx += 1) {
     indexes.forEach(function(existingIndex) {

@@ -39,7 +39,7 @@ dbeSS.serverStatistics = function() {
     // print(stat);
     value = serverStats[stat];
     rate = null;
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       rate = (value / uptime).toFixed(4);
     }
     if (!stat.match(/_mongo/)) {
@@ -58,21 +58,22 @@ dbeSS.flattenServerStatus = function(dbServerStatus) {
   flattenedServerStatus.stats = {};
 
   function internalflattenServerStatus(serverStatus, rootTerm) {
-    var prefix = '';
+    var prefix = "";
     if (arguments.length > 1) {
-      prefix = rootTerm + '.';
+      prefix = rootTerm + ".";
     }
     Object.getOwnPropertyNames(serverStatus).forEach(function(key) {
-      if (key !== '_mongo') {
+      if (key !== "_mongo") {
         var value = serverStatus[key];
-        if (value.constructor === NumberLong) { // eslint-disable-line
+        if (value.constructor === NumberLong) {
+          // eslint-disable-line
           // eslint-disable-line
           value = value.toNumber();
         }
         var valtype = typeof value;
         var fullkey = prefix + key;
         // print(key, value, valtype, fullkey);
-        if (valtype == 'object') {
+        if (valtype == "object") {
           // recurse into nested objects
           internalflattenServerStatus(value, prefix + key);
         } else {
@@ -114,7 +115,7 @@ dbeSS.statDelta = function(instat1, instat2) {
   // print("timedelta", statDelta.timeDelta);
   Object.keys(stat2).forEach(function(key) {
     // print(key,typeof stat2[key]);
-    if (typeof stat2[key] === 'number') {
+    if (typeof stat2[key] === "number") {
       delta = stat2[key] - stat1[key];
       rate = delta / statDelta.timeDelta;
     } else {
@@ -173,20 +174,20 @@ dbeSS.summary = function(sample1, sample2) {
   var data = {};
   var deltas = dbeSS.statDelta(sample1, sample2);
   var finals = dbeSS.convertStat(sample2);
-  data.netIn = deltas['network.bytesIn'].rate;
-  data.netOut = deltas['network.bytesOut'].rate;
+  data.netIn = deltas["network.bytesIn"].rate;
+  data.netOut = deltas["network.bytesOut"].rate;
 
-  data.qry = deltas['opcounters.query'].rate;
-  data.getmore = deltas['opcounters.getmore'].rate;
-  data.command = deltas['opcounters.command'].rate;
-  data.ins = deltas['opcounters.insert'].rate;
-  data.upd = deltas['opcounters.update'].rate;
-  data.del = deltas['opcounters.delete'].rate;
+  data.qry = deltas["opcounters.query"].rate;
+  data.getmore = deltas["opcounters.getmore"].rate;
+  data.command = deltas["opcounters.command"].rate;
+  data.ins = deltas["opcounters.insert"].rate;
+  data.upd = deltas["opcounters.update"].rate;
+  data.del = deltas["opcounters.delete"].rate;
 
-  data.activeRead = finals['globalLock.activeClients.readers'];
-  data.activeWrite = finals['globalLock.activeClients.writers'];
-  data.queuedRead = finals['globalLock.currentQueue.readers'];
-  data.queuedWrite = finals['globalLock.currentQueue.writers'];
+  data.activeRead = finals["globalLock.activeClients.readers"];
+  data.activeWrite = finals["globalLock.activeClients.writers"];
+  data.queuedRead = finals["globalLock.currentQueue.readers"];
+  data.queuedWrite = finals["globalLock.currentQueue.writers"];
   // var lockRe = /locks.*acquireCount.*floatApprox
   //
   // The "time acquiring" counts for locks seem to appoear only after some significant
@@ -194,26 +195,32 @@ dbeSS.summary = function(sample1, sample2) {
   // sometimes it's timeAcquireingMicros.*k.floatApprox
   //
   // print(deltas['opLatencies.reads.ops']);
-  if (deltas['opLatencies.reads.ops'].delta > 0) {
+  if (deltas["opLatencies.reads.ops"].delta > 0) {
     data.readLatency =
-      deltas['opLatencies.reads.latency'].delta /
-      deltas['opLatencies.reads.ops'].delta;
+      deltas["opLatencies.reads.latency"].delta /
+      deltas["opLatencies.reads.ops"].delta;
   } else data.readLatency = 0;
 
-  if (deltas['opLatencies.writes.ops'].delta > 0) {
+  if (deltas["opLatencies.writes.ops"].delta > 0) {
     data.writeLatency =
-      deltas['opLatencies.writes.latency'].delta /
-      deltas['opLatencies.writes.ops'].delta;
+      deltas["opLatencies.writes.latency"].delta /
+      deltas["opLatencies.writes.ops"].delta;
   } else data.writeLatency = 0;
 
-  if (deltas['opLatencies.commands.ops'].delta > 0) {
+  if (deltas["opLatencies.commands.ops"].delta > 0) {
     data.cmdLatency =
-      deltas['opLatencies.commands.latency'].delta /
-      deltas['opLatencies.commands.ops'].delta;
+      deltas["opLatencies.commands.latency"].delta /
+      deltas["opLatencies.commands.ops"].delta;
   } else data.cmdLatency = 0;
 
-  data.connections = deltas['connections.current'].lastValue;
-  data.availableCollections = deltas['connections.available'].firstValue;
+  data.connections = deltas["connections.current"].lastValue;
+  data.availableConnections = deltas["connections.available"].firstValue;
+  data.asserts =
+    deltas["asserts.regular"].rate +
+    deltas["asserts.warning"].rate +
+    deltas["asserts.msg"].rate +
+    deltas["asserts.user"].rate +
+    deltas["asserts.rollovers"].rate;
 
   return data;
 };
