@@ -60,23 +60,24 @@ class Parser extends EventEmitter {
     this.parse(data);
     let cached = null;
     if (this.buffers.length > 0) {
-      if (os.platform() === 'win32') {
-        // find the last line from bottom
-        let i = this.buffers.length - 1;
-        for (; i >= 0; i -= 1) {
-          if (this.buffers[i].data) {
-            break;
-          }
-        }
-        if (this.buffers[i].data.match(/dbKoda>$/)) {
-          cached = this.buffers[i];
-          this.buffers.splice(i, this.buffers.length - i);
-        } else {
-          cached = this.buffers.pop();
-        }
-      } else {
-        cached = this.buffers.pop();
-      }
+      cached = this.buffers.pop();
+      // if (os.platform() === 'win32') {
+      //   // find the last line from bottom
+      //   let i = this.buffers.length - 1;
+      //   for (; i >= 0; i -= 1) {
+      //     if (this.buffers[i].data) {
+      //       break;
+      //     }
+      //   }
+      //   if (this.buffers[i].data.match(/dbKoda>$/)) {
+      //     cached = this.buffers[i];
+      //     this.buffers.splice(i, this.buffers.length - i);
+      //   } else {
+      //     cached = this.buffers.pop();
+      //   }
+      // } else {
+      //   cached = this.buffers.pop();
+      // }
       this.buffers.map((buffer) => {
         this.emit('data', buffer.data);
       });

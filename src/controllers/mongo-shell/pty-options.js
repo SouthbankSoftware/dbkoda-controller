@@ -24,7 +24,7 @@
 const PytOptions = {
   name: 'xterm-color',
   cols: 10000,
-  rows: 250,
+  rows: 25,
   cwd: '.',
   env: process.env
 };

@@ -92,7 +92,7 @@
     "moment": "^2.18.1",
     "mongodb": "^2.2.16",
     "mongodb-uri": "^0.9.7",
-    "node-pty": "^0.7.3",
+    "node-pty": "^0.6.3",
     "node-queue-lib": "0.0.28",
     "node-uuid": "^1.4.8",
     "open-ssh-tunnel": "^0.3.1",
