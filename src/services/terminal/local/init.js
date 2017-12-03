@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T10:55:12+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-27T13:55:14+11:00
+ * @Last modified time: 2017-12-03T15:16:08+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -71,6 +71,11 @@ export default (context, item) => {
     ptyProcess.on('data', onData);
     ptyProcess.on('error', (error) => {
       l.error(`Local Terminal ${_id} error`, error);
+      service.emitError(_id, error.message);
+    });
+    ptyProcess.on('exit', () => {
+      l.warn(`Local Terminal ${_id} exited`);
+      service.emitError(_id, 'Local pty process exited', 'warn');
     });
   });
 

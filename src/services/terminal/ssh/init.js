@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T10:55:12+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-27T13:55:38+11:00
+ * @Last modified time: 2017-12-03T14:39:29+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -61,6 +61,7 @@ export default (context, item) => {
         (err, stream) => {
           if (err) {
             l.error(`SSH Terminal ${_id} error`, err);
+            service.emitError(_id, err.message);
             return;
           }
 
@@ -81,6 +82,7 @@ export default (context, item) => {
           stream
             .on('close', () => {
               l.warn(`SSH Terminal ${_id} stream closed`);
+              service.emitError(_id, 'SSH stream closed', 'warn');
 
               client.end();
             })
@@ -88,6 +90,7 @@ export default (context, item) => {
             .stderr.on('data', onData)
             .on('error', (error) => {
               l.error(`SSH Terminal ${_id} stream error`, error);
+              service.emitError(_id, error.message);
             });
 
           terminal.stream = stream;
@@ -96,6 +99,7 @@ export default (context, item) => {
     })
     .on('error', (error) => {
       l.error(`SSH Terminal ${_id} error`, error);
+      service.emitError(_id, error.message);
     })
     .connect({
       username,
