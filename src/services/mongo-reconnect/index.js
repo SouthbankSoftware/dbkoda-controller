@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-11-23T16:57:54+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,11 +21,6 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-04-18T08:35:43+10:00
- */
-
 const errors = require('feathers-errors');
 const hooks = require('./hooks');
 
@@ -32,31 +30,38 @@ class ReconnectionService {
     this.docs = {
       create: {
         description: 'Reconnect to a mongo instance',
-        parameters: [{
-          in: 'query',
-          name: 'url',
-          type: 'string',
-        }, {
-          in: 'query',
-          name: 'test',
-          type: 'bool'
-        }, {
-          in: 'query',
-          name: 'database',
-          type: 'string'
-        }, {
-          in: 'query',
-          name: 'discoverMembers',
-          type: 'bool'
-        }, {
-          in: 'query',
-          name: 'id',
-          type: 'int',
-        }, {
-          in: 'query',
-          name: 'shellId',
-          type: 'int',
-        }]
+        parameters: [
+          {
+            in: 'query',
+            name: 'url',
+            type: 'string',
+          },
+          {
+            in: 'query',
+            name: 'test',
+            type: 'bool',
+          },
+          {
+            in: 'query',
+            name: 'database',
+            type: 'string',
+          },
+          {
+            in: 'query',
+            name: 'discoverMembers',
+            type: 'bool',
+          },
+          {
+            in: 'query',
+            name: 'id',
+            type: 'int',
+          },
+          {
+            in: 'query',
+            name: 'shellId',
+            type: 'int',
+          },
+        ],
       },
     };
   }
@@ -77,10 +82,9 @@ class ReconnectionService {
 
     return this.controller.create(params.query);
   }
-
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
   // Initialize our service with any options it requires
   const service = new ReconnectionService();

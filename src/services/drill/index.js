@@ -88,6 +88,11 @@ class DrillService {
   }
   create(params) {
     console.log('bControllerInit 1', this.bControllerInit);
+    if (!global.IS_JAVA) {
+      const err = new Error('Java undetected');
+      err.code = 'JAVA_UNDETECTED';
+      throw err;
+    }
     if (!this.bControllerInit) {
       this.initController();
       console.log('bControllerInit 2', this.bControllerInit);

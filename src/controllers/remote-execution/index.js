@@ -1,6 +1,7 @@
-import { clearTimeout } from 'timers';
-
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-11-23T16:57:13+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -19,6 +20,9 @@ import { clearTimeout } from 'timers';
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+import { clearTimeout } from 'timers';
+
 const hooks = require('feathers-hooks-common');
 const uuid = require('node-uuid');
 const errors = require('feathers-errors');
@@ -44,37 +48,41 @@ class RemoteExecController {
       const client = new SshClient();
       client
         .on('ready', () => {
-          const id = (params.id) ? params.id : uuid.v1();
-          this.connections[id] = {client};
+          const id = params.id ? params.id : uuid.v1();
+          this.connections[id] = { client };
           console.log('Client :: ready');
 
-          client.shell(false, {
-            pty: true
-          }, (err, stream) => {
-            if (err) {
-              return reject(err);
-            }
-            stream.setEncoding('utf8');
-            stream.on('data', (data) => {
-              console.log('Stream :: data :', data);
-              that.processData(id, data);
-            });
-            stream.on('finish', () => {
-              console.log('Stream :: finish');
-            });
-            stream.stderr.on('data', (data) => {
-              console.log('Stream :: strerr :: Data :', data);
-              that.processData(id, data);
-            });
-            stream.on('close', (code, signal) => {
-              console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
-              if (code !== 0) {
-                return reject(code);
+          client.shell(
+            false,
+            {
+              pty: true,
+            },
+            (err, stream) => {
+              if (err) {
+                return reject(err);
               }
-            });
-            this.connections[id].stream = stream;
-            resolve({ status: 'SUCCESS', id });
-          });
+              stream.setEncoding('utf8');
+              stream.on('data', (data) => {
+                console.log('Stream :: data :', data);
+                that.processData(id, data);
+              });
+              stream.on('finish', () => {
+                console.log('Stream :: finish');
+              });
+              stream.stderr.on('data', (data) => {
+                console.log('Stream :: strerr :: Data :', data);
+                that.processData(id, data);
+              });
+              stream.on('close', (code, signal) => {
+                console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
+                if (code !== 0) {
+                  return reject(code);
+                }
+              });
+              this.connections[id].stream = stream;
+              resolve({ status: 'SUCCESS', id });
+            },
+          );
         })
         .on('error', (err) => {
           reject(new errors.BadRequest('Client Error: ' + err.message));
@@ -95,11 +103,13 @@ class RemoteExecController {
         this.connections[id].dataBuffer = data.toString();
       }
       this.connections[id].dataReceivedTimer = setTimeout(() => {
-        const result = this.connections[id].dataBuffer.replace(this.lastCmd, '').replace(this.lastCmd, '');
+        const result = this.connections[id].dataBuffer
+          .replace(this.lastCmd, '')
+          .replace(this.lastCmd, '');
         // this.remoteExecService.emit('ssh-shell-output', { id, data: result }); // No need to emit data to this service in case of sync execution.
         console.log('DataBuffer: ', result);
         if (this.executeResolve) {
-          this.executeResolve({ status: 'SUCCESS', id, data: result});
+          this.executeResolve({ status: 'SUCCESS', id, data: result });
         }
       }, 1000);
     }
@@ -110,9 +120,8 @@ class RemoteExecController {
     return new Promise((resolve, reject) => {
       if (this.connections[id] && this.connections[id].stream) {
         that.connections[id].dataBuffer = null;
-        const stream = this.connections[id].stream;
-        let cmd = '';
-        cmd = params.cmd;
+        const { stream } = this.connections[id];
+        let { cmd } = params;
         if (params.cwd) {
           cmd = `cd ${this.options.cwd}; ${cmd}`;
         }
@@ -123,7 +132,7 @@ class RemoteExecController {
         } else {
           this.lastCmd = null;
           stream.write(cmd);
-          resolve({ status: 'SUCCESS', id, data: cmd});
+          resolve({ status: 'SUCCESS', id, data: cmd });
         }
       } else {
         reject(new errors.BadRequest('Execute: Connection not found.'));
@@ -137,22 +146,18 @@ class RemoteExecController {
           this.connections[id].stream.setWindow(params.rows, params.cols);
         }
       } else {
-        reject(
-          new errors.BadRequest('Delete Connection: Connection not found.'),
-        );
+        reject(new errors.BadRequest('Delete Connection: Connection not found.'));
       }
     });
   }
   remove(id) {
     return new Promise((resolve, reject) => {
       if (this.connections[id]) {
-        this.connections[id].client.end();     // client.end() function to terminate ssh shell
+        this.connections[id].client.end(); // client.end() function to terminate ssh shell
         delete this.connections[id];
         resolve({ status: 'SUCCESS', id });
       } else {
-        reject(
-          new errors.BadRequest('Delete Connection: Connection not found.'),
-        );
+        reject(new errors.BadRequest('Delete Connection: Connection not found.'));
       }
     });
   }

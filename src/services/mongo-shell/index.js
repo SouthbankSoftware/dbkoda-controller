@@ -1,4 +1,9 @@
-/*
+/**
+ * @Author: joey
+ * @Date:   2016-12-23T13:05:45+11:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-11-23T16:58:38+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,78 +23,88 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Author: joey
- * @Date:   2016-12-23T13:05:45+11:00
- * @Last modified by:   guiguan
- * @Last modified time: 2017-06-08T18:01:30+10:00
- */
-
 const _ = require('lodash');
 const hooks = require('./hooks');
 
 class ShellService {
   constructor(options) {
     this.options = options || {};
-    this.events = ['shell-output', 'mongo-execution-end', 'mongo-shell-reconnected', 'mongo-shell-process-exited'];
+    this.events = [
+      'shell-output',
+      'mongo-execution-end',
+      'mongo-shell-reconnected',
+      'mongo-shell-process-exited',
+    ];
     this.docs = {
       description: 'A service to create mongo shell and execute command',
       find: {
-        description: 'Get all opening shells'
+        description: 'Get all opening shells',
       },
       get: {
         description: 'Execute cmd in a shell',
-        parameters: [{
-          in: 'path',
-          required: true,
-          name: 'id',
-          type: 'string'
-        }, {
-          in: 'query',
-          required: true,
-          name: 'type',
-          type: 'string',
-          description: 'this paramter can either be script|cmd, if script specified,  ' +
-          'service will run the script in mongo shell; othewise this service will run the command.'
-        }, {
-          in: 'query',
-          required: true,
-          name: 'content',
-          type: 'string'
-        }]
+        parameters: [
+          {
+            in: 'path',
+            required: true,
+            name: 'id',
+            type: 'string',
+          },
+          {
+            in: 'query',
+            required: true,
+            name: 'type',
+            type: 'string',
+            description:
+              'this paramter can either be script|cmd, if script specified,  ' +
+              'service will run the script in mongo shell; othewise this service will run the command.',
+          },
+          {
+            in: 'query',
+            required: true,
+            name: 'content',
+            type: 'string',
+          },
+        ],
       },
       create: {
         description: 'Create a new shell',
-        parameters: [{
-          in: 'query',
-          required: true,
-          name: 'hostname',
-          type: 'string'
-        }, {
-          in: 'query',
-          required: true,
-          name: 'port',
-          type: 'string'
-        }]
+        parameters: [
+          {
+            in: 'query',
+            required: true,
+            name: 'hostname',
+            type: 'string',
+          },
+          {
+            in: 'query',
+            required: true,
+            name: 'port',
+            type: 'string',
+          },
+        ],
       },
       remove: {
         description: 'Remove a shell',
-        parameters: [{
-          in: 'path',
-          required: true,
-          name: 'id',
-          type: 'string'
-        }]
+        parameters: [
+          {
+            in: 'path',
+            required: true,
+            name: 'id',
+            type: 'string',
+          },
+        ],
       },
       put: {
         description: 'run mongo commands through shell',
-        parameters: [{
-          in: 'query',
-          required: true,
-          name: 'id',
-          type: 'string'
-        }]
-      }
+        parameters: [
+          {
+            in: 'query',
+            required: true,
+            name: 'id',
+            type: 'string',
+          },
+        ],
+      },
     };
   }
 
@@ -110,11 +125,7 @@ class ShellService {
    */
   get(id, params) {
     l.info('execution mongo command ', id, params);
-    const {
-      type,
-      content,
-      shellId,
-    } = params.query;
+    const { type, content, shellId } = params.query;
 
     if (type === 'script') {
       return this.controller.executeScript(id, shellId, content);
@@ -152,10 +163,9 @@ class ShellService {
     log.info('remove shell connection ', id, data.query);
     return this.controller.removeShellConnection(id, data.query.shellId);
   }
-
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires

@@ -22,7 +22,7 @@
 
 import {loadCommands} from '../../config';
 
-const exec = require('child_process').exec;
+const { exec } = require('child_process');
 const errors = require('feathers-errors');
 const hooks = require('feathers-hooks-common');
 const request = require('request-promise');
@@ -246,7 +246,7 @@ class DrillRestController {
   remove(params) {
     try {
       if (!this.profileHash[params.alias] && !params.removeAll) {
-        return Promise.reject('no profile found with the specified alias');
+        return Promise.reject(new errors.BadRequest('no profile found with the specified alias'));
       } else if (params.removeAll) {
         this.connectionAttempts = 0; // resetting this for starting up drill next time.
         const removeProfilePromises = [];
@@ -279,7 +279,7 @@ class DrillRestController {
       });
     } catch (err) {
       l.error('get error', err);
-      return Promise.reject('Failed to remove connection.');
+      return Promise.reject(new errors.BadRequest('Failed to remove connection.'));
     }
   }
 

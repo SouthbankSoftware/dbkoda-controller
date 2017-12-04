@@ -45,6 +45,7 @@ import supportBundleService from './support-bundle';
 import driverService from './driver';
 import mongoCmdValidator from './mongo-cmd-validator';
 import remoteExecService from './remote-execution';
+import drill from './drill';
 
 module.exports = function() {
   const app = this;
@@ -75,10 +76,5 @@ module.exports = function() {
   app.configure(driverService);
   app.configure(mongoCmdValidator);
   app.configure(remoteExecService);
-
-  console.log('IS_JAVA', global.IS_JAVA);
-  if (global.IS_JAVA) {
-    const drill = require('./drill');
-    app.configure(drill);
-  }
+  app.configure(drill);
 };

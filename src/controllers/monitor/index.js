@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-11-23T16:54:53+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,17 +21,10 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Author: guiguan
- * @Date:   2017-01-30T10:14:58+11:00
- */
-
-const EventEmitter = require('events')
-  .EventEmitter;
+const { EventEmitter } = require('events');
 const MongoDBHeartBeat = require('./mongodb-heartbeat');
 
 class MongoDBMonitor extends EventEmitter {
-
   constructor(connection) {
     super();
     this.connection = connection;
