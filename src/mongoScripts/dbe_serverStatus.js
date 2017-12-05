@@ -174,9 +174,16 @@ dbeSS.summary = function(sample1, sample2) {
   var data = {};
   var deltas = dbeSS.statDelta(sample1, sample2);
   var finals = dbeSS.convertStat(sample2);
+
+  // *********************************************
+  //  Network counters
+  // *********************************************
   data.netIn = deltas['network.bytesIn'].rate;
   data.netOut = deltas['network.bytesOut'].rate;
 
+  // ********************************************
+  // Activity counters
+  // ********************************************
   data.qry = deltas['opcounters.query'].rate;
   data.getmore = deltas['opcounters.getmore'].rate;
   data.command = deltas['opcounters.command'].rate;
@@ -221,6 +228,29 @@ dbeSS.summary = function(sample1, sample2) {
     deltas['asserts.msg'].rate +
     deltas['asserts.user'].rate +
     deltas['asserts.rollovers'].rate;
+
+  // *********************************************************
+  // Memory counters
+  // *********************************************************
+
+  data.cacheGets = deltas['wiredTiger.cache.pages requested from the cache'].rate;
+
+  data.cacheHighWater = deltas['wiredTiger.cache.maximum bytes configured'].lastValue;
+
+  data.cacheSize = deltas['wiredTiger.cache.bytes currently in the cache'].lastValue;
+
+  data.cacheReadQAvailable = deltas['wiredTiger.concurrentTransactions.read.available'].lastValue;
+  data.cacheReadQUssed = deltas['wiredTiger.concurrentTransactions.read.out'].lastValue;
+
+  data.cacheWriteQAvailable = deltas['wiredTiger.concurrentTransactions.write.available'].lastValue;
+  data.cacheWriteQUsed = deltas['wiredTiger.concurrentTransactions.write.out'].lastValue;
+
+  data.diskBlockReads = deltas['wiredTiger.block-manager.blocks read'].rate;
+  data.diskBlockWrites = deltas['wiredTiger.block-manager.blocks written'].rate;
+
+  data.logByteRate = deltas['wiredTiger.log.log bytes written'].rate;
+
+  data.logSyncTimeRate = deltas['wiredTiger.log.log sync time duration (usecs)'].rate;
 
   return data;
 };
