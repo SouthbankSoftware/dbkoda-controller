@@ -191,7 +191,7 @@ export const loadCommands = () => {
 
 const config = loadCommands();
 loadConfig(config);
-log.info('resolve command paths ', config);
+console.log('resolve command paths ', config);
 global.defaultCommandConfig = config;
 
 export default config;

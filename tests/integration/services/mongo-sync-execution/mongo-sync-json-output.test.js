@@ -8,6 +8,7 @@ const {
   getRandomPort,
   MLAUNCH_TIMEOUT
 } = require('../commons');
+const os = require('os');
 
 let connectionId;
 let shellId;
@@ -15,29 +16,33 @@ const port = getRandomPort();
 
 describe('test run shell command', () => {
   before(function (done) {
-    this.timeout(TIMEOUT * 3);
-    launchSingleInstance(port);
-    generateMongoData(port, 'test', 'user', '--num 1000');
-    generateMongoData(port, 'users', 'user', '--num 2000');
+    if (os.platform() === 'win32') {
+      this.skip();
+    } else {
+      this.timeout(TIMEOUT * 3);
+      launchSingleInstance(port);
+      generateMongoData(port, 'test', 'user', '--num 1000');
+      generateMongoData(port, 'users', 'user', '--num 2000');
 
-    connection
-      .create(
-        {},
-        {
-          query: {
-            url: 'mongodb://localhost:' + port + '/test',
+      connection
+        .create(
+          {},
+          {
+            query: {
+              url: 'mongodb://localhost:' + port + '/test',
+            },
           },
-        },
-      )
-      .then((v) => {
-        winston.info('create connection ', v);
-        connectionId = v.id;
-        shellId = v.shellId;
-        setTimeout(() => done(), MLAUNCH_TIMEOUT);
-      })
-      .catch((e) => {
-        console.log('error:', e);
-      });
+        )
+        .then((v) => {
+          winston.info('create connection ', v);
+          connectionId = v.id;
+          shellId = v.shellId;
+          setTimeout(() => done(), MLAUNCH_TIMEOUT);
+        })
+        .catch((e) => {
+          console.log('error:', e);
+        });
+    }
   });
 
   after(function () {

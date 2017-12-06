@@ -32,21 +32,26 @@ const {
   getRandomPort,
   MLAUNCH_TIMEOUT,
 } = require('../commons');
+const os = require('os');
 
 const port = getRandomPort();
 
 describe('single server inspector test', () => {
   before(function(done) {
-    this.timeout(TIMEOUT * 3);
-    launchSingleInstance(port);
-    _.times(3, (i) => {
-      const dbName = 'db' + i;
-      _.times(3, (j) => {
-        const colname = 'col' + j;
-        generateMongoData(port, dbName, colname);
+    if (os.platform() === 'win32') {
+      this.skip();
+    } else {
+      this.timeout(TIMEOUT * 3);
+      launchSingleInstance(port);
+      _.times(3, (i) => {
+        const dbName = 'db' + i;
+        _.times(3, (j) => {
+          const colname = 'col' + j;
+          generateMongoData(port, dbName, colname);
+        });
       });
-    });
-    setTimeout(() => done(), MLAUNCH_TIMEOUT);
+      setTimeout(() => done(), MLAUNCH_TIMEOUT);
+    }
   });
 
   after(function() {
