@@ -38,7 +38,7 @@
     "test:integration": "rimraf data && NODE_ENV=test nyc mocha tests/integration/ --opts mocha.opts -t 20000",
     "test:integration:win": "rimraf data && set NODE_ENV=test&& nyc mocha tests/integration/ --opts mocha.opts -t 20000",
     "test:unit": "NODE_ENV=test nyc mocha tests/unit/ --opts mocha.opts",
-    "test:unit": "set NODE_ENV=test&& nyc mocha tests/unit/ --opts mocha.opts",
+    "test:unit:win": "set NODE_ENV=test&& nyc mocha tests/unit/ --opts mocha.opts",
     "test:all": "rimraf coverage && NODE_ENV=test nyc --reporter=html mocha tests/unit tests/integration -t 20000 --opts mocha.opts",
     "test:all:win": "rimraf coverage && set NODE_ENV=test&& nyc --reporter=html mocha tests/unit tests/integration -t 20000 --opts mocha.opts",
     "test:report": "open -b com.google.chrome coverage/index.html",
