@@ -12,13 +12,18 @@ const {
   getRandomPort,
   MLAUNCH_TIMEOUT,
 } = require('../commons');
+const os = require('os');
 
 describe('test run shell command', () => {
   const port = getRandomPort();
   before(function (done) {
-    this.timeout(TIMEOUT * 3);
-    launchSingleInstance(port, '--auth --username admin --password 123456 --auth-db admin');
-    setTimeout(() => done(), MLAUNCH_TIMEOUT * 2);
+    if (os.platform() === 'win32') {
+      this.skip();
+    } else {
+      this.timeout(TIMEOUT * 3);
+      launchSingleInstance(port, '--auth --username admin --password 123456 --auth-db admin');
+      setTimeout(() => done(), MLAUNCH_TIMEOUT * 2);
+    }
   });
 
   after(function () {

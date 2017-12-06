@@ -16,6 +16,7 @@ const {
   MLAUNCH_TIMEOUT,
   getRandomPort,
 } = require('../commons');
+const os = require('os');
 
 describe('integration test mongo-connection', () => {
   const port1 = getRandomPort();
@@ -113,21 +114,23 @@ describe('integration test mongo-connection', () => {
     });
   });
   it('test connect to a mongo single instance with credential', () => {
-    const connect = connection;
+    if (os.platform() !== 'win32') {
+      const connect = connection;
 
-    const res = connect.create(
-      {},
-      {
-        query: {
-          url: 'mongodb://admin:123456@localhost:' + port2 + '/admin',
-          test: true,
+      const res = connect.create(
+        {},
+        {
+          query: {
+            url: 'mongodb://admin:123456@localhost:' + port2 + '/admin',
+            test: true,
+          },
         },
-      },
-    );
-    return res.then((v) => {
-      assert.equal(v.id !== undefined, true);
-      return connect.remove(v.id);
-    });
+      );
+      return res.then((v) => {
+        assert.equal(v.id !== undefined, true);
+        return connect.remove(v.id);
+      });
+    }
   });
   it('connect to a mongo single instance with wrong credential', () => {
     const connect = connection;
