@@ -101,7 +101,8 @@
     "strip-ansi": "^4.0.0",
     "winston": "^2.4.0",
     "winston-daily-rotate-file": "^1.7.2",
-    "ws": "^3.3.2"
+    "ws": "^3.3.2",
+    "rx": "^4.1.0"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
@@ -127,7 +128,6 @@
     "nyc": "^11.3.0",
     "request": "^2.83.0",
     "rimraf": "^2.6.2",
-    "rx": "^4.1.0",
     "source-map-support": "^0.5.0",
     "strip-comments": "^0.4.4",
     "test-utils": "^1.0.21"
