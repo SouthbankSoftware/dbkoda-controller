@@ -21,7 +21,62 @@
  * Created by joey on 8/12/17.
  */
 
-class SSHCounter {
+const SshClient = require('ssh2').Client;
+const uuid = require('node-uuid');
+const _ = require('lodash');
+const errors = require('feathers-errors');
 
+export default class SSHCounter {
+  constructor() {
+    this.connections = [];
+  }
 
+  create(params) {
+    const that = this;
+    return new Promise((resolve, reject) => {
+      const client = new SshClient();
+      client
+        .on('ready', () => {
+          const id = params.id ? params.id : uuid.v1();
+          this.connections[id] = { client };
+          log.info('Client :: ready');
+
+          client.shell(
+            false,
+            {
+              pty: true,
+            },
+            (err, stream) => {
+              if (err) {
+                return reject(err);
+              }
+              stream.setEncoding('utf8');
+              stream.on('data', (data) => {
+                console.log('Stream :: data :', data);
+                that.processData(id, data);
+              });
+              stream.on('finish', () => {
+                console.log('Stream :: finish');
+              });
+              stream.stderr.on('data', (data) => {
+                console.log('Stream :: strerr :: Data :', data);
+                that.processData(id, data);
+              });
+              stream.on('close', (code, signal) => {
+                console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
+                if (code !== 0) {
+                  return reject(code);
+                }
+              });
+              this.connections[id].stream = stream;
+              resolve({ status: 'SUCCESS', id });
+            },
+          );
+        })
+        .on('error', (err) => {
+          reject(new errors.BadRequest('Client Error: ' + err.message));
+        })
+        .connect(_.omit(params, 'cwd'));
+    });
+  }
 }
