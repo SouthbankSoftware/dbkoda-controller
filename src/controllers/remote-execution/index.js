@@ -131,7 +131,7 @@ class RemoteExecController {
           stream.write(this.lastCmd);
         } else {
           this.lastCmd = null;
-          stream.write(cmd);
+          stream.write(`${cmd}\n`);
           resolve({ status: 'SUCCESS', id, data: cmd });
         }
       } else {
