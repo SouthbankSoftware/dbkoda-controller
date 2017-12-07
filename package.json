@@ -127,6 +127,7 @@
     "nyc": "^11.3.0",
     "request": "^2.83.0",
     "rimraf": "^2.6.2",
+    "rx": "^4.1.0",
     "source-map-support": "^0.5.0",
     "strip-comments": "^0.4.4",
     "test-utils": "^1.0.21"
