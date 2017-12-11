@@ -23,6 +23,7 @@
 
 const hooks = require('./hooks');
 const SSHCounter = require('../../controllers/performance/SSHCounter');
+const TopologyMonitor = require('../../controllers/topology/topology-monitor');
 
 class PerformanceService {
   constructor(options) {
@@ -50,6 +51,9 @@ class PerformanceService {
         console.error('on error', err);
       }
     );
+
+    const monitor = new TopologyMonitor(this.connectCtr.connections[params.id].driver);
+    monitor.start();
     return ret;
   }
 

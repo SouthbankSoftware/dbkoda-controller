@@ -63,10 +63,8 @@ class MongoConnectionController {
   }
 
   getTunnelParams(params) {
-    if (!params.ssh) {
-      return null;
-    }
     const sshOpts = {
+      // enabled tunnel
       host: params.sshHost, // ip address of the ssh server
       port: 22, // Number(params.sshPort), // port of the ssh server
       username: params.remoteUser,
@@ -78,7 +76,8 @@ class MongoConnectionController {
       localAddr: params.localHost,
       readyTimeout: 5000,
       forwardTimeout: 5000,
-    };
+      sshTunnel: params.sshTunnel
+    }
     if (params.sshKeyFile) {
       sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
       sshOpts.passphrase = params.passPhrase;
@@ -89,7 +88,7 @@ class MongoConnectionController {
   }
 
   createTunnel(sshOpts) {
-    if (sshOpts) {
+    if (sshOpts.sshTunnel) {
       return sshTunnel(sshOpts);
     }
     return new Promise((resolve) => {
@@ -114,8 +113,8 @@ class MongoConnectionController {
           if (resTunnel) {
             l.info('Tunnel created successfully', resTunnel);
             tunnel = resTunnel;
-            conn.sshOpts = sshOpts;
           }
+          conn.sshOpts = sshOpts;
           this.mongoClient.connect(conn.url, that.options, (err, db) => {
             if (err !== null) {
               l.error('failed to connect mongo instance ', err.message);

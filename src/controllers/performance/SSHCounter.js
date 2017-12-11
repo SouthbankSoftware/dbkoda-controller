@@ -109,13 +109,16 @@ class SSHCounter {
           },
           (err, stream) => {
             if (err) {
+              l.error(err);
               return reject(err);
             }
             stream.setEncoding('utf8');
             stream.on('data', (data) => {
               if (this.osType) {
-                if (this.paused) {
+                if (!this.paused) {
                   this.postProcess(data);
+                } else {
+                  l.debug('performance counter is paused');
                 }
               } else if (!this.osType && this.sendOsTypeCmd) {
                 if (data.match(/linux/i)) {
