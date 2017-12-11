@@ -27,16 +27,34 @@ const SSHCounter = require('../../controllers/performance/SSHCounter');
 class PerformanceService {
   constructor(options) {
     this.options = options || {};
-    this.events = [''];
+    this.events = [
+      'performance-output'
+    ];
+    this.sshConnections = [];
   }
 
   setup(app) {
     this.connectCtr = app.service('mongo/connection/controller');
-    this.performanceCtr = new SSHCounter(this.connectCtr);
   }
 
   create(params) {
-    this.performanceCtr.create(params);
+    const sshConn = new SSHCounter(this.connectCtr);
+    const ret = sshConn.create(params);
+    this.sshConnections[params.id] = sshConn;
+    sshConn.sshObservable.subscribe(
+      (data) => {
+        console.log('emit performance output ', data);
+        this.emit('performance-output', {id: params.id, output: data});
+      },
+      (err) => {
+        console.error('on error', err);
+      }
+    );
+    return ret;
+  }
+
+  remove(id) {
+    delete this.sshConnections[id];
   }
 }
 

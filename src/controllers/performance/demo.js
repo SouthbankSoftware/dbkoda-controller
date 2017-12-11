@@ -47,20 +47,23 @@ const sshTunnelOpts = {
 };
 
 const sshOpts = {
-  host: '10.0.0.24',
-  port: 22,
-  username: 'admin',
-  password: process.env.EC2_SHARD_CLUSTER_PASSWORD
+  sshOpts: {
+    host: '10.0.0.25',
+    port: 22,
+    username: 'core',
+    password: process.env.EC2_SHARD_CLUSTER_PASSWORD
+  }
 }
 
 const counter = new SSHCounter();
-counter
-  .create(sshTunnelOpts)
-  .then((res) => {
-    counter.execute(res.id, 'ls\n');
-  });
 
 counter.sshObservable.subscribe(
   x => console.log('get sub ', x),
-  () => console.log('complete')
+  (e) => console.log('complete1',e)
 )
+
+counter
+  .createConnection(sshOpts)
+  .then((res) => {
+    counter.execute(res.id, 'ls\n');
+  });

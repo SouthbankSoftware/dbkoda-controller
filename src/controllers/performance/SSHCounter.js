@@ -29,11 +29,11 @@ const _ = require('lodash');
 const sshTunnel = require('open-ssh-tunnel');
 const errors = require('feathers-errors');
 const Rx = require('rx');
+const os = require('os');
 
 class SSHCounter {
   constructor(connectCtr) {
     this.connectCtr = connectCtr;
-    this.connections = [];
     this.sshObservable = new Rx.Subject();
     this.paused = false;
     this.osType = null;
@@ -61,15 +61,15 @@ class SSHCounter {
     return Promise.resolve();
   }
 
-  getSshOpts(params) {
-    return {
-      host: params.localHost,
-      port: params.localPort,
-    };
-  }
-
   create(params) {
     const connObj = this.connectCtr.connections[params.id];
+    if (!connObj) {
+      throw new errors.BadRequest(`Connection not exist ${id}`);
+    }
+    return this.createConnection(connObj);
+  }
+
+  createConnection(connObj) {
     const sshOpts = {};
     return new Promise((resolve, reject) => {
       this
@@ -101,7 +101,6 @@ class SSHCounter {
     client
       .on('ready', () => {
         const id = sshOpts.id ? sshOpts.id : uuid.v1();
-        this.connections[id] = {client};
         console.log('Client :: ready');
         client.shell(
           false,
@@ -114,16 +113,16 @@ class SSHCounter {
             }
             stream.setEncoding('utf8');
             stream.on('data', (data) => {
-              log.info('Stream :: data :', data);
               if (this.osType) {
                 this.postProcess(data);
-              }
-              if (!this.osType && this.sendOsTypeCmd) {
+              } else if (!this.osType && this.sendOsTypeCmd) {
                 if (data.match(/linux/i)) {
                   // this is linux os
                   this.osType = data;
                   this.execute(id);
                 }
+              } else if (this.osType && this.sendOsTypeCmd) {
+                this.sshObservable.onError(`Doesnt support the OS ${this.osType}`);
               }
             });
             stream.on('finish', () => {
@@ -144,8 +143,8 @@ class SSHCounter {
             });
             this.sendOsTypeCmd = true;
             stream.write('uname\n');
-            this.connections[id].stream = stream;
-            resolve({status: 'SUCCESS', id});
+            this.stream = stream;
+            return resolve({status: 'SUCCESS', id});
           }
         );
       })
@@ -156,15 +155,14 @@ class SSHCounter {
   }
 
   execute(id) {
-    if (!this.connections[id]) {
+    if (!this.stream) {
       throw new errors.BadRequest(`Connection not exist ${id}`);
     }
     if (this.paused) {
       return;
     }
-    const {stream} = this.connections[id];
     log.debug('write command ', `${this.config.cmd} ${this.config.interval}`);
-    stream.write(`${this.config.cmd} ${this.config.interval}\n`);
+    this.stream.write(`${this.config.cmd} ${this.config.interval}\n`);
   }
 
   pause() {
@@ -176,8 +174,63 @@ class SSHCounter {
   }
 
   postProcess(data) {
+    log.debug('post process ', data);
     // parse the vmstat command output
-    this.sshObservable.onNext(data);
+    const splited = data.split(os.platform() === 'win32' ? '\n\r' : '\n');
+    let output = {};
+    splited.forEach((line) => {
+      if (line.match(/procs/) && line.match(/memory/)) {
+        // this is header
+      } else if (line.match(/swpd/ && line.match(/buff/))) {
+        // this is header
+      } else {
+        const items = _.without(line.split(' '), '');
+        console.log('items=', items);
+        if (items.length >= 17) {
+          const intItems = items.map(item => parseInt(item));
+          const data = {
+            details: {
+              procs: {
+                r: parseInt(intItems[0]), // The number of processes waiting for run time
+                b: intItems[1], // The number of processes in uninterruptible sleep,
+              },
+              memory: {
+                swpd: intItems[2], //the amount of virtual memory used.
+                free: intItems[3], // the amount of idle memory
+                buff: intItems[4], //the amount of memory used as buffers
+                cache: intItems[5], // the amount of memory used as cache
+              },
+              swap: {
+                si: intItems[6], // Amount of memory swapped in from disk
+                so: intItems[7], // Amount of memory swapped to disk (/s).
+              },
+              io: {
+                bi: intItems[8], // Blocks received from a block device (blocks/s).
+                bo: intItems[9], // Blocks sent to a block device (blocks/s).
+              },
+              system: {
+                in: intItems[10],  // The number of interrupts per second, including the clock.
+                cs: intItems[11],  // The number of context switches per second
+              },
+              cpu: {
+                us: intItems[12],  //  Time spent running non-kernel code. (user time, including nice time)
+                sy: intItems[13],  //  Time spent running kernel code. (system time)
+                id: intItems[14],  //  Time spent idle. Prior to Linux 2.5.41, this includes IO-wait time
+                wa: intItems[15],  //  Time spent waiting for IO. Prior to Linux 2.5.41, included in idle.
+                st: intItems[16],  //  Time stolen from a virtual machine. Prior to Linux 2.6.11, unknown
+              }
+            }
+          };
+          data.cpu = {used: data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st};
+          data.memory = {
+            total: data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache + data.details.memory.free,
+            used: data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache
+          };
+          output = data;
+        }
+      }
+    });
+    this.sshObservable.onNext(output);
 
   }
 
