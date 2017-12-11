@@ -114,7 +114,9 @@ class SSHCounter {
             stream.setEncoding('utf8');
             stream.on('data', (data) => {
               if (this.osType) {
-                this.postProcess(data);
+                if (this.paused) {
+                  this.postProcess(data);
+                }
               } else if (!this.osType && this.sendOsTypeCmd) {
                 if (data.match(/linux/i)) {
                   // this is linux os
@@ -241,7 +243,8 @@ class SSHCounter {
    */
   reconnect(id) {
     log.info(`reconnect to host ${id} through ssh`);
-
+    this.stream.exit();
+    this.create(id);
   }
 }
 
