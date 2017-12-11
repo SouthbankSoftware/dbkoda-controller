@@ -39,7 +39,7 @@ class PerformanceService {
 
   create(params) {
     const sshConn = new SSHCounter(this.connectCtr);
-    const ret = sshConn.create(params);
+    const ret = sshConn.create(params.id);
     this.sshConnections[params.id] = sshConn;
     sshConn.sshObservable.subscribe(
       (data) => {

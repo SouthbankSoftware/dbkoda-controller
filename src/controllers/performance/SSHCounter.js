@@ -61,8 +61,8 @@ class SSHCounter {
     return Promise.resolve();
   }
 
-  create(params) {
-    const connObj = this.connectCtr.connections[params.id];
+  create(id) {
+    const connObj = this.connectCtr.connections[id];
     if (!connObj) {
       throw new errors.BadRequest(`Connection not exist ${id}`);
     }
@@ -161,7 +161,6 @@ class SSHCounter {
     if (this.paused) {
       return;
     }
-    log.debug('write command ', `${this.config.cmd} ${this.config.interval}`);
     this.stream.write(`${this.config.cmd} ${this.config.interval}\n`);
   }
 
@@ -224,7 +223,8 @@ class SSHCounter {
           data.cpu = {used: data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st};
           data.memory = {
             total: data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache + data.details.memory.free,
-            used: data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache
+            used: data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache,
+            io: data.details.io
           };
           output = data;
         }
@@ -239,8 +239,9 @@ class SSHCounter {
    *
    * @param params
    */
-  reconnect(params) {
-    log.info(`reconnect to host ${params} through ssh`);
+  reconnect(id) {
+    log.info(`reconnect to host ${id} through ssh`);
+
   }
 }
 
