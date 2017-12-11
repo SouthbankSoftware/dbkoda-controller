@@ -31,6 +31,7 @@ class MongoConnection {
     this.status = status;
     this.url = conn.url;
     this.ssl = conn.ssl;
+    this.sshOpts = conn.sshOpts;
     this.username = conn.username;
     this.password = conn.password;
     this.dbVersion = dbVersion;

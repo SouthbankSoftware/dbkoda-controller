@@ -62,27 +62,34 @@ class MongoConnectionController {
     this.mongoShell = app.service('/mongo-shells');
   }
 
-  createTunnel(params) {
-    if (params.ssh) {
-      const sshOpts = {
-        host: params.sshHost, // ip address of the ssh server
-        port: 22, // Number(params.sshPort), // port of the ssh server
-        username: params.remoteUser,
-        srcAddr: params.localHost,
-        srcPort: Number(params.localPort),
-        dstAddr: params.remoteHost, // ip address of mongo db server
-        dstPort: Number(params.remotePort), // port of mongo db server
-        localPort: Number(params.localPort),
-        localAddr: params.localHost,
-        readyTimeout: 5000,
-        forwardTimeout: 5000,
-      };
-      if (params.sshKeyFile) {
-        sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
-        sshOpts.passphrase = params.passPhrase;
-      } else {
-        sshOpts.password = params.remotePass;
-      }
+  getTunnelParams(params) {
+    if (!params.ssh) {
+      return null;
+    }
+    const sshOpts = {
+      host: params.sshHost, // ip address of the ssh server
+      port: 22, // Number(params.sshPort), // port of the ssh server
+      username: params.remoteUser,
+      srcAddr: params.localHost,
+      srcPort: Number(params.localPort),
+      dstAddr: params.remoteHost, // ip address of mongo db server
+      dstPort: Number(params.remotePort), // port of mongo db server
+      localPort: Number(params.localPort),
+      localAddr: params.localHost,
+      readyTimeout: 5000,
+      forwardTimeout: 5000,
+    };
+    if (params.sshKeyFile) {
+      sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
+      sshOpts.passphrase = params.passPhrase;
+    } else {
+      sshOpts.password = params.remotePass;
+    }
+    return sshOpts;
+  }
+
+  createTunnel(sshOpts) {
+    if (sshOpts) {
       return sshTunnel(sshOpts);
     }
     return new Promise((resolve) => {
@@ -100,12 +107,14 @@ class MongoConnectionController {
     let db;
     let dbVersion;
     let tunnel;
+    const sshOpts = this.getTunnelParams(params);
     return new Promise((resolve, reject) => {
-      this.createTunnel(params)
+      this.createTunnel(sshOpts)
         .then((resTunnel) => {
           if (resTunnel) {
-            console.log('Tunnel created successfully', resTunnel);
+            l.info('Tunnel created successfully', resTunnel);
             tunnel = resTunnel;
+            conn.sshOpts = sshOpts;
           }
           this.mongoClient.connect(conn.url, that.options, (err, db) => {
             if (err !== null) {
@@ -131,7 +140,7 @@ class MongoConnectionController {
     })
       .then((v) => {
         db = v;
-        return db.command({ buildinfo: 1 });
+        return db.command({buildinfo: 1});
       })
       .then((v) => {
         dbVersion = v.version;
@@ -184,14 +193,14 @@ class MongoConnectionController {
       .then(() => {
         if (conn.test) {
           l.debug('this is test connection.');
-          return { success: true };
+          return {success: true};
         }
         return this.createMongoShell(db, conn, dbVersion)
           .then((v) => {
             if (v.id && tunnel) {
               this.tunnels[v.id] = tunnel;
             }
-            return { ...v, dbVersion };
+            return {...v, dbVersion};
           })
           .catch((err) => {
             log.error('create mongo shell failed:', err);
@@ -240,9 +249,9 @@ class MongoConnectionController {
   remove(id, _params) {
     try {
       if (!this.connections[id]) {
-        return Promise.resolve({ id });
+        return Promise.resolve({id});
       }
-      const { driver, shells } = this.connections[id];
+      const {driver, shells} = this.connections[id];
       l.info('close connection ', id);
       const shellIds = [];
       _.forOwn(shells, (value, key) => {
@@ -261,7 +270,7 @@ class MongoConnectionController {
         console.log('tunnel closed successfully: ', this.tunnels[id]);
         delete this.tunnels[id];
       }
-      return Promise.resolve({ id, shellIds });
+      return Promise.resolve({id, shellIds});
     } catch (err) {
       l.error('get error', err);
       return Promise.reject('Failed to remove connection.');
@@ -276,7 +285,7 @@ class MongoConnectionController {
   removeShellConnection(id, shellId) {
     l.info('remove shell connection on ', id, shellId);
     if (id in this.connections) {
-      const { shells } = this.connections[id];
+      const {shells} = this.connections[id];
       _.forOwn(shells, (value, key) => {
         if (shellId === key) {
           l.info('remove shell connection ', key);
@@ -285,8 +294,8 @@ class MongoConnectionController {
         }
       });
       delete shells[shellId];
-      l.debug('return removed ', { shellId });
-      return new Promise(resolve => resolve({ shellId }));
+      l.debug('return removed ', {shellId});
+      return new Promise(resolve => resolve({shellId}));
     }
   }
 
@@ -294,7 +303,7 @@ class MongoConnectionController {
    * check authorization on the mongodb connection
    */
   checkAuthorization(db) {
-    return db.command({ listCollections: 1 });
+    return db.command({listCollections: 1});
   }
 
   /**
@@ -329,7 +338,7 @@ class MongoConnectionController {
    * create mongo shell connection
    */
   createMongoShell(db, conn, dbVersion) {
-    console.log('conn=', conn);
+    l.info('conn=', conn);
     const id = conn.id ? conn.id : uuid.v1();
     const shellId = conn.shellId ? conn.shellId : uuid.v1();
     const that = this;
@@ -401,7 +410,7 @@ class MongoConnectionController {
               });
             })
             .catch(() => {
-              that.mongoShell.emit(MongoShell.SHELL_EXIT, { id, shellId });
+              that.mongoShell.emit(MongoShell.SHELL_EXIT, {id, shellId});
             });
         }
       });
@@ -430,14 +439,14 @@ class MongoConnectionController {
       });
       shell.on(MongoShell.EXECUTE_END, () => {
         l.debug('mongodb execution command finished.');
-        that.mongoShell.emit('mongo-execution-end', { id, shellId });
+        that.mongoShell.emit('mongo-execution-end', {id, shellId});
       });
       shell.on(MongoShell.INITIALIZED, (err) => {
         if (!err) {
           l.info('mongo shell initialized');
           const outputMsg = [];
           connectionMessage.map(msg => outputMsg.push(msg.output));
-          resolve({ shell, output: outputMsg });
+          resolve({shell, output: outputMsg});
         } else {
           // failed to initialized
           log.error('failed to initialize ', err, connectionMessage);
@@ -456,7 +465,7 @@ class MongoConnectionController {
       setTimeout(() => {
         if (!shell.initialized) {
           shell.initialized = true;
-          resolve({ shell, output: [] });
+          resolve({shell, output: []});
         }
       }, 20000);
     });
@@ -466,7 +475,7 @@ class MongoConnectionController {
    * parse the password from the uri and return an object include username and password
    */
   parseMongoConnectionURI(connection) {
-    const { url } = connection;
+    const {url} = connection;
     const pattern = /mongodb:\/\/(\S+):(\S+)@(\S+)/;
     let parser;
     try {
@@ -562,7 +571,7 @@ class MongoConnectionController {
     const shell = this.getMongoShell(id, shellId);
     shell.write(`${commands}`);
     return new Promise((resolve) => {
-      resolve({ id, shellId });
+      resolve({id, shellId});
     });
   }
 
@@ -614,7 +623,7 @@ class MongoConnectionController {
   }
 }
 
-module.exports = function() {
+module.exports = function () {
   const app = this;
   // Initialize our service with any options it requires
   const service = new MongoConnectionController();

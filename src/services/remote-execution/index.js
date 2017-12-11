@@ -68,10 +68,12 @@ class RemoteExecService {
       },
     };
   }
+
   setup(app) {
     this.app = app;
     this.controller = app.service('ssh/remote-execution/controller');
   }
+
   create(data) {
     return this.controller.connect(data);
   }
