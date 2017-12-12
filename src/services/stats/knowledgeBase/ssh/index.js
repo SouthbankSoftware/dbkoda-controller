@@ -22,4 +22,4 @@
  */
 
 /* List of indentifiers/keys for items to be observed */
-export const items = ['hostCpu', 'hostMemory', 'hostDisk'];
+export const items = ['cpu', 'memory', 'disk'];

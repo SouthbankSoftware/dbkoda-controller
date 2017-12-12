@@ -28,7 +28,9 @@ global.log = {
   error: msg => console.error(msg),
   debug: msg => console.debug(msg),
 };
-const SSHCounter = require('./SSHCounter');
+global.l = global.log;
+
+const SSHCounter = require('../../services/stats/observables/ssh/');
 
 const sshTunnelOpts = {
   sshHost: '10.0.0.24', // ip address of the ssh server
@@ -57,7 +59,7 @@ const sshOpts = {
 
 const counter = new SSHCounter();
 
-counter.sshObservable.subscribe(
+counter.rxObservable.subscribe(
   x => console.log('get sub ', x),
   (e) => console.log('complete1',e)
 )
@@ -66,4 +68,9 @@ counter
   .createConnection(sshOpts)
   .then((res) => {
     counter.execute(res.id, 'ls\n');
+  })
+  .catch(err => {
+    console.error(err);
   });
+
+// setTimeout(() => counter.destroy(), 3000);
