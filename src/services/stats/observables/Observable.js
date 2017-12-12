@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:50:05+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T11:53:04+11:00
+ * @Last modified time: 2017-12-12T11:57:53+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -27,7 +27,7 @@
  */
 
 export interface Observable {
-  init(): Observable;
+  init(options: {}): Observable;
   destroy(): void;
   capacities: string[];
   pause(): void;
