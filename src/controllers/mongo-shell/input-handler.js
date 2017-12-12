@@ -28,9 +28,7 @@ const ParserState = require('./parser-state');
 const escapeSequence = require('./escape-sequence');
 const Buffer = require('./buffer');
 
-const normalStateHandler = {
-
-};
+const normalStateHandler = {};
 
 normalStateHandler[escapeSequence.CR] = (parser) => {
   parser.bufferX = 0;
@@ -92,7 +90,7 @@ const cursorCharAbsolute = (parser, params) => {
     param = 1;
   }
   parser.bufferX = param - 1;
-  if (parser.buffers.length > parser.bufferY) {
+  if (parser.buffers.length > parser.bufferY && parser.bufferY >= 0) {
     // if the x cursor is greater than the current line length, append space
     const currentLine = parser.buffers[parser.bufferY];
     while (currentLine && currentLine.data && currentLine.data.length < parser.bufferX) {
@@ -114,7 +112,7 @@ const cursorCharAbsolute = (parser, params) => {
  *     Ps = 2  -> Selective Erase All.
  */
 const eraseInDisplay = (parser, params) => {
-  for (let i = parser.bufferY; i < parser.buffers.length; i += 1) {
+  for (let i = parser.bufferY; parser.bufferY >= 0 && i < parser.buffers.length; i += 1) {
     const currentLine = parser.buffers[i];
     switch (params[0]) {
       case 0:
@@ -164,33 +162,66 @@ const csiStateHandler = {
     eraseInLine(parser, params);
   },
   'h': () => { // set mode
+    l.debug('unhandled character h');
   },
   'm': () => { // set color
+    l.debug('unhandled character m');
   },
-  'l': () => {}, // reset mode
+  'l': () => {
+    l.debug('unhandled character l');
+  }, // reset mode
   'A': (parser, params) => { // cursor up
     let num = 0;
     if (params && params.length > 0) {
       num = params[0];
     }
     parser.bufferY -= num;
-    if (parser.bufferY < 0) {
-      parser.bufferY = 0;
+    if (parser.bufferY < -1) {
+      parser.bufferY = -1;
+      parser.buffers = [];
+    } else {
+      parser.buffers = parser.buffers.splice(parser.bufferY, num);
     }
-    },
-  'B': () => {}, // cursor down
-  'C': () => {}, // cursorForward
-  'D': () => {}, // cursorBackward
-  'E': () => {}, // cursorNextLine
-  'F': () => {}, // cursorPrecedingLine
-  'I': () => {}, // cursorForwardTab
-  'L': () => {}, // insert line
-  'M': () => {}, // delete line
-  'P': () => {}, // delete char
-  'S': () => {}, // scroll up
-  'T': () => {}, // scroll down
-  'X': () => {}, // eraseChars
-  'Z': () => {}, // cursorBackwardTab
+  },
+  'B': () => {
+    l.debug('unhandled character B');
+  }, // cursor down
+  'C': () => {
+    l.debug('unhandled character C');
+  }, // cursorForward
+  'D': () => {
+    l.debug('unhandled character D');
+  }, // cursorBackward
+  'E': () => {
+    l.debug('unhandled character E');
+  }, // cursorNextLine
+  'F': () => {
+    l.debug('unhandled character F');
+  }, // cursorPrecedingLine
+  'I': () => {
+    l.debug('unhandled character I');
+  }, // cursorForwardTab
+  'L': () => {
+    l.debug('unhandled character L');
+  }, // insert line
+  'M': () => {
+    l.debug('unhandled character M');
+  }, // delete line
+  'P': () => {
+    l.debug('unhandled character P');
+  }, // delete char
+  'S': () => {
+    l.debug('unhandled character S');
+  }, // scroll up
+  'T': () => {
+    l.debug('unhandled character T');
+  }, // scroll down
+  'X': () => {
+    l.debug('unhandled character X');
+  }, // eraseChars
+  'Z': () => {
+    l.debug('unhandled character Z');
+  }, // cursorBackwardTab
 };
 
 module.exports = {escapedStateHandler, csiStateParameterHandler, csiStateHandler, normalStateHandler};

@@ -61,31 +61,22 @@ class Parser extends EventEmitter {
     this.parse(data);
     let cached = null;
     if (this.buffers.length > 0) {
+      if (this.bufferY === -1) {
+        // remove the cache line
+        this.bufferY = 0;
+        this.buffers.splice(0, 1);
+      }
+      if (this.buffers.length === 0) {
+        return;
+      }
       cached = this.buffers.pop();
-      // if (os.platform() === 'win32') {
-      //   // find the last line from bottom
-      //   let i = this.buffers.length - 1;
-      //   for (; i >= 0; i -= 1) {
-      //     if (this.buffers[i].data) {
-      //       break;
-      //     }
-      //   }
-      //   if (this.buffers[i].data.match(/dbKoda>$/)) {
-      //     cached = this.buffers[i];
-      //     this.buffers.splice(i, this.buffers.length - i);
-      //   } else {
-      //     cached = this.buffers.pop();
-      //   }
-      // } else {
-      //   cached = this.buffers.pop();
-      // }
       this.buffers.map((buffer) => {
+        l.debug('emit output data ', buffer.data);
         this.emit('data', buffer.data);
       });
       this.buffers = [];
       this.buffers.push(cached);
     }
-    this.bufferY = this.buffers.length - 1 >= 0 ? this.buffers.length - 1 : 0;
     // check whether the last line in the buffer is prompt
     if (this.buffers.length > 0 && this.buffers[0].data) {
       if (this.buffers[0].data.match(/dbKoda>$/)) {
@@ -94,6 +85,7 @@ class Parser extends EventEmitter {
         this.emit('incomplete-command-ended', '... ');
       }
     }
+    this.bufferY = this.buffers.length - 1 >= 0 ? this.buffers.length - 1 : 0;
   }
 
   /**
@@ -153,6 +145,9 @@ class Parser extends EventEmitter {
    * @param data
    */
   pushChar(ch) {
+    if (this.bufferY < 0) {
+      return;
+    }
     if (this.buffers.length <= this.bufferY) {
       this.buffers.push(new Buffer()); // eslint-disable-line no-buffer-constructor
       this.bufferX = 0;
@@ -161,7 +156,7 @@ class Parser extends EventEmitter {
       this.bufferY += 1;
       this.buffers.push(new Buffer()); // eslint-disable-line no-buffer-constructor
     }
-    if (!this.buffers[this.bufferY].data) {
+    if (this.bufferY < this.buffers.length && !this.buffers[this.bufferY].data) {
       this.buffers[this.bufferY].data = ' ';
     }
     const diff = (this.bufferX - this.buffers[this.bufferY].data.length) + 1;
@@ -182,3 +177,4 @@ class Parser extends EventEmitter {
 
 
 module.exports = Parser;
+

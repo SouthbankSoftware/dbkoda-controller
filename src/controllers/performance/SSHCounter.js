@@ -128,7 +128,7 @@ class SSHCounter {
                   this.execute(id);
                 }
               } else if (this.osType && this.sendOsTypeCmd) {
-                this.sshObservable.onError(`Doesnt support the OS ${this.osType}`);
+                this.sshObservable.error(`Doesnt support the OS ${this.osType}`);
               }
             });
             stream.on('finish', () => {
@@ -136,7 +136,7 @@ class SSHCounter {
             });
             stream.stderr.on('data', (err) => {
               log.error('Stream :: strerr :: Data :', err);
-              this.sshObservable.onError(err);
+              this.sshObservable.error(err);
             });
             stream.on('close', (code, signal) => {
               log.info(
@@ -236,7 +236,7 @@ class SSHCounter {
         }
       }
     });
-    this.sshObservable.onNext(output);
+    this.sshObservable.next(output);
 
   }
 
