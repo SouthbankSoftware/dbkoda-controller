@@ -58,10 +58,7 @@ class Parser extends EventEmitter {
    * @param data
    */
   onRead(data) {
-    const t1 = new Date().getTime();
     this.parse(data);
-    const t2 = new Date().getTime();
-    l.debug('parser performance ', (t2 - t1));
     let cached = null;
     if (this.buffers.length > 0) {
       if (this.bufferY === -1) {
