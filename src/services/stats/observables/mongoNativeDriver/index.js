@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T11:34:56+11:00
+ * @Last modified time: 2017-12-12T14:21:24+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -23,4 +23,4 @@
 
 import { mongoNativeDriverKnowledge } from '../../knowledgeBase';
 
-export const { capacities } = mongoNativeDriverKnowledge;
+export const { items } = mongoNativeDriverKnowledge;

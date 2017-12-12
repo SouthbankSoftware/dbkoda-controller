@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T11:32:11+11:00
+ * @Last modified time: 2017-12-12T14:20:51+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -22,4 +22,4 @@
  */
 
 /* List of indentifiers/keys for items to be observed */
-export const capacities = ['hostCpu', 'hostMemory', 'hostDisk'];
+export const items = ['hostCpu', 'hostMemory', 'hostDisk'];
