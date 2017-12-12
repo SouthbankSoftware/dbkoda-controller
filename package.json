@@ -94,6 +94,7 @@
     "queue": "^4.4.2",
     "request-promise": "^4.2.2",
     "rss-parser": "^2.10.8",
+    "rxjs": "^5.5.5",
     "serve-favicon": "^2.4.5",
     "shelljs": "^0.7.6",
     "ssh2": "^0.5.5",
@@ -101,8 +102,7 @@
     "strip-ansi": "^4.0.0",
     "winston": "^2.4.0",
     "winston-daily-rotate-file": "^1.7.2",
-    "ws": "^3.3.2",
-    "rx": "^4.1.0"
+    "ws": "^3.3.2"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",

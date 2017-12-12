@@ -1,4 +1,8 @@
-/*
+/**
+ * Created by joey on 11/12/17.
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-12-12T11:11:21+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,9 +21,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * Created by joey on 11/12/17.
- */
 
 const _ = require('lodash');
 
@@ -36,7 +37,7 @@ class TopologyMonitor {
     if (!this.db.topology) {
       return;
     }
-    this.db.admin().command({replSetGetStatus: 1}, (err) => {
+    this.db.admin().command({ replSetGetStatus: 1 }, (err) => {
       if (!err) {
         console.log('start listening');
         this.db.topology.on('serverDescriptionChanged', (event) => {
@@ -46,7 +47,7 @@ class TopologyMonitor {
             // select a new primary
             this.queryMemberStatus().then((members) => {
               console.log('new memebers:', members);
-              const primary = _.find(members, {state: 1});
+              const primary = _.find(members, { state: 1 });
               console.log('primary:', primary);
             });
           }
@@ -55,12 +56,11 @@ class TopologyMonitor {
         console.log('failed to monitor single');
       }
     });
-
   }
 
   queryMemberStatus() {
     return new Promise((resolve) => {
-      this.db.admin().command({replSetGetStatus: 1}, (err, result) => {
+      this.db.admin().command({ replSetGetStatus: 1 }, (err, result) => {
         if (!result) {
           resolve(null);
           return;

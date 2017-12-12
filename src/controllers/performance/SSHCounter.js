@@ -1,4 +1,8 @@
-/*
+/**
+ * Created by joey on 8/12/17.
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-12-12T11:08:17+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,9 +21,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * Created by joey on 8/12/17.
- */
 
 /* eslint-disable */
 
@@ -28,7 +29,7 @@ const uuid = require('node-uuid');
 const _ = require('lodash');
 const sshTunnel = require('open-ssh-tunnel');
 const errors = require('feathers-errors');
-const Rx = require('rx');
+const Rx = require('rxjs');
 const os = require('os');
 
 class SSHCounter {
