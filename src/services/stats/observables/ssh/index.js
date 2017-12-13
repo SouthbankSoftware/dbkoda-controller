@@ -73,11 +73,10 @@ class SSHCounter implements Observable {
   }
 
   create(id) {
-    const connObj = this.mongoConnection.connections[id];
-    if (!connObj) {
+    if (!this.mongoConnection) {
       throw new errors.BadRequest(`Connection not exist ${id}`);
     }
-    return this.createConnection(connObj);
+    return this.createConnection(this.mongoConnection);
   }
 
   createConnection(connObj) {
@@ -236,13 +235,11 @@ class SSHCounter implements Observable {
               }
             }
           };
-          data.cpu = {used: data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st};
+          data.cpu = {usage: data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st};
           const totalMemory = data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache + data.details.memory.free;
           const usedMemory = data.details.memory.swpd + data.details.memory.buff;
           data.memory = {
-            total: totalMemory,
-            used: usedMemory,
-            percentage: parseInt((usedMemory / totalMemory) * 100, 10),
+            usage: parseInt((usedMemory / totalMemory) * 100, 10),
           };
           data.dist = data.details.io;
           output.value = data;

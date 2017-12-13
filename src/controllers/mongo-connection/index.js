@@ -113,6 +113,7 @@ class MongoConnectionController {
             tunnel = resTunnel;
           }
           conn.sshOpts = sshOpts;
+          l.debug('ssh opts ', conn);
           this.mongoClient.connect(conn.url, that.options, (err, db) => {
             if (err !== null) {
               l.error('failed to connect mongo instance ', err.message);

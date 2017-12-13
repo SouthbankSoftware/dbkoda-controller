@@ -22,8 +22,7 @@
  */
 
 const hooks = require('./hooks');
-const SSHCounter = require('../../controllers/performance/SSHCounter');
-const TopologyMonitor = require('../../controllers/topology/topology-monitor');
+const SSHCounter = require('../../services/stats/observables/ssh');
 
 class PerformanceService {
   constructor(options) {
@@ -39,10 +38,9 @@ class PerformanceService {
   }
 
   create(params) {
-    const sshConn = new SSHCounter(this.connectCtr);
-    const ret = sshConn.create(params.id);
-    this.sshConnections[params.id] = sshConn;
-    sshConn.sshObservable.subscribe(
+    const sshConn = new SSHCounter();
+    const ret = sshConn.createConnection(this.connectCtr.connections[params.id]);
+    sshConn.rxObservable.subscribe(
       (data) => {
         console.log('emit performance output ', data);
         this.emit('performance-output', {id: params.id, output: data});
@@ -51,14 +49,7 @@ class PerformanceService {
         console.error('on error', err);
       }
     );
-
-    const monitor = new TopologyMonitor(this.connectCtr.connections[params.id].driver);
-    monitor.start();
     return ret;
-  }
-
-  remove(id) {
-    delete this.sshConnections[id];
   }
 }
 
