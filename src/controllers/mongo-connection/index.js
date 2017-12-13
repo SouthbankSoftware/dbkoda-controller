@@ -37,6 +37,10 @@ const ConnectionListener = require('./connection-listener');
 const uuid = require('node-uuid');
 const Errors = require('../../errors/Errors').Errors;
 
+const Mongos = mongodb.Mongos;
+const Server = mongodb.Server;
+const ReplSet = mongodb.ReplSet;
+
 /**
  * Mongo instance connection controller
  */
@@ -183,7 +187,17 @@ class MongoConnectionController {
       .then(() => {
         if (conn.test) {
           l.debug('this is test connection.');
-          return { success: true };
+          return {success: true};
+        }
+        const serverConfig = db.serverConfig;
+        if (serverConfig instanceof Mongos) {
+          conn.mongoType = 'Mongos';
+        } else if (serverConfig instanceof ReplSet) {
+          conn.mongoType = 'ReplSet';
+        } else if (serverConfig instanceof Server) {
+          conn.mongoType = 'Single';
+        } else {
+          conn.mongoType = 'Unknown';
         }
         return this.createMongoShell(db, conn, dbVersion)
           .then((v) => {
@@ -350,6 +364,7 @@ class MongoConnectionController {
             shellId,
             output: v.output,
             shellVersion: v.shell.shellVersion,
+            mongoType: conn.mongoType
           });
         })
         .catch((e) => {
