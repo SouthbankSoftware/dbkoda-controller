@@ -22,3 +22,65 @@
  */
 
 export const items = ['topology'];
+
+const Rx = require('rxjs');
+const Observable = require('../Observable');
+
+class TopologyMonitor implements Observable {
+  constructor() {
+    this.rxObservable = new Rx.Subject();
+    this.type = 'Unknown';
+  }
+
+  init(profileId, options) {
+    this.profileId = profileId;
+    this.mongoConnection = options ? options.mongoConnection : null;
+    this.db = this.mongoConnection ? this.mongoConnection.driver : null;
+    this.start(this.db);
+  }
+
+  /**
+   * start listening on topology change
+   */
+  start(db) {
+    if (!db || !db.topology) {
+      this.rxObservable.error('failed to find mongodb driver.');
+      return;
+    }
+    db.admin().command({replSetGetStatus: 1}, (err) => {
+      if (!err) {
+        l.info('start monitoring topology');
+        db.topology.on('serverDescriptionChanged', (event) => {
+          console.log('received serverDescriptionChanged,', event);
+          if (event && event.newDescription && event.newDescription.type !== 'Unknown') {
+            l.info('replicaset topology was changed');
+            this.queryMemberStatus(db).then((members) => {
+              l.info('new members:', members);
+              this.rxObservable.next({profileId: this.profileId, timestamp: (new Date()).getTime(), value: {topology: members}});
+            }).catch(err => this.rxObservable.error(err));
+          }
+        });
+      } else {
+        l.info('cant monitor single/shard cluster');
+        this.rxObservable.error('this is not mongodb replicaset connection.');
+      }
+    });
+  }
+
+  queryMemberStatus(db) {
+    return new Promise((resolve, reject) => {
+      db.admin().command({replSetGetStatus: 1}, (err, result) => {
+        if (!result || err) {
+          reject(err);
+          return;
+        }
+        resolve(result.members);
+      });
+    }).catch((err) => {
+      l.error('failed to get replica set ', err);
+      this.rxObservable.error(err);
+    });
+  }
+}
+
+module.exports = TopologyMonitor;

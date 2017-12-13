@@ -108,61 +108,11 @@ class SSHCounter implements Observable {
   }
 
   createSshConnection(sshOpts, resolve, reject) {
-    const client = new SshClient();
-    client
+    this.client = new SshClient();
+    this.client
       .on('ready', () => {
-        const id = sshOpts.id ? sshOpts.id : uuid.v1();
         l.info('Client :: ready');
-        client.shell(
-          false,
-          {
-            pty: true,
-          },
-          (err, stream) => {
-            if (err) {
-              l.error(err);
-              return reject(err);
-            }
-            stream.setEncoding('utf8');
-            stream.on('data', (data) => {
-              if (this.osType) {
-                if (!this.paused) {
-                  this.postProcess(data);
-                } else {
-                  l.debug('performance counter is paused');
-                }
-              } else if (!this.osType && this.sendOsTypeCmd) {
-                if (data.match(/linux/i)) {
-                  // this is linux os
-                  this.osType = data;
-                  this.execute(id);
-                }
-              } else if (this.osType && this.sendOsTypeCmd) {
-                this.rxObservable.error(`Doesnt support the OS ${this.osType}`);
-              }
-            });
-            stream.on('finish', () => {
-              log.info('Stream :: finish');
-            });
-            stream.stderr.on('data', (err) => {
-              log.error('Stream :: strerr :: Data :', err);
-              this.rxObservable.error(err);
-            });
-            stream.on('close', (code, signal) => {
-              log.info(
-                'Stream :: close :: code: ' + code + ', signal: ' + signal
-              );
-              if (code !== 0) {
-                this.rxObservable.error(code);
-                return reject(code);
-              }
-            });
-            this.sendOsTypeCmd = true;
-            stream.write('uname\n');
-            this.stream = stream;
-            return resolve({status: 'SUCCESS', id});
-          }
-        );
+        this.createShell(resolve, reject);
       })
       .on('error', (err) => {
         reject(new errors.BadRequest('Client Error: ' + err.message));
@@ -170,9 +120,60 @@ class SSHCounter implements Observable {
       .connect(_.omit(sshOpts, 'cwd'));
   }
 
-  execute(id) {
+  createShell(resolve, reject) {
+    this.client.shell(
+      false,
+      {
+        pty: true,
+      },
+      (err, stream) => {
+        if (err) {
+          l.error(err);
+          return reject(err);
+        }
+        stream.setEncoding('utf8');
+        stream.on('data', (data) => {
+          if (this.osType) {
+            if (!this.paused) {
+              this.postProcess(data);
+            } else {
+              l.debug('performance counter is paused');
+            }
+          } else if (!this.osType && this.sendOsTypeCmd) {
+            if (data.match(/linux/i)) {
+              // this is linux os
+              this.osType = data;
+              this.execute();
+            }
+          } else if (this.osType && this.sendOsTypeCmd) {
+            this.rxObservable.error(`Doesnt support the OS ${this.osType}`);
+          }
+        });
+        stream.on('finish', () => {
+          log.info('Stream :: finish');
+        });
+        stream.stderr.on('data', (err) => {
+          log.error('Stream :: strerr :: Data :', err);
+          this.rxObservable.error(err);
+        });
+        stream.on('close', (code, signal) => {
+          log.info(
+            'Stream :: close :: code: ' + code + ', signal: ' + signal
+          );
+        });
+        this.sendOsTypeCmd = true;
+        if (!this.osType) {
+          stream.write('uname\n');
+        }
+        this.stream = stream;
+        return resolve();
+      }
+    );
+  }
+
+  execute() {
     if (!this.stream) {
-      throw new errors.BadRequest(`Connection not exist ${id}`);
+      throw new errors.BadRequest(`Connection not exist ${this.profileId}`);
     }
     if (this.paused) {
       return;
@@ -192,7 +193,7 @@ class SSHCounter implements Observable {
     log.debug('post process ', data);
     // parse the vmstat command output
     const splited = data.split(os.platform() === 'win32' ? '\n\r' : '\n');
-    let output = {};
+    let output = {timestamp: (new Date()).getTime(), profileId: this.profileId};
     splited.forEach((line) => {
       if (line.match(/procs/) && line.match(/memory/)) {
         // this is header
@@ -244,7 +245,7 @@ class SSHCounter implements Observable {
             percentage: parseInt((usedMemory / totalMemory) * 100, 10),
           };
           data.dist = data.details.io;
-          output = data;
+          output.value = data;
         }
       }
     });
@@ -256,8 +257,29 @@ class SSHCounter implements Observable {
    * set back to `null`
    */
   destroy() {
-    if (this.stream && this.stream._client) {
-      this.stream._client.end();
+    if (this.client) {
+      this.client.destroy();
+    } else {
+      this.rxObservable.error('ssh connection doesnt exist');
+    }
+  }
+
+  set samplingRate(rate) {
+    if (this.stream) {
+      this.stream.close();
+      try {
+        new Promise((resolve, reject) => {
+          this.createShell(resolve, reject);
+        }).then(_ => {
+          this.config.interval = rate;
+          this.execute();
+        });
+      } catch (err) {
+        l.error(err);
+        this.rxObservable.error(err);
+      }
+    } else {
+      this.rxObservable.error('ssh connection doesnt exist');
     }
   }
 }

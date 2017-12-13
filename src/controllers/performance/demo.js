@@ -67,10 +67,9 @@ counter.rxObservable.subscribe(
 counter
   .createConnection(sshOpts)
   .then((res) => {
-    counter.execute(res.id, 'ls\n');
   })
   .catch(err => {
     console.error(err);
   });
 
-// setTimeout(() => counter.destroy(), 3000);
+setTimeout(() => counter.samplingRate = 5, 3000);

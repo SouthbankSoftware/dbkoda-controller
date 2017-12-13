@@ -23,15 +23,25 @@
 /* eslint-disable */
 
 
+global.log = {
+  info: msg => console.log(msg),
+  error: msg => console.error(msg),
+  debug: msg => console.debug(msg),
+};
+global.l = global.log;
+
 const MongoClient = require('mongodb').MongoClient;
-const TopologyMonitor = require('./topology-monitor');
+const TopologyMonitor = require('../../services/stats/observables/topology');
 
 const url = 'mongodb://10.0.0.24:27019,10.0.0.24:27020,10.0.0.24:27021/admin?replicaSet=replset';
 
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
 
-  const monitor = new TopologyMonitor(db);
-  monitor.start();
-
+  const monitor = new TopologyMonitor();
+  monitor.start(db);
+  monitor.rxObservable.subscribe(
+    x => console.log('get sub ', x),
+    (e) => console.log('error ',e)
+  )
 });
