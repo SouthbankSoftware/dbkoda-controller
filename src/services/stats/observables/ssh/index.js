@@ -31,9 +31,10 @@ const os = require('os');
 const {items} = sshKnowledge;
 const Observable = require('../Observable');
 
+const loadCommands = require('../../../../config').loadCommands;
+
 class SSHCounter implements Observable {
   constructor() {
-    this.paused = false;
     this.osType = null;
     this.config = {interval: 2, cmd: 'vmstat'};
     this.rxObservable = new Rx.Subject();
@@ -44,7 +45,12 @@ class SSHCounter implements Observable {
     this.rxObservable = new Rx.Subject();
     this.profileId = profileId;
     this.mongoConnection = options ? options.mongoConnection : null;
-    this.create(profileId);
+    const configObj = loadCommands();
+    if (configObj) {
+      this.config.cmd = config.sshCounterCmd ? config.sshCounterCmd : 'vmstat';
+      this.config.interval = config.sshCounterInterval ? config.sshCounterInterval : 2;
+    }
+    return this.create(profileId);
   }
 
 
@@ -130,11 +136,7 @@ class SSHCounter implements Observable {
         stream.setEncoding('utf8');
         stream.on('data', (data) => {
           if (this.osType) {
-            if (!this.paused) {
-              this.postProcess(data);
-            } else {
-              l.debug('performance counter is paused');
-            }
+            this.postProcess(data);
           } else if (!this.osType && this.sendOsTypeCmd) {
             if (data.match(/linux/i)) {
               // this is linux os
@@ -171,18 +173,23 @@ class SSHCounter implements Observable {
     if (!this.stream) {
       throw new errors.BadRequest(`Connection not exist ${this.profileId}`);
     }
-    if (this.paused) {
-      return;
-    }
     this.stream.write(`${this.config.cmd} ${this.config.interval}\n`);
   }
 
   pause() {
-    this.paused = true;
+    if (this.stream) {
+      this.stream.close();
+    }
   }
 
   resume() {
-    this.paused = false;
+    if (this.stream) {
+      return new Promise((resolve, reject) => {
+        this.createShell(resolve, reject);
+      }).then(() => {
+        this.execute();
+      });
+    }
   }
 
   postProcess(data) {
