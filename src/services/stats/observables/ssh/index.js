@@ -37,7 +37,6 @@ const Observable = require('../Observable');
 
 class SSHCounter implements Observable {
   constructor() {
-    this.rxObservable = new Rx.Subject();
     this.paused = false;
     this.osType = null;
     this.config = {interval: 2, cmd: 'vmstat'};
@@ -45,6 +44,7 @@ class SSHCounter implements Observable {
   }
 
   init(profileId, options) {
+    this.rxObservable = new Rx.Subject();
     this.profileId = profileId;
     this.mongoConnection = options ? options.mongoConnection : null;
     this.create(profileId);
@@ -256,6 +256,7 @@ class SSHCounter implements Observable {
   destroy() {
     if (this.client) {
       this.client.destroy();
+      this.rxObservable.unsubscribe();
     } else {
       this.rxObservable.error('ssh connection doesnt exist');
     }
