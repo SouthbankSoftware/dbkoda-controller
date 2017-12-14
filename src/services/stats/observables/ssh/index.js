@@ -1,7 +1,4 @@
 /**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:21:03+11:00
- *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -21,11 +18,10 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* eslint-disable */
+/* eslint-disable class-methods-use-this */
 
 const sshKnowledge = require('../../knowledgeBase');
 const SshClient = require('ssh2').Client;
-const uuid = require('node-uuid');
 const _ = require('lodash');
 const sshTunnel = require('open-ssh-tunnel');
 const errors = require('feathers-errors');
@@ -193,7 +189,7 @@ class SSHCounter implements Observable {
     log.debug('post process ', data);
     // parse the vmstat command output
     const splited = data.split(os.platform() === 'win32' ? '\n\r' : '\n');
-    let output = {timestamp: (new Date()).getTime(), profileId: this.profileId};
+    const output = {timestamp: (new Date()).getTime(), profileId: this.profileId};
     splited.forEach((line) => {
       if (line.match(/procs/) && line.match(/memory/)) {
         // this is header
@@ -269,7 +265,7 @@ class SSHCounter implements Observable {
       try {
         new Promise((resolve, reject) => {
           this.createShell(resolve, reject);
-        }).then(_ => {
+        }).then(() => {
           this.config.interval = rate;
           this.execute();
         });
