@@ -58,10 +58,12 @@ export const getMongoPath = (mongoCmd) => {
   return mongoPath;
 };
 
+export const mongoCmds = ['mongoCmd', 'mongodumpCmd', 'mongorestoreCmd', 'mongoimportCmd', 'mongoexportCmd'];
+
 const applyPathToOtherCommands = (config) => {
   const mongoPath = getMongoPath(config.mongoCmd);
   _.keys(config).map((key) => {
-    if (!config[key] && key !== 'mongoVersionCmd' && key !== 'mongoCmd' && key !== 'drillCmd' && key !== 'drillControllerCmd' && key !== 'telemetryEnabled') {
+    if (!config[key] && mongoCmds.indexOf(key) >= 0) {
       const cmdName = key.replace('Cmd', '');
       if (os.platform() === 'win32') {
         config[key] = mongoPath + cmdName + '.exe';
@@ -118,6 +120,8 @@ export const loadConfigFromYamlFile = (p) => {
     drillControllerCmd: null,
     showWelcomePageAtStart: true,
     telemetryEnabled: true,
+    sshCounterInterval: 2,
+    sshCounterCmd: 'vmstat'
   };
   if (!fs.existsSync(p)) {
     loadConfig(config);

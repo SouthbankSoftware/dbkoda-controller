@@ -47,8 +47,8 @@ class SSHCounter implements Observable {
     this.mongoConnection = options ? options.mongoConnection : null;
     const configObj = loadCommands();
     if (configObj) {
-      this.config.cmd = config.sshCounterCmd ? config.sshCounterCmd : 'vmstat';
-      this.config.interval = config.sshCounterInterval ? config.sshCounterInterval : 2;
+      this.config.cmd = configObj.sshCounterCmd ? configObj.sshCounterCmd : 'vmstat';
+      this.config.interval = configObj.sshCounterInterval ? configObj.sshCounterInterval : 2;
     }
     return this.create(profileId);
   }
