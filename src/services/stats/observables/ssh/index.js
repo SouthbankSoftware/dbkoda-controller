@@ -40,6 +40,7 @@ class SSHCounter implements Observable {
     this.paused = false;
     this.osType = null;
     this.config = {interval: 2, cmd: 'vmstat'};
+    this.rxObservable = new Rx.Subject();
     this.items = items;
   }
 
