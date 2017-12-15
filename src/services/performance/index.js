@@ -30,7 +30,6 @@ class PerformanceService {
     this.events = [
       'performance-output'
     ];
-    this.sshConnections = [];
   }
 
   setup(app) {
@@ -39,17 +38,18 @@ class PerformanceService {
 
   create(params) {
     const sshConn = new SSHCounter();
-    const ret = sshConn.createConnection(this.connectCtr.connections[params.id]);
-    sshConn.rxObservable.subscribe(
-      (data) => {
-        console.log('emit performance output ', data);
-        this.emit('performance-output', {id: params.id, output: data});
-      },
-      (err) => {
-        console.error('on error', err);
-      }
-    );
-    return ret;
+    return sshConn.init(params.id, {mongoConnection: this.connectCtr.connections[params.id]})
+      .then(() => {
+        sshConn.rxObservable.subscribe(
+          (data) => {
+            console.log('emit performance output ', data);
+            this.emit('performance-output', {id: params.id, output: data});
+          },
+          (err) => {
+            console.error('on error', err);
+          }
+        );
+      });
   }
 }
 

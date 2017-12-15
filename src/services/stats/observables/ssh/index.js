@@ -53,7 +53,6 @@ class SSHCounter implements Observable {
     return this.create(profileId);
   }
 
-
   createSshTunnel(params) {
     if (params.sshTunnel && !params.sshTunnel) { // disable ssh tunnel for now
       const sshOpts = {
@@ -249,7 +248,9 @@ class SSHCounter implements Observable {
         }
       }
     });
-    this.rxObservable.next(output);
+    if (output.value) {
+      this.rxObservable.next(output);
+    }
   }
 
   /**
