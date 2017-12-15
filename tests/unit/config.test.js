@@ -23,7 +23,7 @@
  */
 
 import '../../src/app';
-import { loadConfig, loadConfigFromYamlFile, loadCommands, getMongoPath } from '../../src/config';
+import { loadConfig, loadConfigFromYamlFile, loadCommands, getMongoPath, mongoCmds } from '../../src/config';
 
 const os = require('os');
 const assert = require('assert');
@@ -60,7 +60,7 @@ describe('configure path tests', () => {
     console.log('loaded config', config);
     if (os.platform() === 'win32') {
       _.keys(config).map((key) => {
-        if (key !== 'mongoVersionCmd' && key !== 'drillCmd') {
+        if (mongoCmds.indexOf(key) >= 0) {
           assert.equal(config[key].match(new RegExp('.exe$')) !== null, true);
         }
       });
@@ -80,16 +80,14 @@ describe('configure path tests', () => {
     assert.notEqual(config.mongoVersionCmd, null);
     if (os.platform() === 'win32') {
       _.keys(config).map((key) => {
-        if (key !== 'mongoVersionCmd' && key !== 'drillCmd' && key !== 'drillControllerCmd' &&
-          key !== 'showWelcomePageAtStart' && key !== 'telemetryEnabled') {
+        if (mongoCmds.indexOf(key) >= 0) {
           assert.equal(config[key].match(new RegExp('.exe$')) !== null, true);
         }
       });
     } else {
       _.keys(config).map((key) => {
         const cmdName = key.replace('Cmd', '');
-        if (key !== 'mongoVersionCmd' && key !== 'drillCmd' && key !== 'drillControllerCmd' &&
-          key !== 'showWelcomePageAtStart' && key !== 'telemetryEnabled') {
+        if (mongoCmds.indexOf(key) >= 0) {
           assert.equal(config[key], '/opt/mongo/bin/' + cmdName);
         }
       });

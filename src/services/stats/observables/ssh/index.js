@@ -1,7 +1,4 @@
 /**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:21:03+11:00
- *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -21,11 +18,10 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* eslint-disable */
+/* eslint-disable class-methods-use-this */
 
 const sshKnowledge = require('../../knowledgeBase');
 const SshClient = require('ssh2').Client;
-const uuid = require('node-uuid');
 const _ = require('lodash');
 const sshTunnel = require('open-ssh-tunnel');
 const errors = require('feathers-errors');
@@ -35,11 +31,13 @@ const os = require('os');
 const {items} = sshKnowledge;
 const Observable = require('../Observable');
 
+const loadCommands = require('../../../../config').loadCommands;
+
 class SSHCounter implements Observable {
   constructor() {
-    this.paused = false;
     this.osType = null;
     this.config = {interval: 2, cmd: 'vmstat'};
+    this.rxObservable = new Rx.Subject();
     this.items = items;
   }
 
@@ -47,9 +45,13 @@ class SSHCounter implements Observable {
     this.rxObservable = new Rx.Subject();
     this.profileId = profileId;
     this.mongoConnection = options ? options.mongoConnection : null;
-    this.create(profileId);
+    const configObj = loadCommands();
+    if (configObj) {
+      this.config.cmd = configObj.sshCounterCmd ? configObj.sshCounterCmd : 'vmstat';
+      this.config.interval = configObj.sshCounterInterval ? configObj.sshCounterInterval : 2;
+    }
+    return this.create(profileId);
   }
-
 
   createSshTunnel(params) {
     if (params.sshTunnel && !params.sshTunnel) { // disable ssh tunnel for now
@@ -133,11 +135,7 @@ class SSHCounter implements Observable {
         stream.setEncoding('utf8');
         stream.on('data', (data) => {
           if (this.osType) {
-            if (!this.paused) {
-              this.postProcess(data);
-            } else {
-              l.debug('performance counter is paused');
-            }
+            this.postProcess(data);
           } else if (!this.osType && this.sendOsTypeCmd) {
             if (data.match(/linux/i)) {
               // this is linux os
@@ -174,25 +172,30 @@ class SSHCounter implements Observable {
     if (!this.stream) {
       throw new errors.BadRequest(`Connection not exist ${this.profileId}`);
     }
-    if (this.paused) {
-      return;
-    }
     this.stream.write(`${this.config.cmd} ${this.config.interval}\n`);
   }
 
   pause() {
-    this.paused = true;
+    if (this.stream) {
+      this.stream.close();
+    }
   }
 
   resume() {
-    this.paused = false;
+    if (this.stream) {
+      return new Promise((resolve, reject) => {
+        this.createShell(resolve, reject);
+      }).then(() => {
+        this.execute();
+      });
+    }
   }
 
   postProcess(data) {
     log.debug('post process ', data);
     // parse the vmstat command output
     const splited = data.split(os.platform() === 'win32' ? '\n\r' : '\n');
-    let output = {timestamp: (new Date()).getTime(), profileId: this.profileId};
+    const output = {timestamp: (new Date()).getTime(), profileId: this.profileId};
     splited.forEach((line) => {
       if (line.match(/procs/) && line.match(/memory/)) {
         // this is header
@@ -241,12 +244,13 @@ class SSHCounter implements Observable {
           data.memory = {
             usage: parseInt((usedMemory / totalMemory) * 100, 10),
           };
-          data.dist = data.details.io;
           output.value = data;
         }
       }
     });
-    this.rxObservable.next(output);
+    if (output.value) {
+      this.rxObservable.next(output);
+    }
   }
 
   /**
@@ -268,7 +272,7 @@ class SSHCounter implements Observable {
       try {
         new Promise((resolve, reject) => {
           this.createShell(resolve, reject);
-        }).then(_ => {
+        }).then(() => {
           this.config.interval = rate;
           this.execute();
         });

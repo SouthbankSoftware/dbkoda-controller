@@ -58,18 +58,18 @@ const sshOpts = {
 }
 
 const counter = new SSHCounter();
-
+counter.init('1', {'mongoConnection': sshOpts});
 counter.rxObservable.subscribe(
   x => console.log('get sub ', x),
   (e) => console.log('complete1',e)
 )
 
-counter
-  .createConnection(sshOpts)
-  .then((res) => {
-  })
-  .catch(err => {
-    console.error(err);
-  });
+// counter
+//   .createConnection(sshOpts)
+//   .then((res) => {
+//   })
+//   .catch(err => {
+//     console.error(err);
+//   });
 
 setTimeout(() => counter.samplingRate = 5, 3000);

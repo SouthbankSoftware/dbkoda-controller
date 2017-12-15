@@ -33,6 +33,7 @@ class TopologyMonitor implements Observable {
   }
 
   init(profileId, options) {
+    this.rxObservable = new Rx.Subject();
     this.profileId = profileId;
     this.mongoConnection = options ? options.mongoConnection : null;
     this.db = this.mongoConnection ? this.mongoConnection.driver : null;
@@ -80,6 +81,13 @@ class TopologyMonitor implements Observable {
       l.error('failed to get replica set ', err);
       this.rxObservable.error(err);
     });
+  }
+
+  destroy() {
+    if (this.db.topology) {
+      this.db.topology.close();
+      this.rxObservable.unsubscribe();
+    }
   }
 }
 
