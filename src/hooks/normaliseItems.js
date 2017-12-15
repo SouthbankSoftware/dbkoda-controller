@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T09:43:34+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-09-22T10:53:02+10:00
+ * @Last modified time: 2017-12-12T15:53:01+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -31,9 +31,9 @@ const consolidateQueryParams = (hook) => {
   hook.data = _.assign(hook.data, hook.params.query);
 };
 
-const consoldateId = (hook) => {
+const consoldateId = (hook, idAlias) => {
   if (hook.id) {
-    hook.data._id = hook.id;
+    hook.data[idAlias] = hook.id;
   }
 };
 
@@ -44,25 +44,29 @@ const checkIdAndItems = (hook) => {
   }
 };
 
-export default _options => (hook) => {
-  consolidateQueryParams(hook);
-  switch (hook.method) {
-    case 'get': {
-      consoldateId(hook);
-      break;
+export default (options) => {
+  const { idAlias = '_id' } = options || {};
+
+  return (hook) => {
+    consolidateQueryParams(hook);
+    switch (hook.method) {
+      case 'get': {
+        consoldateId(hook, idAlias);
+        break;
+      }
+      case 'update':
+      case 'patch': {
+        checkIdAndItems(hook);
+        consoldateId(hook, idAlias);
+        break;
+      }
+      case 'remove': {
+        consoldateId(hook, idAlias);
+        break;
+      }
+      default: {
+        break;
+      }
     }
-    case 'update':
-    case 'patch': {
-      checkIdAndItems(hook);
-      consoldateId(hook);
-      break;
-    }
-    case 'remove': {
-      consoldateId(hook);
-      break;
-    }
-    default: {
-      break;
-    }
-  }
+  };
 };

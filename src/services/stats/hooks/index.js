@@ -3,7 +3,7 @@
  * @Date:   2017-12-12T11:17:37+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T11:20:02+11:00
+ * @Last modified time: 2017-12-12T15:53:48+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,7 +28,7 @@ import normaliseItems from '~/hooks/normaliseItems';
 import validateItems from './validateItems';
 
 const before = {
-  all: [normaliseItems(), validateItems()],
+  all: [normaliseItems({ idAlias: 'profileId' }), validateItems()],
   find: [],
   get: [],
   create: [],

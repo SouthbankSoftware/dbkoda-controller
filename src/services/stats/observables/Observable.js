@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:50:05+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-13T10:28:38+11:00
+ * @Last modified time: 2017-12-15T12:17:47+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,8 +26,7 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* eslint-disable */
-
+import type { Observable } from 'rxjs';
 import MongoConnection from '~/controllers/mongo-connection/connection';
 
 export type ObservaleValue = {
@@ -36,13 +35,13 @@ export type ObservaleValue = {
   value: { [string]: any },
 };
 
-export interface Observable {
+export interface ObservableWrapper {
   /**
    * Underlie RxJs Observable instance
    *
    * You should manage it
    */
-  rxObservable: rxjs$Observable<ObservaleValue>;
+  rxObservable: Observable<ObservaleValue>;
   /**
    * Name of this observable type for displaying purpose
    *
@@ -70,10 +69,10 @@ export interface Observable {
    */
   items: string[];
   /* Initialise current observable. `rxObservable` should be created after this */
-  init(profileId: UUID, options: { mongoConnection: MongoConnection }): void;
+  init(profileId: UUID, options: { mongoConnection: MongoConnection }): Promise<*>;
   /**
    * Destroy current observable. Any created resources should be recyled. `rxObservable` should be
    * set back to `null`
    */
-  destroy(): void;
+  destroy(): Promise<*>;
 }
