@@ -245,7 +245,6 @@ class SSHCounter implements Observable {
           data.memory = {
             usage: parseInt((usedMemory / totalMemory) * 100, 10),
           };
-          data.dist = data.details.io;
           output.value = data;
         }
       }
