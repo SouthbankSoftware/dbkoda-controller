@@ -76,4 +76,6 @@ export interface Observable {
    * set back to `null`
    */
   destroy(): void;
+  pause(): void;
+  resume(): void;
 }
