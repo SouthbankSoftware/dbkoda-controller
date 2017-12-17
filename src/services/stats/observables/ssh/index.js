@@ -1,4 +1,7 @@
 /**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-12-15T18:25:32+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -29,11 +32,11 @@ const Rx = require('rxjs');
 const os = require('os');
 
 const {items} = sshKnowledge;
-const Observable = require('../Observable');
+const ObservableWrapper = require('../ObservableWrapper');
 
 const loadCommands = require('../../../../config').loadCommands;
 
-class SSHCounter implements Observable {
+class SSHCounter implements ObservableWrapper {
   constructor() {
     this.osType = null;
     this.config = {interval: 2, cmd: 'vmstat'};

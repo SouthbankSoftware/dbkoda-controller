@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:23:10+11:00
+ * @Last modified time: 2017-12-18T09:28:58+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -24,9 +24,9 @@
 export const items = ['topology'];
 
 const Rx = require('rxjs');
-const Observable = require('../Observable');
+const ObservableWrapper = require('../ObservableWrapper');
 
-class TopologyMonitor implements Observable {
+class TopologyMonitor implements ObservableWrapper {
   constructor() {
     this.rxObservable = new Rx.Subject();
     this.type = 'Unknown';

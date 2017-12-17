@@ -3,7 +3,7 @@
  * @Date:   2017-12-12T11:17:37+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T11:40:47+11:00
+ * @Last modified time: 2017-12-18T09:27:30+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,45 +28,75 @@ import _ from 'lodash';
 import ajv from '~/helpers/ajv';
 import { validateSchema } from 'feathers-hooks-common';
 
-const createSchema = {
+const itemsSchema = {
+  type: 'array',
+  item: {
+    type: 'string',
+  },
+};
+
+const findSchema = {
   properties: {
-    _id: {
-      type: 'string',
-    },
+    items: itemsSchema,
+  },
+  required: [],
+  additionalProperties: false,
+};
+
+const getSchema = {
+  properties: {
     profileId: {
       type: 'string',
     },
+    items: itemsSchema,
   },
-  required: ['_id', 'profileId'],
+  required: ['profileId'],
+  additionalProperties: false,
+};
+
+const createSchema = {
+  properties: {
+    profileId: {
+      type: 'string',
+    },
+    items: itemsSchema,
+    options: {
+      type: 'object',
+    },
+  },
+  required: ['profileId', 'items'],
   additionalProperties: false,
 };
 
 const patchSchema = {
   properties: {
-    _id: {
+    profileId: {
       type: 'string',
     },
-    enabled: {
-      type: 'boolean',
+    items: itemsSchema,
+    samplingRate: {
+      type: 'number',
+      minimum: 0,
     },
   },
-  required: ['_id'],
+  required: ['profileId'],
   additionalProperties: false,
 };
 
 const removeSchema = {
   properties: {
-    _id: {
+    profileId: {
       type: 'string',
     },
+    items: itemsSchema,
   },
-  required: ['_id'],
+  required: ['profileId'],
   additionalProperties: false,
 };
 
 const schema = {
-  find: {},
-  get: {},
+  find: findSchema,
+  get: getSchema,
   create: createSchema,
   update: {},
   patch: patchSchema,
