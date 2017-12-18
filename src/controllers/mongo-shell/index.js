@@ -51,7 +51,6 @@ class MongoShell extends EventEmitter {
     this.autoComplete = false;
     this.shellVersion = this.getShellVersion();
     this.commandQueue = [];
-    this.shellSize = {cols: PtyOptions.cols, rows: PtyOptions.rows};
     l.debug(`Shell version: ${this.shellVersion}`);
   }
 
@@ -346,12 +345,6 @@ class MongoShell extends EventEmitter {
     data = data.replace(/\t/g, '  ');
     l.debug('write to shell ', data);
     this.currentCommand = data;
-    if (data.length > this.shellSize.cols) {
-      l.debug('resize pty window cols to ', data.length);
-      this.shellSize.cols = data.length * 2;
-      this.shell.resize(data.length * 2, PtyOptions.rows);
-      this.shell.write(' \n');
-    }
     this.shell.write(data);
   }
 

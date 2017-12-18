@@ -58,14 +58,18 @@ class Parser extends EventEmitter {
    * @param data
    */
   onRead(data) {
+    l.debug('xxxx:', data);
+    const t1 = (new Date()).getTime();
     this.parse(data);
+    const t2 = (new Date()).getTime();
+    l.debug('performance:', (t2 - t1));
     let cached = null;
     if (this.buffers.length > 0) {
-      if (this.bufferY === -1) {
-        // remove the cache line
-        this.bufferY = 0;
-        this.buffers.splice(0, 1);
-      }
+      // if (this.bufferY === -1) {
+      //   // remove the cache line
+      //   this.bufferY = 0;
+      //   this.buffers.splice(0, 1);
+      // }
       if (this.buffers.length === 0) {
         return;
       }
@@ -151,11 +155,12 @@ class Parser extends EventEmitter {
     if (this.buffers.length <= this.bufferY) {
       this.buffers.push(new Buffer()); // eslint-disable-line no-buffer-constructor
       this.bufferX = 0;
-    } else if (this.bufferX >= PytOptions.cols) {
-      this.bufferX = 0;
-      this.bufferY += 1;
-      this.buffers.push(new Buffer()); // eslint-disable-line no-buffer-constructor
     }
+    // else if (this.bufferX >= PytOptions.cols) {
+    //   this.bufferX = 0;
+    //   this.bufferY += 1;
+    //   this.buffers.push(new Buffer()); // eslint-disable-line no-buffer-constructor
+    // }
     if (this.bufferY < this.buffers.length && !this.buffers[this.bufferY].data) {
       this.buffers[this.bufferY].data = ' ';
     }
@@ -164,7 +169,14 @@ class Parser extends EventEmitter {
       _.times(diff, this.buffers[this.bufferY].data += ' ');
     }
     const tmp = this.buffers[this.bufferY].data;
-    this.buffers[this.bufferY].data = tmp.substr(0, this.bufferX) + ch + tmp.substr(this.bufferX + 1);
+    // this.buffers[this.bufferY].write(ch, this.bufferX);
+    // this.buffers[this.bufferY].data = buffer.toString();
+
+      // if (this.bufferX >= tmp.length - 1) {
+    //   this.buffers[this.bufferY].data = tmp + ch;
+    // } else {
+      this.buffers[this.bufferY].data = tmp.substr(0, this.bufferX) + ch + tmp.substr(this.bufferX + 1);
+    // }
     this.bufferX += 1;
   }
 
