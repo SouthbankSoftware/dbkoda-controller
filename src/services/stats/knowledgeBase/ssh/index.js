@@ -23,3 +23,17 @@
 
 /* List of indentifiers/keys for items to be observed */
 export const items = ['cpu', 'memory', 'disk'];
+
+export default {
+  linux: {
+    common: {
+      cmd: 'vmstat',
+      parse: () => {
+
+      }
+    },
+  },
+  mac: {
+
+  }
+};
