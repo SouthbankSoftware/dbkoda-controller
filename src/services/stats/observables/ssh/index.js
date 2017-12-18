@@ -1,7 +1,5 @@
 /**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-12-15T18:25:32+11:00
- *
+ * @flow
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -23,40 +21,66 @@
 
 /* eslint-disable class-methods-use-this */
 
-const sshKnowledge = require('../../knowledgeBase');
-const SshClient = require('ssh2').Client;
-const _ = require('lodash');
-const sshTunnel = require('open-ssh-tunnel');
-const errors = require('feathers-errors');
+import {Observable, Observer} from 'rxjs';
+// $FlowFixMe
+import {Client} from 'ssh2';
+import _ from 'lodash';
+// $FlowFixMe
+import sshTunnel from 'open-ssh-tunnel';
+// $FlowFixMe
+import errors from 'feathers-errors';
+import type {ObservableWrapper, ObservaleValue} from '../ObservableWrapper';
+
+
 const Rx = require('rxjs');
 const os = require('os');
 
-const {items} = sshKnowledge;
-const ObservableWrapper = require('../ObservableWrapper');
-
 const loadCommands = require('../../../../config').loadCommands;
 
-class SSHCounter implements ObservableWrapper {
+const sshKnowledge = require('../../knowledgeBase');
+
+const {items} = sshKnowledge;
+
+
+export default class SSHCounter implements ObservableWrapper {
+  osType: string;
+  config: Object;
+  rxObservable: ?Observable<ObservaleValue> = null;
+  items: Array<*>;
+  profileId: string;
+  mongoConnection: Object;
+  client: Client;
+  stream: Object;
+  sendOsTypeCmd: boolean;
+  observer: Observer<ObservaleValue>;
+  displayName = 'SSH Stats';
+  samplingRate: number;
+
   constructor() {
-    this.osType = null;
     this.config = {interval: 2, cmd: 'vmstat'};
     this.rxObservable = new Rx.Subject();
     this.items = items;
   }
 
-  init(profileId, options) {
-    this.rxObservable = new Rx.Subject();
+  init(profileId: string, options: Object): Promise<*> {
     this.profileId = profileId;
-    this.mongoConnection = options ? options.mongoConnection : null;
+    this.mongoConnection = options.mongoConnection;
     const configObj = loadCommands();
     if (configObj) {
       this.config.cmd = configObj.sshCounterCmd ? configObj.sshCounterCmd : 'vmstat';
       this.config.interval = configObj.sshCounterInterval ? configObj.sshCounterInterval : 2;
     }
-    return this.create(profileId);
+    this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
+      this.observer = observer;
+      this.create(profileId);
+      return () => {
+        this.pause();
+      };
+    });
+    return Promise.resolve();
   }
 
-  createSshTunnel(params) {
+  createSshTunnel(params: Object): Promise<*> {
     if (params.sshTunnel && !params.sshTunnel) { // disable ssh tunnel for now
       const sshOpts = {
         host: params.sshHost, // ip address of the ssh server
@@ -77,14 +101,14 @@ class SSHCounter implements ObservableWrapper {
     return Promise.resolve();
   }
 
-  create(id) {
+  create(id: string) {
     if (!this.mongoConnection) {
       throw new errors.BadRequest(`Connection not exist ${id}`);
     }
     return this.createConnection(this.mongoConnection);
   }
 
-  createConnection(connObj) {
+  createConnection(connObj: Object): Promise<*> {
     const sshOpts = {};
     return new Promise((resolve, reject) => {
       this
@@ -106,16 +130,16 @@ class SSHCounter implements ObservableWrapper {
           this.createSshConnection(sshOpts, resolve, reject);
         })
         .catch((err) => {
-          l.error(err);
+          log.error(err);
         });
     });
   }
 
-  createSshConnection(sshOpts, resolve, reject) {
-    this.client = new SshClient();
+  createSshConnection(sshOpts: Object, resolve: Function, reject: Function) {
+    this.client = new Client();
     this.client
       .on('ready', () => {
-        l.info('Client :: ready');
+        log.info('Client :: ready');
         this.createShell(resolve, reject);
       })
       .on('error', (err) => {
@@ -124,7 +148,7 @@ class SSHCounter implements ObservableWrapper {
       .connect(_.omit(sshOpts, 'cwd'));
   }
 
-  createShell(resolve, reject) {
+  createShell(resolve: Function, reject: Function) {
     this.client.shell(
       false,
       {
@@ -132,7 +156,7 @@ class SSHCounter implements ObservableWrapper {
       },
       (err, stream) => {
         if (err) {
-          l.error(err);
+          log.error(err);
           return reject(err);
         }
         stream.setEncoding('utf8');
@@ -146,7 +170,7 @@ class SSHCounter implements ObservableWrapper {
               this.execute();
             }
           } else if (this.osType && this.sendOsTypeCmd) {
-            this.rxObservable.error(`Doesnt support the OS ${this.osType}`);
+            this.observer.error(`Doesnt support the OS ${this.osType}`);
           }
         });
         stream.on('finish', () => {
@@ -154,7 +178,7 @@ class SSHCounter implements ObservableWrapper {
         });
         stream.stderr.on('data', (err) => {
           log.error('Stream :: strerr :: Data :', err);
-          this.rxObservable.error(err);
+          this.observer.error(err);
         });
         stream.on('close', (code, signal) => {
           log.info(
@@ -184,7 +208,7 @@ class SSHCounter implements ObservableWrapper {
     }
   }
 
-  resume() {
+  resume(): Promise<*> {
     if (this.stream) {
       return new Promise((resolve, reject) => {
         this.createShell(resolve, reject);
@@ -192,13 +216,14 @@ class SSHCounter implements ObservableWrapper {
         this.execute();
       });
     }
+    return Promise.reject();
   }
 
-  postProcess(data) {
-    log.debug('post process ', data);
+  postProcess(d: Object) {
+    log.debug('post process ', d);
     // parse the vmstat command output
-    const splited = data.split(os.platform() === 'win32' ? '\n\r' : '\n');
-    const output = {timestamp: (new Date()).getTime(), profileId: this.profileId};
+    const splited = d.split(os.platform() === 'win32' ? '\n\r' : '\n');
+    const output: any = {timestamp: (new Date()).getTime(), profileId: this.profileId};
     splited.forEach((line) => {
       if (line.match(/procs/) && line.match(/memory/)) {
         // this is header
@@ -208,7 +233,7 @@ class SSHCounter implements ObservableWrapper {
         const items = _.without(line.split(' '), '');
         if (items.length >= 17) {
           const intItems = items.map(item => parseInt(item, 10));
-          const data = {
+          const data: any = {
             details: {
               procs: {
                 r: intItems[0], // The number of processes waiting for run time
@@ -252,7 +277,7 @@ class SSHCounter implements ObservableWrapper {
       }
     });
     if (output.value) {
-      this.rxObservable.next(output);
+      this.observer.next(output);
     }
   }
 
@@ -260,18 +285,20 @@ class SSHCounter implements ObservableWrapper {
    * Destroy current observable. Any created resources should be recyled. `rxObservable` should be
    * set back to `null`
    */
-  destroy() {
+  destroy(): Promise<*> {
     if (this.client) {
       this.client.destroy();
-      this.rxObservable.unsubscribe();
-    } else {
-      this.rxObservable.error('ssh connection doesnt exist');
+      this.rxObservable = null;
+      return Promise.resolve();
     }
+    this.observer.error('ssh connection doesnt exist');
+    return Promise.reject();
   }
 
-  set samplingRate(rate) {
+  setSamplingRate(rate: number): void {
     if (this.stream) {
       this.stream.close();
+      this.samplingRate = rate;
       try {
         new Promise((resolve, reject) => {
           this.createShell(resolve, reject);
@@ -280,13 +307,12 @@ class SSHCounter implements ObservableWrapper {
           this.execute();
         });
       } catch (err) {
-        l.error(err);
-        this.rxObservable.error(err);
+        log.error(err);
+        this.observer.error(err);
       }
     } else {
-      this.rxObservable.error('ssh connection doesnt exist');
+      this.observer.error('ssh connection doesnt exist');
     }
   }
 }
 
-module.exports = SSHCounter;

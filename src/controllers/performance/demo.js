@@ -72,4 +72,4 @@ counter.rxObservable.subscribe(
 //     console.error(err);
 //   });
 
-setTimeout(() => counter.samplingRate = 5, 3000);
+setTimeout(() => counter.setSamplingRate(15), 3000);

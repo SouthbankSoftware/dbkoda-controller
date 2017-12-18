@@ -37,6 +37,7 @@ class PerformanceService {
   }
 
   create(params) {
+    l.info('request performance');
     const sshConn = new SSHCounter();
     return sshConn.init(params.id, {mongoConnection: this.connectCtr.connections[params.id]})
       .then(() => {
@@ -49,6 +50,9 @@ class PerformanceService {
             console.error('on error', err);
           }
         );
+      })
+      .catch((err) => {
+        l.error(err);
       });
   }
 }
