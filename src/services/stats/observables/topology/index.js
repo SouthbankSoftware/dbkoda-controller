@@ -1,6 +1,5 @@
 /**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:23:10+11:00
+ * @flow
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,54 +20,71 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-export const items = ['topology'];
+import {Observable, Observer} from 'rxjs';
 
-const Rx = require('rxjs');
-const Observable = require('../Observable');
+import type {ObservaleValue} from '../ObservableWrapper';
+import {ObservableWrapper} from '../ObservableWrapper';
 
-class TopologyMonitor implements Observable {
-  constructor() {
-    this.rxObservable = new Rx.Subject();
-    this.type = 'Unknown';
-  }
+export default class TopologyMonitor implements ObservableWrapper {
+  rxObservable: ?Observable<ObservaleValue> = null;
+  type: string = 'Unknown';
+  observer: Observer<ObservaleValue>;
+  profileId: string;
+  mongoConnection: Object;
+  db: Object;
+  samplingRate: number;
+  items: string[] = ['topology'];
+  displayName: string = 'Topology Monitor';
 
-  init(profileId, options) {
-    this.rxObservable = new Rx.Subject();
+  init(profileId: string, options: Object): Promise<*> {
     this.profileId = profileId;
-    this.mongoConnection = options ? options.mongoConnection : null;
-    this.db = this.mongoConnection ? this.mongoConnection.driver : null;
-    this.start(this.db);
+    this.mongoConnection = options.mongoConnection;
+    this.db = this.mongoConnection.driver;
+    this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
+      this.observer = observer;
+      this.start(this.db);
+      return () => {
+        this.db.topology.removeListener('serverDescriptionChanged', this.topologyListener);
+      };
+    });
+    return Promise.resolve();
   }
 
   /**
    * start listening on topology change
    */
-  start(db) {
+  start(db: Object) {
     if (!db || !db.topology) {
-      this.rxObservable.error('failed to find mongodb driver.');
+      this.observer.error('failed to find mongodb driver.');
       return;
     }
     db.admin().command({replSetGetStatus: 1}, (err) => {
       if (!err) {
-        l.info('start monitoring topology');
-        db.topology.on('serverDescriptionChanged', (event) => {
-          console.log('received serverDescriptionChanged,', event);
-          if (event && event.newDescription && event.newDescription.type !== 'Unknown') {
-            l.info('replicaset topology was changed');
-            this.queryMemberStatus(db).then((members) => {
-              l.info('new members:', members);
-              this.rxObservable.next({profileId: this.profileId, timestamp: (new Date()).getTime(), value: {topology: members}});
-            }).catch(err => this.rxObservable.error(err));
-          }
-        });
+        log.info('start monitoring topology');
+        db.topology.on('serverDescriptionChanged', this.topologyListener.bind(this));
       } else {
-        l.info('cant monitor single/shard cluster');
-        this.rxObservable.error('this is not mongodb replicaset connection.');
+        log.info('cant monitor single/shard cluster');
+        this.observer.error('this is not mongodb replicaset connection.');
       }
     });
   }
 
-  queryMemberStatus(db) {
+  topologyListener(event: Object) {
+    console.log('received serverDescriptionChanged,', event);
+    if (event && event.newDescription && event.newDescription.type !== 'Unknown') {
+      log.info('replicaset topology was changed');
+      this.queryMemberStatus(this.db).then((members) => {
+        log.info('new members:', members);
+        this.observer.next({
+          profileId: this.profileId,
+          timestamp: (new Date()).getTime(),
+          value: {topology: members}
+        });
+      }).catch(err => this.observer.error(err));
+    }
+  }
+
+  queryMemberStatus(db: Object): Promise<*> {
     return new Promise((resolve, reject) => {
       db.admin().command({replSetGetStatus: 1}, (err, result) => {
         if (!result || err) {
@@ -78,17 +94,15 @@ class TopologyMonitor implements Observable {
         resolve(result.members);
       });
     }).catch((err) => {
-      l.error('failed to get replica set ', err);
-      this.rxObservable.error(err);
+      log.error('failed to get replica set ', err);
+      this.observer.error(err);
     });
   }
 
-  destroy() {
+  destroy(): Promise<*> {
     if (this.db.topology) {
       this.db.topology.close();
-      this.rxObservable.unsubscribe();
     }
+    return Promise.resolve();
   }
 }
-
-module.exports = TopologyMonitor;

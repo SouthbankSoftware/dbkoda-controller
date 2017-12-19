@@ -3,7 +3,7 @@
  * @Date:   2017-12-12T11:17:22+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T11:19:16+11:00
+ * @Last modified time: 2017-12-18T09:30:22+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,21 +26,35 @@
 
 /* eslint-disable class-methods-use-this */
 
+// $FlowFixMe
 import errors from 'feathers-errors';
 import _ from 'lodash';
+import { ObservableWrapper } from './observables/ObservableWrapper';
 import hooks from './hooks';
 
 export class Stats {
-  constructor(_options) {
+  // key: profileId
+  observables: Map<
+    UUID,
+    {
+      wrappers: ObservableWrapper[],
+      // key: item
+      index: Map<string, ObservableWrapper>,
+    },
+  >;
+  events: string[];
+
+  constructor(_options: *) {
     this.events = ['data', 'error', 'warn'];
   }
 
-  setup(_app, _path) {
+  setup(_app: *, _path: *) {
     this.observables = new Map();
   }
 
   emitError(id: string, error: string, level: 'warn' | 'error' = 'error') {
-    this.emit('error', { _id: id, payload: { error, level } });
+    // $FlowFixMe
+    this.emit('error', { profileId: id, payload: { error, level } });
   }
 
   find(_params) {

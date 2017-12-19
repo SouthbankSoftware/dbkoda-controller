@@ -27,3 +27,4 @@
 
 /** Global types */
 declare type UUID = string;
+declare var log: Function;

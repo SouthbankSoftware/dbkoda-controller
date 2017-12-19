@@ -64,12 +64,4 @@ counter.rxObservable.subscribe(
   (e) => console.log('complete1',e)
 )
 
-// counter
-//   .createConnection(sshOpts)
-//   .then((res) => {
-//   })
-//   .catch(err => {
-//     console.error(err);
-//   });
-
-setTimeout(() => counter.samplingRate = 5, 3000);
+setTimeout(() => counter.setSamplingRate(15), 3000);

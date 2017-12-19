@@ -1,9 +1,11 @@
 /**
+ * @flow
+ *
  * @Author: Guan Gui <guiguan>
  * @Date:   2017-12-12T11:44:18+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T11:44:41+11:00
+ * @Last modified time: 2017-12-18T08:50:30+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -24,4 +26,62 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// scanned from `observables` directory
+import _ from 'lodash';
+import { ObservableWrapper } from './observables/ObservableWrapper';
+
+/**
+ * Customised constructors for ObservableWrappers defined in `observables`
+ *
+ * [TYPE_NAME]: {
+ *   path: TYPE_DEFINITION_PATH, // related to `observables` directory
+ *   constructor: (wrapper: ObservableWrapper): void | null // Customised constructor to override
+ *                                                          // default settings
+ * }
+ */
+export const constructors = {
+  dummy1: {
+    path: 'dummy',
+    // can be null
+    constructor: (wrapper: ObservableWrapper) => {
+      wrapper.displayName = 'Dummy 1';
+      wrapper.items = ['item-1', 'item-2', 'item-3'];
+    },
+  },
+  dummy2: {
+    path: 'dummy',
+    constructor: (wrapper: ObservableWrapper) => {
+      wrapper.displayName = 'Dummy 2';
+      wrapper.items = ['item-4', 'item-5'];
+    },
+  },
+  dummy3: {
+    path: 'dummy',
+    constructor: (wrapper: ObservableWrapper) => {
+      wrapper.displayName = 'Dummy 3';
+      wrapper.items = ['item-6'];
+    },
+  },
+  dummy4: {
+    path: 'dummy',
+    constructor: (wrapper: ObservableWrapper) => {
+      wrapper.displayName = 'Dummy 4';
+      wrapper.items = ['item-7', 'item-8', 'item-9', 'item-10'];
+    },
+  },
+  dummy5: {
+    path: 'dummy',
+    constructor: (wrapper: ObservableWrapper) => {
+      wrapper.displayName = 'Dummy 5';
+      wrapper.items = ['item-10'];
+    },
+  },
+};
+
+export default _.reduce(
+  constructors,
+  (acc, _v, k) => {
+    acc[k] = k;
+    return acc;
+  },
+  {},
+);
