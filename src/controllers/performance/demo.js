@@ -55,7 +55,7 @@ const sshOpts = {
     username: 'core',
     password: process.env.EC2_SHARD_CLUSTER_PASSWORD
   }
-}
+};
 
 const counter = new SSHCounter();
 counter.init('1', {'mongoConnection': sshOpts});

@@ -27,7 +27,6 @@ const { EventEmitter } = require('events');
 const ParseState = require('./parser-state');
 const {escapedStateHandler, csiStateHandler, csiStateParameterHandler, normalStateHandler} = require('./input-handler');
 const Buffer = require('./buffer');
-const PytOptions = require('./pty-options');
 
 /* eslint no-fallthrough : 0 */
 

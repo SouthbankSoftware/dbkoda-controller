@@ -24,12 +24,13 @@
 
 import _ from 'lodash';
 import linuxStats from './linux';
+import darwinStats from './darwin';
 
 export const items = ['cpu', 'memory'];
 
 export const rules = {
   linux: linuxStats,
-  mac: {}
+  darwin: darwinStats
 };
 
 

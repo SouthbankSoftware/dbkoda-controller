@@ -32,7 +32,7 @@ import errors from 'feathers-errors';
 import os from 'os';
 
 import type {ObservableWrapper, ObservaleValue} from '../ObservableWrapper';
-import {getKnowledgeBaseRules, items, buildCommand} from '../../knowledgeBase/ssh';
+import {buildCommand, getKnowledgeBaseRules, items} from '../../knowledgeBase/ssh';
 
 
 export default class SSHCounter implements ObservableWrapper {
@@ -140,13 +140,15 @@ export default class SSHCounter implements ObservableWrapper {
         this.exeCmd('uname -s')
           .then((osType) => {
             if (osType) {
-              this.osType.osType = osType.trim();
+              this.osType.osType = osType.toLowerCase().trim();
+              if (this.osType.osType === 'linux') {
+                return this.exeCmd('cat /etc/os-release');
+              }
             }
-            return this.exeCmd('cat /etc/os-release');
           })
           .then((release) => {
             log.info(release);
-            if (!release) {
+            if (release) {
               const splitted = release.split(os.platform() === 'win32' ? '\n\r' : '\n');
               splitted.forEach((str) => {
                 if (str.toLowerCase().match(/name=/)) {
@@ -159,10 +161,13 @@ export default class SSHCounter implements ObservableWrapper {
             }
             log.info('get os type ', this.osType);
             this.knowledgeBase = getKnowledgeBaseRules(this.osType);
-            if (!this.knowledgeBase) {
+            if (!this.knowledgeBase || !this.knowledgeBase.cmd) {
               return reject(`Unsupported Operation System ${this.osType.os}`);
             }
             this.statsCmd = buildCommand(this.knowledgeBase);
+            if (!this.statsCmd) {
+              return reject('Cant find command from knowledge base on ', this.osType);
+            }
             this.createShell(resolve, reject);
           });
       })
@@ -181,7 +186,7 @@ export default class SSHCounter implements ObservableWrapper {
         }).on('data', (data) => {
           output += data.toString('utf8');
         }).stderr.on('data', (data) => {
-          log.error(data);
+          log.error(data.toString('utf8'));
           resolve(null);
         });
       });
@@ -247,9 +252,11 @@ export default class SSHCounter implements ObservableWrapper {
 
   postProcess(output: Object) {
     const o = this.knowledgeBase.parse(output);
-    o.profileId = this.profileId;
-    if (o.value) {
-      this.observer.next(o);
+    if (o) {
+      o.profileId = this.profileId;
+      if (o.value) {
+        this.observer.next(o);
+      }
     }
   }
 
