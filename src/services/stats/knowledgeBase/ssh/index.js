@@ -78,6 +78,37 @@ export const findRules = ({osType, release, version}, rules) => {
   return matchedVersion[matchedVersion.length - 1];
 };
 
+/**
+ * parsing below object into command:
+ *
+ * {
+ *  cmd: 'vmstat $samplingRate $counter',
+ *  samplingRate: 4,
+ *  counter: 10
+ * }
+ */
+export const buildCommand = (obj) => {
+  if (!obj || !obj.cmd) {
+    return null;
+  }
+  let command = obj.cmd;
+  const match = obj.cmd.match(/\$[^\s]*/g);
+  const replaceMap = {};
+  if (match && match.length > 0) {
+    match.forEach((str) => {
+      const cmd = str.replace('$', '');
+      if (obj[cmd]) {
+        replaceMap[str] = obj[cmd];
+      }
+    });
+  }
+  _.forOwn(replaceMap, (v, k) => {
+    const replace = `\\${k}`;
+    const re = new RegExp(replace, 'g');
+    command = obj.cmd.replace(re, v);
+  });
+  return command;
+};
 
 /**
  * find the knowledge base rules
@@ -88,5 +119,6 @@ export const findRules = ({osType, release, version}, rules) => {
  * @returns {*}
  */
 export const getKnowledgeBaseRules = ({osType, release, version}) => {
-  return findRules({osType, release, version}, rules);
+  const rule = findRules({osType, release, version}, rules);
+  return {...rule};
 };

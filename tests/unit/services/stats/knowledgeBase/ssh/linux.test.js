@@ -21,7 +21,8 @@
  * Created by joey on 18/12/17.
  */
 
-const findRules = require('../../../../../../src/services/stats/knowledgeBase/ssh').findRules;
+import {findRules, buildCommand} from '../../../../../../src/services/stats/knowledgeBase/ssh';
+
 const assert = require('assert');
 
 describe('test knowledge base rules', () => {
@@ -149,5 +150,40 @@ describe('test knowledge base rules', () => {
     assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'all');
     assert.equal(matched.version, undefined);
+  });
+
+  it('test build command', () => {
+    let rule = {
+      cmd: 'vmstat $samplingRate',
+      samplingRate: 5
+    };
+    let cmd = buildCommand(rule);
+    assert.equal(cmd, 'vmstat 5');
+    rule.samplingRate = 15;
+    cmd = buildCommand(rule);
+    assert.equal(cmd, 'vmstat 15');
+
+    rule = {
+      cmd: 'vmstat 5',
+      samplingRate: 5
+    };
+    cmd = buildCommand(rule);
+    assert.equal(cmd, 'vmstat 5');
+  });
+
+  it('test find kb and build command', () => {
+    const rules = {
+      'linux': [{
+        os: 'linux',
+        release: 'all',
+        cmd: 'vmstat $samplingRate',
+        samplingRate: 5
+      }]};
+    const matched = findRules({osType: 'Linux', release: 'ubuntu', version: '14.0'}, rules);
+    let cmd = buildCommand(matched);
+    assert.equal(cmd, 'vmstat 5');
+    matched.samplingRate = 15;
+    cmd = buildCommand(matched);
+    assert.equal(cmd, 'vmstat 15');
   });
 });

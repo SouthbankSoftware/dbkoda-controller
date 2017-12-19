@@ -32,9 +32,7 @@ import errors from 'feathers-errors';
 import os from 'os';
 
 import type {ObservableWrapper, ObservaleValue} from '../ObservableWrapper';
-import {getKnowledgeBaseRules, items} from '../../knowledgeBase/ssh';
-
-const loadCommands = require('../../../../config').loadCommands;
+import {getKnowledgeBaseRules, items, buildCommand} from '../../knowledgeBase/ssh';
 
 
 export default class SSHCounter implements ObservableWrapper {
@@ -51,9 +49,9 @@ export default class SSHCounter implements ObservableWrapper {
   displayName = 'SSH Stats';
   samplingRate: number;
   knowledgeBase: Object;
+  statsCmd: string;
 
   constructor() {
-    this.config = {interval: 2, cmd: 'vmstat'};
     this.rxObservable = new Rx.Subject();
     this.items = items;
   }
@@ -61,11 +59,6 @@ export default class SSHCounter implements ObservableWrapper {
   init(profileId: string, options: Object): Promise<*> {
     this.profileId = profileId;
     this.mongoConnection = options.mongoConnection;
-    const configObj = loadCommands();
-    if (configObj) {
-      this.config.cmd = configObj.sshCounterCmd ? configObj.sshCounterCmd : 'vmstat';
-      this.config.interval = configObj.sshCounterInterval ? configObj.sshCounterInterval : 2;
-    }
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
       this.observer = observer;
       this.create(profileId);
@@ -143,7 +136,7 @@ export default class SSHCounter implements ObservableWrapper {
     this.client = new Client();
     this.client
       .on('ready', () => {
-        log.info('Client :: ready');
+        log.info('SSH Client :: ready');
         this.exeCmd('uname -s')
           .then((osType) => {
             if (osType) {
@@ -169,6 +162,7 @@ export default class SSHCounter implements ObservableWrapper {
             if (!this.knowledgeBase) {
               return reject(`Unsupported Operation System ${this.osType.os}`);
             }
+            this.statsCmd = buildCommand(this.knowledgeBase);
             this.createShell(resolve, reject);
           });
       })
@@ -216,11 +210,8 @@ export default class SSHCounter implements ObservableWrapper {
           log.error('Stream :: strerr :: Data :', err);
           this.observer.error(err);
         });
-        stream.on('close', (code, signal) => {
-          log.info(
-            'Stream :: close :: code: ' + code + ', signal: ' + signal
-          );
-        });
+        // stream.on('close', (code, signal) => {
+        // });
         this.stream = stream;
         this.execute();
         return resolve();
@@ -233,7 +224,8 @@ export default class SSHCounter implements ObservableWrapper {
     if (!this.stream) {
       throw new errors.BadRequest(`Connection not exist ${this.profileId}`);
     }
-    this.stream.write(`${this.config.cmd} ${this.config.interval}\n`);
+    log.info(`run command ${this.statsCmd}`);
+    this.stream.write(`${this.statsCmd}\n`);
   }
 
   pause() {
@@ -276,14 +268,15 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   setSamplingRate(rate: number): void {
+    log.info('change sampling rate');
     if (this.stream) {
       this.stream.close();
-      this.samplingRate = rate;
+      this.knowledgeBase.samplingRate = rate;
+      this.statsCmd = buildCommand(this.knowledgeBase);
       try {
         new Promise((resolve, reject) => {
           this.createShell(resolve, reject);
         }).then(() => {
-          this.config.interval = rate;
           this.execute();
         });
       } catch (err) {
