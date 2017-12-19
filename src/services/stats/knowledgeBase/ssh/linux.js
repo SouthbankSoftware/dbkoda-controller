@@ -22,6 +22,7 @@
  */
 
 import os from 'os';
+import _ from 'lodash';
 
 const common = {
   os: 'linux',
@@ -33,7 +34,7 @@ const common = {
     log.debug('post process ', d);
     // parse the vmstat command output
     const splited = d.split(os.platform() === 'win32' ? '\n\r' : '\n');
-    const output: any = {timestamp: (new Date()).getTime(), profileId: this.profileId};
+    const output: any = {timestamp: (new Date()).getTime()};
     splited.forEach((line) => {
       if (line.match(/procs/) && line.match(/memory/)) {
         // this is header, ignore
@@ -90,46 +91,4 @@ const common = {
   }
 };
 
-const type1 = {
-  os: 'linux',
-  release: 'ubuntu',
-  version: '14.0',
-  cmd: 'vmstat 30', // command need to query os stats
-  parse: (data) => {
-    // parsing
-    return {
-      cpu: '50',
-      memory: '40'
-    };
-  }
-};
-
-const type2 = {
-  os: 'linux',
-  release: 'ubuntu',
-  version: 'all',
-  cmd: 'vmstat 5', // command need to query os stats
-  parse: (data) => {
-    // parsing
-    return {
-      cpu: '50',
-      memory: '40'
-    };
-  }
-};
-
-const type3 = {
-  os: 'linux',
-  release: 'centos',
-  version: 'all',
-  cmd: 'vmstat 1', // command need to query os stats
-  parse: (data) => {
-    // parsing
-    return {
-      cpu: '50',
-      memory: '40'
-    };
-  }
-};
-
-export default [common, type1, type2, type3];
+export default [common];

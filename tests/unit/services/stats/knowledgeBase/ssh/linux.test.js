@@ -138,4 +138,16 @@ describe('test knowledge base rules', () => {
     assert.equal(matched.release, 'ubuntu');
     assert.equal(matched.version, '16.0.1');
   });
+
+  it('test case sensitive match', () => {
+    const rules = {
+      'linux': [{
+        os: 'linux',
+        release: 'all',
+      }]};
+    const matched = findRules({osType: 'Linux', release: 'ubuntu', version: '14.0'}, rules);
+    assert.equal(matched.os, 'linux');
+    assert.equal(matched.release, 'all');
+    assert.equal(matched.version, undefined);
+  });
 });

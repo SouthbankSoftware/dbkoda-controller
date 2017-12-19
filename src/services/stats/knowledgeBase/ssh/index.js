@@ -36,7 +36,7 @@ export const rules = {
 export const findRules = ({osType, release, version}, rules) => {
   let matchedOs = [];
   _.forOwn(rules, (value, key) => {
-    if (key === osType) {
+    if (key === osType.toLowerCase()) {
       matchedOs = value;
     }
   });
@@ -87,6 +87,6 @@ export const findRules = ({osType, release, version}, rules) => {
  * @param version   the os version
  * @returns {*}
  */
-export const getKnowledgeBaseRules = (osType, release, version) => {
+export const getKnowledgeBaseRules = ({osType, release, version}) => {
   return findRules({osType, release, version}, rules);
 };

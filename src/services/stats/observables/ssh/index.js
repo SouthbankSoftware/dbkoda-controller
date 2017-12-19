@@ -21,7 +21,7 @@
 
 /* eslint-disable class-methods-use-this */
 
-import {Observable, Observer} from 'rxjs';
+import Rx, {Observable, Observer} from 'rxjs';
 // $FlowFixMe
 import {Client} from 'ssh2';
 import _ from 'lodash';
@@ -29,20 +29,16 @@ import _ from 'lodash';
 import sshTunnel from 'open-ssh-tunnel';
 // $FlowFixMe
 import errors from 'feathers-errors';
+import os from 'os';
+
 import type {ObservableWrapper, ObservaleValue} from '../ObservableWrapper';
-
-
-const Rx = require('rxjs');
+import {getKnowledgeBaseRules, items} from '../../knowledgeBase/ssh';
 
 const loadCommands = require('../../../../config').loadCommands;
 
-const sshKnowledge = require('../../knowledgeBase');
-
-const {items, getKnowledgeBaseRules} = sshKnowledge;
-
 
 export default class SSHCounter implements ObservableWrapper {
-  osType: string;
+  osType: Object = {};
   config: Object;
   rxObservable: ?Observable<ObservaleValue> = null;
   items: Array<*>;
@@ -54,8 +50,7 @@ export default class SSHCounter implements ObservableWrapper {
   observer: Observer<ObservaleValue>;
   displayName = 'SSH Stats';
   samplingRate: number;
-  releaseType: string;
-  releaseVersion: string;
+  knowledgeBase: Object;
 
   constructor() {
     this.config = {interval: 2, cmd: 'vmstat'};
@@ -136,12 +131,46 @@ export default class SSHCounter implements ObservableWrapper {
     });
   }
 
+  getValueFromPair(pair: string): string {
+    const split = pair.split('=');
+    if (split.length > 1) {
+      return split[1].replace(/"/g, '').trim();
+    }
+    return split[0];
+  }
+
   createSshConnection(sshOpts: Object, resolve: Function, reject: Function) {
     this.client = new Client();
     this.client
       .on('ready', () => {
         log.info('Client :: ready');
-        this.createShell(resolve, reject);
+        this.exeCmd('uname -s')
+          .then((osType) => {
+            if (osType) {
+              this.osType.osType = osType.trim();
+            }
+            return this.exeCmd('cat /etc/os-release');
+          })
+          .then((release) => {
+            log.info(release);
+            if (!release) {
+              const splitted = release.split(os.platform() === 'win32' ? '\n\r' : '\n');
+              splitted.forEach((str) => {
+                if (str.toLowerCase().match(/name=/)) {
+                  this.osType.release = this.getValueFromPair(str);
+                }
+                if (str.toLowerCase().match(/version_id=/)) {
+                  this.osType.version = this.getValueFromPair(str);
+                }
+              });
+            }
+            log.info('get os type ', this.osType);
+            this.knowledgeBase = getKnowledgeBaseRules(this.osType);
+            if (!this.knowledgeBase) {
+              return reject(`Unsupported Operation System ${this.osType.os}`);
+            }
+            this.createShell(resolve, reject);
+          });
       })
       .on('error', (err) => {
         reject(new errors.BadRequest('Client Error: ' + err.message));
@@ -149,11 +178,27 @@ export default class SSHCounter implements ObservableWrapper {
       .connect(_.omit(sshOpts, 'cwd'));
   }
 
+  exeCmd(cmd: string): Promise<*> {
+    let output = '';
+    return new Promise((resolve) => {
+      this.client.exec(cmd, (err, stream) => {
+        stream.on('close', () => {
+          resolve(output);
+        }).on('data', (data) => {
+          output += data.toString('utf8');
+        }).stderr.on('data', (data) => {
+          log.error(data);
+          resolve(null);
+        });
+      });
+    });
+  }
+
   createShell(resolve: Function, reject: Function) {
     this.client.shell(
       false,
       {
-        pty: true,
+        pty: false,
       },
       (err, stream) => {
         if (err) {
@@ -162,20 +207,7 @@ export default class SSHCounter implements ObservableWrapper {
         }
         stream.setEncoding('utf8');
         stream.on('data', (data) => {
-          if (this.osType) {
-            this.postProcess(data);
-          } else if (!this.osType && this.sendOsTypeCmd) {
-            if (data.match(/Linux/i)) {
-              // this is linux os
-              this.osType = 'linux';
-              this.execute();
-            } else if (data.match(/Darwin/i)) {
-              // this is mac os
-              this.osType = 'mac';
-            }
-          } else if (this.osType && this.sendOsTypeCmd) {
-            this.observer.error(`Doesnt support the OS ${this.osType}`);
-          }
+          this.postProcess(data);
         });
         stream.on('finish', () => {
           log.info('Stream :: finish');
@@ -189,16 +221,12 @@ export default class SSHCounter implements ObservableWrapper {
             'Stream :: close :: code: ' + code + ', signal: ' + signal
           );
         });
-        this.sendOsTypeCmd = true;
-        if (!this.osType) {
-          stream.write('uname\n');
-        }
         this.stream = stream;
+        this.execute();
         return resolve();
       }
     );
   }
-
 
 
   execute() {
@@ -226,7 +254,8 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   postProcess(output: Object) {
-    const o = getKnowledgeBaseRules(this.osType).parse(output);
+    const o = this.knowledgeBase.parse(output);
+    o.profileId = this.profileId;
     if (o.value) {
       this.observer.next(o);
     }
