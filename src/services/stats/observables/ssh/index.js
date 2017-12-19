@@ -33,13 +33,12 @@ import type {ObservableWrapper, ObservaleValue} from '../ObservableWrapper';
 
 
 const Rx = require('rxjs');
-const os = require('os');
 
 const loadCommands = require('../../../../config').loadCommands;
 
 const sshKnowledge = require('../../knowledgeBase');
 
-const {items} = sshKnowledge;
+const {items, getKnowledgeBaseRules} = sshKnowledge;
 
 
 export default class SSHCounter implements ObservableWrapper {
@@ -55,6 +54,8 @@ export default class SSHCounter implements ObservableWrapper {
   observer: Observer<ObservaleValue>;
   displayName = 'SSH Stats';
   samplingRate: number;
+  releaseType: string;
+  releaseVersion: string;
 
   constructor() {
     this.config = {interval: 2, cmd: 'vmstat'};
@@ -164,10 +165,13 @@ export default class SSHCounter implements ObservableWrapper {
           if (this.osType) {
             this.postProcess(data);
           } else if (!this.osType && this.sendOsTypeCmd) {
-            if (data.match(/linux/i)) {
+            if (data.match(/Linux/i)) {
               // this is linux os
-              this.osType = data;
+              this.osType = 'linux';
               this.execute();
+            } else if (data.match(/Darwin/i)) {
+              // this is mac os
+              this.osType = 'mac';
             }
           } else if (this.osType && this.sendOsTypeCmd) {
             this.observer.error(`Doesnt support the OS ${this.osType}`);
@@ -195,6 +199,8 @@ export default class SSHCounter implements ObservableWrapper {
     );
   }
 
+
+
   execute() {
     if (!this.stream) {
       throw new errors.BadRequest(`Connection not exist ${this.profileId}`);
@@ -219,65 +225,10 @@ export default class SSHCounter implements ObservableWrapper {
     return Promise.reject();
   }
 
-  postProcess(d: Object) {
-    log.debug('post process ', d);
-    // parse the vmstat command output
-    const splited = d.split(os.platform() === 'win32' ? '\n\r' : '\n');
-    const output: any = {timestamp: (new Date()).getTime(), profileId: this.profileId};
-    splited.forEach((line) => {
-      if (line.match(/procs/) && line.match(/memory/)) {
-        // this is header
-      } else if (line.match(/swpd/ && line.match(/buff/))) {
-        // this is header
-      } else {
-        const items = _.without(line.split(' '), '');
-        if (items.length >= 17) {
-          const intItems = items.map(item => parseInt(item, 10));
-          const data: any = {
-            details: {
-              procs: {
-                r: intItems[0], // The number of processes waiting for run time
-                b: intItems[1], // The number of processes in uninterruptible sleep,
-              },
-              memory: {
-                swpd: intItems[2], // the amount of virtual memory used.
-                free: intItems[3], // the amount of idle memory
-                buff: intItems[4], // the amount of memory used as buffers
-                cache: intItems[5], // the amount of memory used as cache
-              },
-              swap: {
-                si: intItems[6], // Amount of memory swapped in from disk
-                so: intItems[7], // Amount of memory swapped to disk (/s).
-              },
-              io: {
-                bi: intItems[8], // Blocks received from a block device (blocks/s).
-                bo: intItems[9], // Blocks sent to a block device (blocks/s).
-              },
-              system: {
-                in: intItems[10], // The number of interrupts per second, including the clock.
-                cs: intItems[11], // The number of context switches per second
-              },
-              cpu: {
-                us: intItems[12], //  Time spent running non-kernel code. (user time, including nice time)
-                sy: intItems[13], //  Time spent running kernel code. (system time)
-                id: intItems[14], //  Time spent idle. Prior to Linux 2.5.41, this includes IO-wait time
-                wa: intItems[15], //  Time spent waiting for IO. Prior to Linux 2.5.41, included in idle.
-                st: intItems[16], //  Time stolen from a virtual machine. Prior to Linux 2.6.11, unknown
-              }
-            }
-          };
-          data.cpu = {usage: data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st};
-          const totalMemory = data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache + data.details.memory.free;
-          const usedMemory = data.details.memory.swpd + data.details.memory.buff;
-          data.memory = {
-            usage: parseInt((usedMemory / totalMemory) * 100, 10),
-          };
-          output.value = data;
-        }
-      }
-    });
-    if (output.value) {
-      this.observer.next(output);
+  postProcess(output: Object) {
+    const o = getKnowledgeBaseRules(this.osType).parse(output);
+    if (o.value) {
+      this.observer.next(o);
     }
   }
 

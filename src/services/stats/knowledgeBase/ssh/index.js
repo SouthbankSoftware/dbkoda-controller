@@ -21,19 +21,72 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* List of indentifiers/keys for items to be observed */
-export const items = ['cpu', 'memory', 'disk'];
 
-export default {
-  linux: {
-    common: {
-      cmd: 'vmstat',
-      parse: () => {
+import _ from 'lodash';
+import linuxStats from './linux';
 
-      }
-    },
-  },
-  mac: {
+export const items = ['cpu', 'memory'];
 
+export const rules = {
+  linux: linuxStats,
+  mac: {}
+};
+
+
+export const findRules = ({osType, release, version}, rules) => {
+  let matchedOs = [];
+  _.forOwn(rules, (value, key) => {
+    if (key === osType) {
+      matchedOs = value;
+    }
+  });
+  if (!matchedOs || matchedOs.length === 0) {
+    return null;
   }
+  if (!release) {
+    // no release specified return the first as default one
+    return matchedOs[0];
+  }
+  const matchedRelease = [];
+  matchedOs.forEach((mos) => {
+    if (mos.release.toLowerCase().indexOf(release.toLowerCase()) >= 0) {
+      matchedRelease.push(mos);
+    }
+    if (mos.release === 'all') {
+      matchedRelease.unshift(mos);
+    }
+  });
+  if (matchedRelease.length === 0) {
+    return matchedOs[0];
+  }
+  if (!version) {
+    // get the closest match
+    return matchedRelease[matchedRelease.length - 1];
+  }
+  const matchedVersion = [];
+  matchedRelease.forEach((rel) => {
+    if (version.indexOf(rel.version) >= 0) {
+      matchedVersion.push(rel);
+    }
+    if (rel.version === 'all') {
+      matchedVersion.unshift(rel);
+    }
+  });
+  if (matchedVersion.length === 0) {
+    return matchedRelease[matchedRelease.length - 1];
+  }
+  return matchedVersion[matchedVersion.length - 1];
+};
+
+
+/**
+ * find the knowledge base rules
+ *
+ * @param osType  the operation system type, could be linux, mac, windows
+ * @param release could be centos, ubuntu, coreos etc.
+ * @param version   the os version
+ * @returns {*}
+ */
+export const getKnowledgeBaseRules = (osType, release, version) => {
+  return findRules({osType, release, version}, rules);
 };
