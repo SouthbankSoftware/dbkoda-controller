@@ -231,8 +231,8 @@ dbkInx.testPlans = function() {
     // Second time through there should be no better index available.
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
 
-var x = db.getSiblingDB('SampleCollections').getCollection('Sakila_films').find(
-  { '$and':[
+   var x = db.getSiblingDB('SampleCollections').getCollection('Sakila_films').find(
+    { '$and':[
          { 'Title':{ $eq:'FRED' } },
          { 'Actors.Firstname':{ $eq:'JOE' } },
          { 'Category':{ $eq:'G' } }
@@ -259,7 +259,7 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   // existingIndexEntries = {}; var orDetected = false; var multiIndexes = [];
   var indId = 0;
   var indKeys = []; // Global for the filter recusive routine
-  var projections = {};
+  var projection = {};
   indKeys[0] = {};
 
   if (dbkInx.debug) {
@@ -332,10 +332,10 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
         });
         if (includeProjection) {
           projection = step.transformBy;
+          if (dbkInx.debug) {
+            print('Projection detected: ', JSON.stringify(projection));
+          }
         }
-      }
-      if (dbkInx.debug) {
-        print('Projection detected: ', JSON.stringify(projection));
       }
     }
   };
