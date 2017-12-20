@@ -26,10 +26,10 @@ import _ from 'lodash';
 
 const common = {
   os: 'linux',
-  release: 'all',
-  version: 'all',
+  release: 'all', // ubuntu, centos, red hat, etc.
+  version: 'all', // 15.0, 16.0, etc.
   cmd: 'vmstat $samplingRate', // command need to query os stats
-  samplingRate: 5, // define the sampling rete in seconds
+  samplingRate: 5, // define the sampling rate in seconds
   parse: (d) => { // define the parse command output logic
     log.debug('post process ', d);
     // parse the vmstat command output
@@ -77,12 +77,10 @@ const common = {
               }
             }
           };
-          data.cpu = {usage: data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st};
+          data.cpu = data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st;
           const totalMemory = data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache + data.details.memory.free;
           const usedMemory = data.details.memory.swpd + data.details.memory.buff;
-          data.memory = {
-            usage: parseInt((usedMemory / totalMemory) * 100, 10),
-          };
+          data.memory = parseInt((usedMemory / totalMemory) * 100, 10),
           output.value = data;
         }
       }

@@ -98,7 +98,7 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   createConnection(connObj: Object): Promise<*> {
-    const sshOpts = {};
+    let sshOpts = {};
     return new Promise((resolve, reject) => {
       this
         .createSshTunnel(connObj)
@@ -111,10 +111,7 @@ export default class SSHCounter implements ObservableWrapper {
             sshOpts.password = connObj.sshPassword;
           } else {
             // direct ssh connection
-            sshOpts.host = connObj.sshOpts.host;
-            sshOpts.username = connObj.sshOpts.username;
-            sshOpts.password = connObj.sshOpts.password;
-            sshOpts.port = connObj.sshOpts.port;
+            sshOpts = connObj.sshOpts;
           }
           this.createSshConnection(sshOpts, resolve, reject);
         })
@@ -252,11 +249,11 @@ export default class SSHCounter implements ObservableWrapper {
 
   postProcess(output: Object) {
     const o = this.knowledgeBase.parse(output);
-    if (o) {
-      o.profileId = this.profileId;
-      if (o.value) {
-        this.observer.next(o);
-      }
+    if (o && o.value) {
+      const nextObj = _.pick(o, ['value', 'timestamp']);
+      nextObj.profileId = this.profileId;
+      nextObj.value = _.pick(o.value, this.items);
+      this.observer.next(nextObj);
     }
   }
 
