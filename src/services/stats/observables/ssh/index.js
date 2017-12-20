@@ -248,12 +248,17 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   postProcess(output: Object) {
-    const o = this.knowledgeBase.parse(output);
-    if (o && o.value) {
-      const nextObj = _.pick(o, ['value', 'timestamp']);
-      nextObj.profileId = this.profileId;
-      nextObj.value = _.pick(o.value, this.items);
-      this.observer.next(nextObj);
+    try {
+      const o = this.knowledgeBase.parse(output);
+      if (o && o.value) {
+        const nextObj = _.pick(o, ['value', 'timestamp']);
+        nextObj.profileId = this.profileId;
+        nextObj.value = _.pick(o.value, this.items);
+        this.observer.next(nextObj);
+      }
+    } catch (err) {
+      log.error(err);
+      this.observer.error(err);
     }
   }
 
