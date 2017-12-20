@@ -24,6 +24,7 @@ import {Observable, Observer} from 'rxjs';
 
 import type {ObservaleValue} from '../ObservableWrapper';
 import {ObservableWrapper} from '../ObservableWrapper';
+import {getKnowledgeBaseRules} from '../../knowledgeBase/topology';
 
 export default class TopologyMonitor implements ObservableWrapper {
   rxObservable: ?Observable<ObservaleValue> = null;
@@ -35,16 +36,21 @@ export default class TopologyMonitor implements ObservableWrapper {
   samplingRate: number;
   items: string[] = ['topology'];
   displayName: string = 'Topology Monitor';
+  knowledgeBase: Object;
 
   init(profileId: string, options: Object): Promise<*> {
     this.profileId = profileId;
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
+    this.knowledgeBase = getKnowledgeBaseRules();
+    if (!this.knowledgeBase) {
+      return Promise.reject('Cant find knowledge base');
+    }
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
       this.observer = observer;
       this.start(this.db);
       return () => {
-        this.db.topology.removeListener('serverDescriptionChanged', this.topologyListener);
+        this.db.topology.removeListener('serverDescriptionChanged', this.knowledgeBase);
       };
     });
     return Promise.resolve();
@@ -73,7 +79,7 @@ export default class TopologyMonitor implements ObservableWrapper {
     console.log('received serverDescriptionChanged,', event);
     if (event && event.newDescription && event.newDescription.type !== 'Unknown') {
       log.info('replicaset topology was changed');
-      this.queryMemberStatus(this.db).then((members) => {
+      this.knowledgeBase.parse(this.db).then((members) => {
         log.info('new members:', members);
         this.observer.next({
           profileId: this.profileId,
@@ -82,21 +88,6 @@ export default class TopologyMonitor implements ObservableWrapper {
         });
       }).catch(err => this.observer.error(err));
     }
-  }
-
-  queryMemberStatus(db: Object): Promise<*> {
-    return new Promise((resolve, reject) => {
-      db.admin().command({replSetGetStatus: 1}, (err, result) => {
-        if (!result || err) {
-          reject(err);
-          return;
-        }
-        resolve(result.members);
-      });
-    }).catch((err) => {
-      log.error('failed to get replica set ', err);
-      this.observer.error(err);
-    });
   }
 
   destroy(): Promise<*> {
