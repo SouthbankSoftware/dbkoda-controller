@@ -39,7 +39,7 @@ MongoClient.connect(url, function(err, db) {
   if (err) throw err;
 
   const monitor = new TopologyMonitor();
-  monitor.init('id', {mongoConnection: {driver: db}});
+  monitor.init('id', {mongoConnection: {driver: db, dbVersion: '3.6'}});
   monitor.rxObservable.subscribe(
     x => console.log('get sub ', x),
     (e) => console.log('error ',e)

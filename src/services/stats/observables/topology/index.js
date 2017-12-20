@@ -42,7 +42,7 @@ export default class TopologyMonitor implements ObservableWrapper {
     this.profileId = profileId;
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
-    this.knowledgeBase = getKnowledgeBaseRules();
+    this.knowledgeBase = getKnowledgeBaseRules(this.mongoConnection.dbVersion);
     if (!this.knowledgeBase) {
       return Promise.reject('Cant find knowledge base');
     }
