@@ -318,44 +318,39 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   // Check for existing indexes
   var dbName = explainPlan.queryPlanner.namespace.split('.')[0];
   var collectionName = explainPlan.queryPlanner.namespace.split('.')[1];
-  var indexes = db.
-  getSiblingDB(dbName).
-  getCollection(collectionName).
-  getIndexes();
-  var existingIndexes = [];
-  for (var idx = 0; idx < indKeys.length; idx += 1) {
-    indexes.forEach(function(existingIndex) {
-      if (dbkInx.debug) {
-        print('====Checking for index match');
-        printjson(existingIndex.key);
-        printjson(indKeys[idx]);
-      }
-      if (JSON.stringify(existingIndex.key) === JSON.stringify(indKeys[idx])) {
-        existingIndexes.push(idx);
-        if (dbkInx.debug) {
-          print('====Index already exists');
-        }
-      }
-    });
-  }
-
+  var indexes = db.getSiblingDB(dbName).getCollection(collectionName).getIndexes();
+  
   var advisedIndexes = [];
-  for (var idx = 0; idx < indKeys.length; idx += 1) {  //eslint-disable-line
-    if (!(idx in existingIndexes)) {
-      advisedIndexes.push(indKeys[idx]);
+  indKeys.forEach(function(suggestedInx){
+    if (!dbkInx.checkForExistingIndex(indexes,suggestedInx)) {
+      advisedIndexes.push(suggestedInx);
     }
-  }
-  if (dbkInx.debug) {
-    print(
-      'was ',
-      indKeys.length,
-      ' indexes ',
-      advisedIndexes.length,
-      ' not existing'
-    );
-    printjson(existingIndexes);
-    printjson(indKeys);
-  }
+  });
 
   return advisedIndexes;
+};
+
+//
+// Function to check for an existing index or a index with the same leading keys
+//
+dbkInx.checkForExistingIndex = function(existingIndexes, proposedKeys) {
+  var proposedLen = Object.keys(proposedKeys).length;
+  var foundMatch = false;
+  existingIndexes.forEach(function(index) {
+    var adjustedKeys = {};
+    // Each existing index
+    var existKeys = Object.keys(index.key);
+    var leadingKeys = existKeys.splice(0, proposedLen); //Slice down to the same number of keys
+    leadingKeys.forEach(function(leadkey) {
+      adjustedKeys[leadkey] = index.key[leadkey];
+    });
+    if (dbkInx.debug) {
+      print('Comparing proposed key ',JSON.stringify(proposedKeys), 'to',JSON.stringify(adjustedKeys));
+    }
+    if (JSON.stringify(adjustedKeys) === JSON.stringify(proposedKeys)) {
+      if (dbkInx.debug) print('Matched');
+      foundMatch = true;
+    }
+  });
+  return foundMatch;
 };
