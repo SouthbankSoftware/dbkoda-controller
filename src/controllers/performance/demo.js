@@ -70,6 +70,7 @@ const sshOpts = {
 
 const counter = new SSHCounter();
 counter.init('1', {'mongoConnection': sshOpts});
+counter.samplingRate = 1;
 counter.rxObservable.subscribe(
   x => console.log('get sub ', x),
   (e) => console.log('complete1',e)

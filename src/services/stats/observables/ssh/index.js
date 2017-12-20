@@ -50,6 +50,7 @@ export default class SSHCounter implements ObservableWrapper {
   samplingRate: number;
   knowledgeBase: Object;
   statsCmd: string;
+  intervalId: number;
 
   constructor() {
     this.rxObservable = new Rx.Subject();
@@ -161,6 +162,9 @@ export default class SSHCounter implements ObservableWrapper {
             if (!this.knowledgeBase || !this.knowledgeBase.cmd) {
               return reject(`Unsupported Operation System ${this.osType.os}`);
             }
+            if (this.samplingRate) {
+              this.knowledgeBase.samplingRate = this.samplingRate;
+            }
             this.statsCmd = buildCommand(this.knowledgeBase);
             if (!this.statsCmd) {
               return reject('Cant find command from knowledge base on ', this.osType);
@@ -215,7 +219,11 @@ export default class SSHCounter implements ObservableWrapper {
         // stream.on('close', (code, signal) => {
         // });
         this.stream = stream;
-        this.execute();
+        if (this.knowledgeBase.cmd.indexOf('$samplingRate') >= 0) {
+          this.execute();
+        } else {
+          this.intervalId = setInterval(() => this.execute(), this.samplingRate * 1000);
+        }
         return resolve();
       }
     );
@@ -278,9 +286,13 @@ export default class SSHCounter implements ObservableWrapper {
 
   setSamplingRate(rate: number): void {
     log.info('change sampling rate');
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
     if (this.stream) {
       this.stream.close();
       this.knowledgeBase.samplingRate = rate;
+      this.samplingRate = rate;
       this.statsCmd = buildCommand(this.knowledgeBase);
       try {
         new Promise((resolve, reject) => {
