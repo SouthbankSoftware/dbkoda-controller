@@ -79,7 +79,10 @@ const common = {
           };
           data.cpu = data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st;
           const totalMemory = data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache + data.details.memory.free;
-          const usedMemory = data.details.memory.swpd + data.details.memory.buff;
+          let usedMemory = data.details.memory.swpd + data.details.memory.buff;
+          if (usedMemory > totalMemory) {
+            usedMemory = totalMemory;
+          }
           data.memory = parseFloat((usedMemory / totalMemory) * 100, 10);
           output.value = data;
         }
