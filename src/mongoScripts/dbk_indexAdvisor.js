@@ -440,7 +440,7 @@ dbkInx.existingRedundantIndexes = function(existingIndexes) {
   var redundantIndexes = [];
   existingIndexes.forEach(function(index1) {
     // print('proposed',JSON.stringify(proposedIndex));
-    existingIndexes.forEach(function(index2) {
+    existingIndexes.some(function(index2) {
       // print('exist',JSON.stringify(existingIndex));
       if (index1.name !== index2.name) {
         var existingLen = Object.keys(index1.key).length;
@@ -454,11 +454,40 @@ dbkInx.existingRedundantIndexes = function(existingIndexes) {
             becauseIndex: index2.name,
             becauseKeys: JSON.stringify(index2.key)
           });
+          return (true);
         }
       }
     });
   });
   return redundantIndexes;
+};
+
+dbkInx.redundantDbIndexes = function(dbName) {
+  var output = [];
+  db.getSiblingDB(dbName).getCollectionNames().forEach(function(collection) {
+    print(collection);
+    indexes = db.getSiblingDB(dbName).getCollection(collection).getIndexes();
+    var redundant = dbkInx.existingRedundantIndexes(indexes);
+    if (redundant.length > 0) {
+      redundant.forEach(function(r) {
+        var comment =
+          '\\ Index ' + collection + '.' +
+          r.indexName +
+          '(' +
+          r.key +
+          ') is covered by ' +
+          r.becauseIndex +
+          ' (' +
+          r.becauseKeys +
+          ')';
+        output.push(comment);
+        var dropCmd = 'db.getSiblingDB(' + dbName + ').getCollection(' + collection +
+            ').dropIndex(' + r.indexName + ');';
+        output.push(dropCmd);
+      });
+    }
+  });
+  return (output);
 };
 
 dbkInx.firstElements = function(object, N) {
