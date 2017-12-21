@@ -250,13 +250,7 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   // Only works when there are one level of nesting in conditions.  Eg You can't
   // nest $and within $or $or only generates a single index for $OR, where
   // multiple would be preferable
-  //
-  // TODO: This won't work with deeply nested conditions and not      ideal for
-  // $or conditions
-  //
-  // Usage: var indexKeys=dbkIdx.suggestIndexKeys(explainDoc);
-  // db.Sakila_films.createIndex(indexKeys); var indexEntries = {}; var
-  // existingIndexEntries = {}; var orDetected = false; var multiIndexes = [];
+
   var indId = 0;
   var indKeys = []; // Global for the filter recusive routine
   var projection = {};
@@ -463,31 +457,27 @@ dbkInx.existingRedundantIndexes = function(existingIndexes) {
 };
 
 dbkInx.redundantDbIndexes = function(dbName) {
-  var output = [];
+  var indexList = [];
   db.getSiblingDB(dbName).getCollectionNames().forEach(function(collection) {
-    print(collection);
+    // print(collection);
     indexes = db.getSiblingDB(dbName).getCollection(collection).getIndexes();
     var redundant = dbkInx.existingRedundantIndexes(indexes);
     if (redundant.length > 0) {
       redundant.forEach(function(r) {
-        var comment =
-          '\\ Index ' + collection + '.' +
-          r.indexName +
-          '(' +
-          r.key +
-          ') is covered by ' +
-          r.becauseIndex +
-          ' (' +
-          r.becauseKeys +
-          ')';
-        output.push(comment);
-        var dropCmd = 'db.getSiblingDB(' + dbName + ').getCollection(' + collection +
-            ').dropIndex(' + r.indexName + ');';
-        output.push(dropCmd);
+
+        var redundantIndex = {
+          dbName: dbName,
+          collection: collection,
+          indexName: r.indexName,
+          key: r.key,
+          becauseIndex: r.becauseIndex,
+          becauseKeys: r.becauseKeys
+        };
+        indexList.push(redundantIndex);
       });
     }
   });
-  return (output);
+  return indexList;
 };
 
 dbkInx.firstElements = function(object, N) {
