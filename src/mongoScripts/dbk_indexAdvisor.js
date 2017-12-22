@@ -483,7 +483,7 @@ dbkInx.suggestIndexesAndRedundants = function(explainPlan) {
     getSiblingDB(dbName).
     getCollection(collectionName).
     getIndexes();
-  printjson(existIndexes);
+    // printjson(existIndexes);
     var newIndexes = dbkInx.suggestIndexKeys(explainPlan);
     var redundantIndexes = dbkInx.proposedRedundantIndexes(existIndexes, newIndexes);
     return ({
