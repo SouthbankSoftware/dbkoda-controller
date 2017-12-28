@@ -27,15 +27,25 @@
 /* eslint no-var: 0 */
 /* eslint no-prototype-builtins: 0 */
 /* eslint camelcase: 0 */
-/* eslint prefer-arrow-callback: 0 */
-/* eslint object-shorthand: 0 */
-/* eslint vars-on-top: 0 */
+/*  eslint prefer-arrow-callback: 0  */
+/*  eslint object-shorthand: 0 */
+/*  eslint vars-on-top: 0 */
+/*  eslint dot-location: 0 */
+/*  eslint no-loop-func: 0 */
+/*  eslint no-undef: 0 */
+/*  eslint no-plusplus: 0 */
+/* eslint no-unused-vars: 0 */
+/* eslint prefer-destructuring: 0 */
+/* eslint no-restricted-globals: 0 */
+/* eslint block-scoped-var: 0 */
+/* eslint guard-for-in: 0 */
 
-dbk_Cs = {};
+
+var dbk_Cs = {};
 
 // Increment the totals for a specific element
 dbk_Cs.incSize = function(index, size) {
-  if (typeof dbk_Cs.sizes[index] === "undefined") {
+  if (typeof dbk_Cs.sizes[index] === 'undefined') {
     dbk_Cs.sizes[index] = size;
   } else {
     dbk_Cs.sizes[index] += size;
@@ -45,9 +55,9 @@ dbk_Cs.incSize = function(index, size) {
 // This is the recursive function to size a given
 // subset of the sample
 dbk_Cs.sizeSample = function(sample, parentId) {
-  //print("parentId=" + parentId+ " "+typeof parentId);
-  //print (sample);
-  if (typeof sample === "object" && sample != null) {
+  // print("parentId=" + parentId+ " "+typeof parentId);
+  // print (sample);
+  if (typeof sample === 'object' && sample != null) {
     if (sample.constructor === Array) {
       sample.forEach(function(d) {
         dbk_Cs.sizeElem(d, parentId);
@@ -58,12 +68,12 @@ dbk_Cs.sizeSample = function(sample, parentId) {
 
 // Size a single element
 dbk_Cs.sizeElem = function(doc, parentId) {
-  if (typeof doc === "object" && doc !== null) {
+  if (typeof doc === 'object' && doc !== null) {
     dbk_Cs.incSize(parentId, Object.bsonsize(doc));
     Object.keys(doc).forEach(function(k) {
-      //print("key=" + k);
-      if (typeof doc[k] === "object") {
-        //print("parentId (elem)="+parentId+" "+parentId.constructor);
+      // print("key=" + k);
+      if (typeof doc[k] === 'object') {
+        // print("parentId (elem)="+parentId+" "+parentId.constructor);
         dbk_Cs.sizeSample(doc[k], parentId.concat([k]));
       }
     });
@@ -80,18 +90,18 @@ dbk_Cs.collectionSize = function(dbName, collectionName, sampleSize) {
   if (dbe.majorVersion() < 3.2) {
     sampleClause = { $limit: sampleSize };
   }
-  var sample = collection.aggregate([sampleClause],{allowDiskUse: true});
+  var sample = collection.aggregate([sampleClause], {allowDiskUse: true});
 
   var sampleArray = sample.toArray();
 
   if (sampleArray.length === 0) {
-    return [{name: "Other", size: totalSize}];
-  } else {
-    dbk_Cs.sizeSample(sampleArray, ["total"]);
+    return [{name: 'Other', size: totalSize}];
   }
+    dbk_Cs.sizeSample(sampleArray, ['total']);
+
 
   output = dbk_Cs.sizes;
-  var sampleTotal = output["total"];
+  var sampleTotal = output.total;
   var multiplier = totalSize / sampleTotal;
   Object.keys(output).forEach(function(key) {
     output[key] *= multiplier;
@@ -105,19 +115,19 @@ dbk_Cs.convertJsonToHierarchy = function(jsObj) {
   var resObj = {};
   var obj;
   for (var key in jsObj) {
-    var keyArr = key.split(",");
+    var keyArr = key.split(',');
     if (keyArr.length == 1) {
       obj = { name: key, size: jsObj[key] };
       res.push(obj);
       resObj[key] = obj;
     } else {
       var parentKArr = keyArr;
-      var objKey = parentKArr.pop(); //get Object key
+      var objKey = parentKArr.pop(); // get Object key
 
       obj = { name: objKey, size: jsObj[key] };
       resObj[key] = obj;
 
-      var parentKey = parentKArr.join(",");
+      var parentKey = parentKArr.join(',');
 
       var parentObj = resObj[parentKey];
       if (parentObj) {
@@ -145,13 +155,13 @@ dbk_Cs.addOtherSum = function(obj) {
       }
     }
 
-    if (obj.name === "total") {
+    if (obj.name === 'total') {
       // We need "other" at the top level to make sure the chart doesn't
       // show the wrong size for the total data segment
-      obj.children.push({ name: "Other", size: obj.size - childSum });
+      obj.children.push({ name: 'Other', size: obj.size - childSum });
       obj.size = 0;
     } else {
-      obj.size = obj.size - childSum;
+      obj.size -= childSum;
     }
   }
 };

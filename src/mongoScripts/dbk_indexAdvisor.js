@@ -1,19 +1,15 @@
 //
 //  * dbKoda - a modern, open source code editor, for MongoDB.
-//  * Copyright (C) 2017-2018 Southbank Software
-//  *
-//  * This file is part of dbKoda.
-//  *
+//  * Copyright (C) 2017-2018 Southbank Software  *
+//  * This file is part of dbKoda.  *
 //  * dbKoda is free software: you can redistribute it and/or modify
 //  * it under the terms of the GNU Affero General Public License as
 //  * published by the Free Software Foundation, either version 3 of the
-//  * License, or (at your option) any later version.
-//  *
+//  * License, or (at your option) any later version.  *
 //  * dbKoda is distributed in the hope that it will be useful,
 //  * but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  * GNU Affero General Public License for more details.
-//  *
+//  * GNU Affero General Public License for more details.  *
 //  * You should have received a copy of the GNU Affero General Public License
 //  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -73,7 +69,7 @@ dbkInx.quick_explain = function(explainPlan) {
         step.filter.$or.forEach(function(filter) {
           keys.push(Object.keys(filter));
         });
-      } else {
+      } else if (!('$nor' in step.filter)) {
         keys.push(Object.keys(step.filter));
       }
     }
@@ -118,12 +114,9 @@ dbkInx.adviseCachedCollectionPlans = function(collectionName) {
 };
 
 dbkInx.adviseProfileQueries = function() {
-  db.system.profile. // eslint-disable-line
-  find({
-    op: 'query'
-  }).forEach(function(profile) {
-    // eslint-disable-line
-    // eslint-disable-line
+  db.system.profile; // eslint-disable-line.
+  find({ op: 'query' }).forEach(function(profile) {
+    // eslint-disable-line eslint-disable-line
     if (dbkInx.debug) printjson(profile.query);
     // var indexKeys = dbkInx.suggestIndexKeys(profile.execStats);
     // printjson(indexKeys);
@@ -149,99 +142,118 @@ dbkInx.testPlans = function() {
   for (var i = 1; i <= 1; i++) {
     if (dbkInx.debug) print(1);
     var explain = db.Sakila_films.
-    explain().
-    find({ Category: 'Documentary', Rating: 'PG' }).
-    sort({ Length: 1 }).
-    next();
+      explain().
+      find({ Category: 'Documentary', Rating: 'PG' }).
+      sort({ Length: 1 }).
+      next();
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
 
     db.Sakila_films.createIndex({ Category: 1 }); // eslint-disable-line
     if (dbkInx.debug) print(2);
     explain = db.Sakila_films.
-    explain().
-    find({ Category: 'Documentary', Rating: 'PG' }).
-    sort({ Length: 1 }).
-    next();
+      explain().
+      find({ Category: 'Documentary', Rating: 'PG' }).
+      sort({ Length: 1 }).
+      next();
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
 
     db.Sakila_films.createIndex({ Rating: 1 }); // eslint-disable-line
     if (dbkInx.debug) print(3);
     explain = db.Sakila_films.
-    explain().
-    find({ Category: 'Documentary', Rating: 'PG' }).
-    sort({ Length: 1 }).
-    next();
+      explain().
+      find({ Category: 'Documentary', Rating: 'PG' }).
+      sort({ Length: 1 }).
+      next();
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
     // print('ITERATING THROUGH ALL PLANS');
 
     explain = db.Sakila_films.
-    explain().
-    find({ Category: 'Documentary', Rating: 'PG' }).
-    next();
-    // printjson(dbkInx.suggestIndexKeys(explain.queryPlanner.winningPlan)); // eslint-disable-line
+      explain().
+      find({ Category: 'Documentary', Rating: 'PG' }).
+      next();
+    // printjson(dbkInx.suggestIndexKeys(explain.queryPlanner.winningPlan)); //
+    // eslint-disable-line
     explain = db.Sakila_films.
-    explain().
-    find({ $or: [{ Rating: 'PG' }, { Category: 'Family' }] }).
-    next();
+      explain().
+      find({
+        $or: [
+          {
+            Rating: 'PG'
+          },
+          {
+            Category: 'Family'
+          }
+        ]
+      }).
+      next();
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
     db.Sakila_films.createIndex({ Rating: 1 }); // eslint-disable-line
     db.Sakila_films.createIndex({ Category: 1 }); // eslint-disable-line
     if (dbkInx.debug) print(5);
     explain = db.Sakila_films.
-    explain().
-    find({
-      $or: [
-        { Rating: 'PG', 'Rental Duration': '6' },
-        { Category: 'Family', 'Rental Duration': '6' }
-      ]
-    }).
-    sort({ Length: 1 }).
-    next();
+      explain().
+      find({
+        $or: [
+          {
+            Rating: 'PG',
+            'Rental Duration': '6'
+          },
+          {
+            Category: 'Family',
+            'Rental Duration': '6'
+          }
+        ]
+      }).
+      sort({ Length: 1 }).
+      next();
     // printjson(explain); // eslint-disable-line
     // printjson(explain.queryPlanner.winningPlan);
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
     explain = db.Sakila_films.
-    explain().
-    find({
-      $or: [
-        { Rating: 'PG', 'Rental Duration': '6' },
-        { Category: 'Family', 'Rental Duration': '6' }
-      ]
-    }).
-    sort({ Length: -1, Rating: 1 }).
-    next();
-    // printjson(explain); // eslint-disable-line
+      explain().
+      find({
+        $or: [
+          {
+            Rating: 'PG',
+            'Rental Duration': '6'
+          },
+          {
+            Category: 'Family',
+            'Rental Duration': '6'
+          }
+        ]
+      }).
+      sort({ Length: -1, Rating: 1 }).
+      next();
+    // printjson(explain); // eslint-disable-lin e
     // printjson(explain.queryPlanner.winningPlan);
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
     // Second time through there should be no better index available.
     dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
-  }
 
+   var x = db.getSiblingDB('SampleCollections').getCollection('Sakila_films').find(
+    { '$and':[
+         { 'Title':{ $eq:'FRED' } },
+         { 'Actors.Firstname':{ $eq:'JOE' } },
+         { 'Category':{ $eq:'G' } }
+        ] },
+     { 'Title':1 }).sort({ 'Category':-1 }).explain();
+  }
   // db.Sakila_films.dropIndexes(); // eslint-disable-line
 };
 
 dbkInx.suggestIndexKeys = function(explainPlan) {
   //
-  // This function accepts an execution plan and generates an index
-  // definition that would avoid COLLSCAN and Sort
+  // This function accepts an execution plan and generates an index definition
+  // that would avoid COLLSCAN and Sort
   //
-  // Only works when there are one level of nesting in conditions.  Eg
-  // You can't nest $and within $or
-  // $or only generates a single index for $OR, where multiple would be
-  // preferable
-  //
-  // TODO: This won't work with deeply nested conditions and not
-  //      ideal for $or conditions
-  //
-  // Usage:
-  // var indexKeys=dbkIdx.suggestIndexKeys(explainDoc);
-  // db.Sakila_films.createIndex(indexKeys);
-  // var indexEntries = {};
-  // var existingIndexEntries = {};
-  // var orDetected = false;
-  // var multiIndexes = [];
+  // Only works when there are one level of nesting in conditions.  Eg You can't
+  // nest $and within $or $or only generates a single index for $OR, where
+  // multiple would be preferable
+
   var indId = 0;
   var indKeys = []; // Global for the filter recusive routine
+  var projection = {};
   indKeys[0] = {};
 
   if (dbkInx.debug) {
@@ -265,7 +277,8 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
       filter.$and.forEach(function(subfilter) {
         filterParser(subfilter);
       });
-    } else {
+    } else if (firstArg !== '$nor') {
+      // Not equals can't be supported by index
       var keys = Object.keys(filter);
       // printjson(filter);
       keys.forEach(function(key) {
@@ -286,8 +299,8 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
       });
     }
     //
-    // We should have got every index we need other than for a sort
-    // already.  Only if a sort turns up do we need to add more keys
+    // We should have got every index we need other than for a sort already.  Only
+    // if a sort turns up do we need to add more keys
     //
 
     if (step.stage === 'SORT') {
@@ -304,11 +317,39 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
         });
       }
     }
+    if (step.stage === 'PROJECTION') {
+      if ('transformBy' in step) {
+        var includeProjection = true;
+        Object.keys(step.transformBy).forEach(function(key) {
+          // Only create indexes for "include"projections
+          if (step.transformBy[key] === 0) includeProjection = false;
+        });
+        if (includeProjection) {
+          projection = step.transformBy;
+          if (dbkInx.debug) {
+            print('Projection detected: ', JSON.stringify(projection));
+          }
+        }
+      }
+    }
   };
 
   var baseIndexes = filterParser(explainPlan.queryPlanner.parsedQuery);
   // printjson(baseIndexes);
   checkInputStage(explainPlan.queryPlanner.winningPlan, 1);
+
+  // Add projections to each index
+
+  if (Object.keys(projection).length > 0) {
+    for (var indI = 0; indI < indKeys.length; indI++) {
+      Object.keys(projection).forEach(function(projKey) {
+        if (!(projKey in indKeys[indI])) {
+          // Index can't have same key twice
+          indKeys[indI][projKey] = 1;
+        }
+      });
+    }
+  }
 
   if (dbkInx.debug) {
     print('Suggested Indexes');
@@ -319,43 +360,153 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   var dbName = explainPlan.queryPlanner.namespace.split('.')[0];
   var collectionName = explainPlan.queryPlanner.namespace.split('.')[1];
   var indexes = db.
-  getSiblingDB(dbName).
-  getCollection(collectionName).
-  getIndexes();
-  var existingIndexes = [];
-  for (var idx = 0; idx < indKeys.length; idx += 1) {
-    indexes.forEach(function(existingIndex) {
-      if (dbkInx.debug) {
-        print('====Checking for index match');
-        printjson(existingIndex.key);
-        printjson(indKeys[idx]);
+    getSiblingDB(dbName).
+    getCollection(collectionName).
+    getIndexes();
+
+  var advisedIndexes = [];
+  indKeys.forEach(function(suggestedInx) {
+    if (!dbkInx.checkForExistingIndex(indexes, suggestedInx)) {
+      advisedIndexes.push(suggestedInx);
+    }
+  });
+
+  return advisedIndexes;
+};
+
+//
+// Function to check for an existing index or a index with the same leading keys
+//
+dbkInx.checkForExistingIndex = function(existingIndexes, proposedKeys) {
+  var proposedLen = Object.keys(proposedKeys).length;
+  var foundMatch = false;
+  existingIndexes.forEach(function(index) {
+    var adjustedKeys = {};
+    // Each existing index
+    var existKeys = Object.keys(index.key);
+    var leadingKeys = existKeys.splice(0, proposedLen); // Slice down to the same number of keys
+    leadingKeys.forEach(function(leadkey) {
+      adjustedKeys[leadkey] = index.key[leadkey];
+    });
+    if (dbkInx.debug) {
+      print(
+        'Comparing proposed key ',
+        JSON.stringify(proposedKeys),
+        'to',
+        JSON.stringify(adjustedKeys)
+      );
+    }
+    if (JSON.stringify(adjustedKeys) === JSON.stringify(proposedKeys)) {
+      if (dbkInx.debug) print('Matched');
+      foundMatch = true;
+    }
+  });
+  return foundMatch;
+};
+
+//
+// This function looks for any indexes that will be made redundant by
+// the proposed changes x
+//
+dbkInx.proposedRedundantIndexes = function(existingIndexes, proposedIndexes) {
+  var redundantIndexes = [];
+  proposedIndexes.forEach(function(proposedIndex) {
+    // print('proposed',JSON.stringify(proposedIndex));
+    existingIndexes.forEach(function(existingIndex) {
+      // print('exist',JSON.stringify(existingIndex));
+      var existingLen = Object.keys(existingIndex.key).length;
+      // print ('len',existingLen);
+      var matchKeys = dbkInx.firstElements(proposedIndex, existingLen);
+      // print('match',JSON.stringify(matchKeys));
+      if (JSON.stringify(matchKeys) === JSON.stringify(existingIndex.key)) {
+        redundantIndexes.push({
+          indexName: existingIndex.name,
+          key: existingIndex.key,
+          because: proposedIndex
+        });
       }
-      if (JSON.stringify(existingIndex.key) === JSON.stringify(indKeys[idx])) {
-        existingIndexes.push(idx);
-        if (dbkInx.debug) {
-          print('====Index already exists');
+    });
+  });
+  return redundantIndexes;
+};
+
+dbkInx.existingRedundantIndexes = function(existingIndexes) {
+  var redundantIndexes = [];
+  existingIndexes.forEach(function(index1) {
+    // print('proposed',JSON.stringify(proposedIndex));
+    existingIndexes.some(function(index2) {
+      // print('exist',JSON.stringify(existingIndex));
+      if (index1.name !== index2.name) {
+        var existingLen = Object.keys(index1.key).length;
+        // print ('len',existingLen);
+        var matchKeys = dbkInx.firstElements(index2.key, existingLen);
+        // print('match',JSON.stringify(matchKeys));
+        if (JSON.stringify(matchKeys) === JSON.stringify(index1.key)) {
+          redundantIndexes.push({
+            indexName: index1.name,
+            key: JSON.stringify(index1.key),
+            becauseIndex: index2.name,
+            becauseKeys: JSON.stringify(index2.key)
+          });
+          return (true);
         }
       }
     });
-  }
+  });
+  return redundantIndexes;
+};
 
-  var advisedIndexes = [];
-  for (var idx = 0; idx < indKeys.length; idx += 1) {  //eslint-disable-line
-    if (!(idx in existingIndexes)) {
-      advisedIndexes.push(indKeys[idx]);
+dbkInx.redundantDbIndexes = function(dbName) {
+  var indexList = [];
+  db.getSiblingDB(dbName).getCollectionNames().forEach(function(collection) {
+    // print(collection);
+    indexes = db.getSiblingDB(dbName).getCollection(collection).getIndexes();
+    var redundant = dbkInx.existingRedundantIndexes(indexes);
+    if (redundant.length > 0) {
+      redundant.forEach(function(r) {
+
+        var redundantIndex = {
+          dbName: dbName,
+          collection: collection,
+          indexName: r.indexName,
+          key: r.key,
+          becauseIndex: r.becauseIndex,
+          becauseKeys: r.becauseKeys
+        };
+        indexList.push(redundantIndex);
+      });
     }
-  }
-  if (dbkInx.debug) {
-    print(
-      'was ',
-      indKeys.length,
-      ' indexes ',
-      advisedIndexes.length,
-      ' not existing'
-    );
-    printjson(existingIndexes);
-    printjson(indKeys);
-  }
+  });
+  return indexList;
+};
 
-  return advisedIndexes;
+dbkInx.firstElements = function(object, N) {
+  // First Elements in array
+  var output = {};
+  var n = 0;
+  Object.keys(object).forEach(function(key) {
+    if (n++ < N) {
+      output[key] = object[key];
+    }
+  });
+  return output;
+};
+//
+// This function is a combination of suggestIndexes and proposedRedundantIndexes
+//
+dbkInx.suggestIndexesAndRedundants = function(explainPlan) {
+    // Check for existing indexes
+  var dbName = explainPlan.queryPlanner.namespace.split('.')[0];
+  var collectionName = explainPlan.queryPlanner.namespace.split('.')[1];
+  var existIndexes = db.
+    getSiblingDB(dbName).
+    getCollection(collectionName).
+    getIndexes();
+    // printjson(existIndexes);
+    var newIndexes = dbkInx.suggestIndexKeys(explainPlan);
+    var redundantIndexes = dbkInx.proposedRedundantIndexes(existIndexes, newIndexes);
+    return ({
+      newIndexes:newIndexes,
+      redundantIndexes:redundantIndexes
+    });
 };
