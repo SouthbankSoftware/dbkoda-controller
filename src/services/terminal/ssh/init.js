@@ -108,6 +108,7 @@ export default (context, item) => {
       port,
       privateKey,
       passphrase,
+      debug: console.log,
     });
 
   return { client };
