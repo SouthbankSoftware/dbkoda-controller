@@ -62,7 +62,18 @@ rules:
   no-use-before-define: [error, {functions: false, classes: true}]
   linebreak-style: off
   function-paren-newline: off
-  prefer-destructuring: warn
+  prefer-destructuring: [warn, {
+    VariableDeclarator: {
+      array: true,
+      object: true
+    },
+    AssignmentExpression: {
+      array: false,
+      object: false
+    }
+  }, {
+    enforceForRenamedProperties: false
+  }]
   prefer-promise-reject-errors: warn
   object-curly-newline: [off, {
     ObjectExpression: { minProperties: 0, multiline: true },

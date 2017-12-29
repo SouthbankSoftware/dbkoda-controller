@@ -1,9 +1,11 @@
 /**
+ * @flow
+ *
  * @Author: Guan Gui <guiguan>
- * @Date:   2017-12-12T11:17:37+11:00
+ * @Date:   2017-12-18T10:30:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-18T10:46:04+11:00
+ * @Last modified time: 2017-12-18T10:32:35+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -24,34 +26,31 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import normaliseItems from '~/hooks/normaliseItems';
-import validateItems from './validateItems';
-import listObservables from './listObservables';
-import createObservables from './createObservables';
-import patchObservables from './patchObservables';
-import removeObservables from './removeObservables';
+import processItems from '~/hooks/processItems';
+// $FlowFixMe
+import errors from 'feathers-errors';
 
-const before = {
-  all: [normaliseItems({ idAlias: 'profileId' }), validateItems()],
-  find: [listObservables()],
-  get: [listObservables()],
-  create: [createObservables()],
-  update: [],
-  patch: [patchObservables()],
-  remove: [removeObservables()],
-};
+export default () =>
+  processItems(
+    (context, item) => {
+      const { profileId, samplingRate, debug } = item;
+      const { service } = context;
+      const { observableManifests } = service;
 
-const after = {
-  all: [],
-  find: [],
-  get: [],
-  create: [],
-  update: [],
-  patch: [],
-  remove: [],
-};
+      const observableManifest = observableManifests.get(profileId);
 
-export default {
-  before,
-  after,
-};
+      if (!observableManifest) {
+        throw new errors.NotFound(`Observable manifest for profile ${profileId} doesn't exist`);
+      }
+
+      if (samplingRate !== undefined) {
+        observableManifest.samplingRate = samplingRate;
+        service.updateObservableManifest(observableManifest);
+      }
+
+      if (debug !== undefined) {
+        observableManifest.debug = debug;
+      }
+    },
+    { idAlias: 'profileId' },
+  );

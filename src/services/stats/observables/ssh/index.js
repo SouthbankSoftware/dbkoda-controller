@@ -1,5 +1,4 @@
 /**
- * @flow
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -309,4 +308,3 @@ export default class SSHCounter implements ObservableWrapper {
     }
   }
 }
-

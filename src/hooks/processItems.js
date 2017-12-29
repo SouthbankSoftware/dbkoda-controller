@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T11:37:14+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-16T14:19:26+11:00
+ * @Last modified time: 2017-12-18T10:17:12+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,7 +28,8 @@ import { getItems } from 'feathers-hooks-common';
 import errors from 'feathers-errors';
 import _ from 'lodash';
 
-export default (processItem: (context: {}, item: {}) => Promise) => (context) => {
+export default (processItem: (context: {}, item: {}) => Promise, options) => (context) => {
+  const { idAlias = '_id' } = options || {};
   let items = getItems(context);
   const isArray = Array.isArray(items);
   items = isArray ? items : [items];
@@ -37,9 +38,9 @@ export default (processItem: (context: {}, item: {}) => Promise) => (context) =>
     items.map(item =>
       Promise.resolve()
         .then(() => processItem(context, item))
-        .then(payload => ({ _id: item._id, payload }))
+        .then(payload => ({ [idAlias]: item[idAlias], payload }))
         .catch(error => ({
-          _id: item._id,
+          [idAlias]: item[idAlias],
           error: error instanceof errors.FeathersError ? error : error.message || String(error),
         })),
     ),
@@ -47,13 +48,12 @@ export default (processItem: (context: {}, item: {}) => Promise) => (context) =>
     if (isArray) {
       context.result = results;
     } else {
-      context.result = results[0];
+      context.result = results[0]; // eslint-disable-line prefer-destructuring
 
       let { error } = context.result;
 
       if (error) {
-        const { _id } = context.result;
-        const errorData = { _id };
+        const errorData = { [idAlias]: context.result[idAlias] };
 
         if (error instanceof errors.FeathersError) {
           error.data = _.assign(error.data, errorData);
