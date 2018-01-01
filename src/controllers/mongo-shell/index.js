@@ -51,7 +51,7 @@ class MongoShell extends EventEmitter {
     this.autoComplete = false;
     this.shellVersion = this.getShellVersion();
     this.commandQueue = [];
-    this.shellSize = {cols: PtyOptions.cols, rows: PtyOptions.rows};
+    this.shellSize = { cols: PtyOptions.cols, rows: PtyOptions.rows };
     l.debug(`Shell version: ${this.shellVersion}`);
   }
 
@@ -94,7 +94,7 @@ class MongoShell extends EventEmitter {
       params.push('--host');
       if (connection.options && connection.options.replicaSet) {
         params = params.concat([
-          connection.options.replicaSet + '/' + connection.hosts,
+          connection.options.replicaSet + '/' + connection.hosts
         ]);
       } else {
         params = params.concat([connection.hosts]);
@@ -129,7 +129,7 @@ class MongoShell extends EventEmitter {
     if (connection.authenticationDatabase) {
       params = params.concat([
         '--authenticationDatabase',
-        connection.authenticationDatabase,
+        connection.authenticationDatabase
       ]);
     }
     return params;
@@ -154,6 +154,17 @@ class MongoShell extends EventEmitter {
       throw err;
     }
 
+    if (this.shellVersion.match(/^([012]).*/gim)) {
+      log.error('Invalid Mongo binary Version Detected.');
+      const err = new Error(
+        'Mongo Binary Version (' +
+          this.shellVersion +
+          ') is not supported, please upgrade to a Mongo Binary version of at least 3.0'
+      );
+      err.responseCode = 'MONGO_BINARY_INVALID_VERSION';
+      throw err;
+    }
+
     const mongoCmd = configObj.mongoCmd;
 
     const parameters = this.createMongoShellParameters();
@@ -168,7 +179,7 @@ class MongoShell extends EventEmitter {
     if (os.platform() !== 'win32') {
       _.assign(PtyOptions, {
         uid: process.getuid(),
-        gid: process.getgid(),
+        gid: process.getgid()
       });
     }
 
@@ -180,7 +191,7 @@ class MongoShell extends EventEmitter {
       this.shell = spawn(
         mongoCmdArray[0],
         [...mongoCmdArray.slice(1), ...parameters],
-        PtyOptions,
+        PtyOptions
       );
     } catch (error) {
       console.error(error);
@@ -204,7 +215,7 @@ class MongoShell extends EventEmitter {
     this.parser.on('command-ended', this.commandEnded.bind(this));
     this.parser.on(
       'incomplete-command-ended',
-      this.incompleteCommandEnded.bind(this),
+      this.incompleteCommandEnded.bind(this)
     );
 
     // handle shell output
@@ -424,7 +435,7 @@ class MongoShell extends EventEmitter {
         const chunk = 1;
         while (cmdQueue.length > 0) {
           temparray = cmdQueue.splice(0, chunk);
-          const joinCmd = (temparray.join(sep));
+          const joinCmd = temparray.join(sep);
           this.commandQueue.push(joinCmd);
         }
         this.runCommandFromQueue();
