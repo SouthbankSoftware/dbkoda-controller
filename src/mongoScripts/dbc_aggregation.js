@@ -44,7 +44,10 @@ dbk_agg.newAggBuilder = function(dbName, collectionName) {
   newAgg.collectionName = collectionName;
   newAgg.steps = [];
   // If version is above 3.2
-  if (db.version().match(/^([012]|3.0|3.1).*/gim)) {
+  if (
+    db.version().match(/^([012]|3.0|3.1).*/gim) ||
+    version().match(/^([012]|3.0|3.1).*/gim)
+  ) {
     newAgg.steps[0] = {
       $limit: dbk_agg.sampleSize
     };
