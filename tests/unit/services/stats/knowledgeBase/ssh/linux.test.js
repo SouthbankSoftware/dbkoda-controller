@@ -21,7 +21,7 @@
  * Created by joey on 18/12/17.
  */
 
-import {findRules, buildCommand} from '../../../../../../src/services/stats/knowledgeBase/ssh';
+import {findRules, buildCommand} from '../../../../../../src/services/stats/knowledgeBase/utils';
 
 const assert = require('assert');
 
@@ -29,23 +29,19 @@ describe('test knowledge base rules', () => {
   it('test loading kb rules', () => {
     const rules = {
       'linux': [{
-        os: 'linux',
         release: 'ubuntu',
         version: '14.0'
       }]
     };
     let matched = findRules({osType: 'linux', release: 'ubuntu', version: '14.0'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'ubuntu');
     assert.equal(matched.version, '14.0');
 
     matched = findRules({osType: 'linux', release: 'ubuntu', version: '14'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'ubuntu');
     assert.equal(matched.version, '14.0');
 
     matched = findRules({osType: 'linux', release: 'ubuntu'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'ubuntu');
     assert.equal(matched.version, '14.0');
   });
@@ -53,21 +49,17 @@ describe('test knowledge base rules', () => {
   it('test loading db default rules', () => {
     const rules = {
       'linux': [{
-        os: 'linux',
         release: 'all',
       }, {
-        os: 'linux',
         release: 'ubuntu',
         version: '14.0'
       }]
     };
     let matched = findRules({osType: 'linux', release: 'ubuntu', version: '14.0'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'ubuntu');
     assert.equal(matched.version, '14.0');
 
     matched = findRules({osType: 'linux'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'all');
     assert.equal(matched.version, undefined);
   });
@@ -75,32 +67,25 @@ describe('test knowledge base rules', () => {
   it('test loading linux rules', () => {
     const rules = {
       'linux': [{
-        os: 'linux',
         release: 'all',
       }, {
-        os: 'linux',
         release: 'ubuntu',
         version: '14.0'
       }, {
-        os: 'linux',
         release: 'centos',
       }, {
-        os: 'linux',
         release: 'Red Hat Enterprise Linux Server',
       }]
     };
     let matched = findRules({osType: 'linux', release: 'ubuntu', version: '14.0'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'ubuntu');
     assert.equal(matched.version, '14.0');
 
     matched = findRules({osType: 'linux', release: 'centos'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'centos');
     assert.equal(matched.version, undefined);
 
     matched = findRules({osType: 'linux', release: 'Red Hat'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'Red Hat Enterprise Linux Server');
     assert.equal(matched.version, undefined);
   });
@@ -108,34 +93,27 @@ describe('test knowledge base rules', () => {
   it('test find rules based on various versions', () => {
     const rules = {
       'linux': [{
-        os: 'linux',
         release: 'all',
       }, {
-        os: 'linux',
         release: 'ubuntu',
         version: '14.0'
       }, {
-        os: 'linux',
         release: 'ubuntu',
         version: 'all'
       }, {
-        os: 'linux',
         release: 'ubuntu',
         version: '16.0.1'
       }]
     };
     let matched = findRules({osType: 'linux', release: 'ubuntu', version: '14.0'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'ubuntu');
     assert.equal(matched.version, '14.0');
 
     matched = findRules({osType: 'linux', release: 'ubuntu', version: '12.0'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'ubuntu');
     assert.equal(matched.version, 'all');
 
     matched = findRules({osType: 'linux', release: 'ubuntu', version: '16.0.1'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'ubuntu');
     assert.equal(matched.version, '16.0.1');
   });
@@ -143,11 +121,9 @@ describe('test knowledge base rules', () => {
   it('test case sensitive match', () => {
     const rules = {
       'linux': [{
-        os: 'linux',
         release: 'all',
       }]};
     const matched = findRules({osType: 'Linux', release: 'ubuntu', version: '14.0'}, rules);
-    assert.equal(matched.os, 'linux');
     assert.equal(matched.release, 'all');
     assert.equal(matched.version, undefined);
   });
@@ -174,7 +150,6 @@ describe('test knowledge base rules', () => {
   it('test find kb and build command', () => {
     const rules = {
       'linux': [{
-        os: 'linux',
         release: 'all',
         cmd: 'vmstat $samplingRate',
         samplingRate: 5
@@ -185,5 +160,51 @@ describe('test knowledge base rules', () => {
     matched.samplingRate = 15;
     cmd = buildCommand(matched);
     assert.equal(cmd, 'vmstat 15');
+  });
+
+  it('test all os type', () => {
+    const rules = {
+      'linux': [{
+        release: 'all',
+        samplingRate: 5
+      }, {
+        release: 'ubuntu',
+        samplingRate: 2
+      }]};
+    let matched = findRules({osType: 'Linux', release: 'ubuntu', version: '14.0'}, rules);
+    assert.equal(matched.release, 'ubuntu');
+    assert.equal(matched.version, undefined);
+    assert.equal(matched.samplingRate, 2);
+
+    matched = findRules({osType: 'Linux', release: 'all', version: '14.0'}, rules);
+    assert.equal(matched.release, 'all');
+    assert.equal(matched.version, undefined);
+    assert.equal(matched.samplingRate, 5);
+  });
+
+
+  it('test mongo version', () => {
+    const rules = {
+      'all': [{
+        release: 'mongod',
+        samplingRate: 5
+      }, {
+        release: 'mongos',
+        samplingRate: 2
+      }]};
+    let matched = findRules({osType: 'all', release: 'mongod', version: '14.0'}, rules);
+    assert.equal(matched.release, 'mongod');
+    assert.equal(matched.version, undefined);
+    assert.equal(matched.samplingRate, 5);
+
+    matched = findRules({osType: 'all', release: 'mongos', version: '14.0'}, rules);
+    assert.equal(matched.release, 'mongos');
+    assert.equal(matched.version, undefined);
+    assert.equal(matched.samplingRate, 2);
+
+    matched = findRules({osType: 'all', version: '14.0'}, rules);
+    assert.equal(matched.release, 'mongod');
+    assert.equal(matched.version, undefined);
+    assert.equal(matched.samplingRate, 5);
   });
 });

@@ -1,7 +1,4 @@
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:20:51+11:00
- *
+/*
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -20,29 +17,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
-import linuxStats from './linux';
-import darwinStats from './darwin';
-import {findRules} from '../utils';
-
-export const items = ['cpu', 'memory'];
-
-export const rules = {
-  linux: linuxStats,
-  darwin: darwinStats
-};
-
-
 /**
- * find the knowledge base rules
- *
- * @param osType  the operation system type, could be linux, mac, windows
- * @param release could be centos, ubuntu, coreos etc.
- * @param version   the os version
- * @returns {*}
+ * Created by joey on 2/1/18.
  */
-export const getKnowledgeBaseRules = ({osType, release, version}) => {
-  const rule = findRules({osType, release, version}, rules);
-  return {...rule};
+
+
+/* eslint-disable */
+
+const MongoNativeDriver = require('./index');
+
+global.log = {
+  info: msg => console.log(msg),
+  error: msg => console.error(msg),
+  debug: msg => console.debug(msg),
 };
+global.l = global.log;
+
+
+
+const MongoClient = require('mongodb').MongoClient;
+
+let url = 'mongodb://10.0.0.24:27019,10.0.0.24:27020,10.0.0.24:27021/admin?replicaSet=replset';
+// url = 'mongodb://localhost'
+
+MongoClient.connect(url, function(err, db) {
+  if (err) throw err;
+
+  const monitor = new MongoNativeDriver();
+  monitor.init('id', {mongoConnection: {driver: db, dbVersion: '3.6'}});
+  monitor.rxObservable.subscribe(
+    x => console.log('get sub ', x),
+    (e) => console.log('error ',e)
+  );
+});

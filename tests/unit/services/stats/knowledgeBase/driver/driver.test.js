@@ -1,7 +1,4 @@
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:20:41+11:00
- *
+/*
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -20,6 +17,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+ * Created by joey on 2/1/18.
+ */
 
-/* List of indentifiers/keys for items to be observed */
-export const items = ['numConnections', 'insertOpCounter'];
+const {getKnowledgeBaseRules} = require('../../../../../../src/services/stats/knowledgeBase/driver');
+
+const assert = require('assert');
+
+describe('test knowledge base rules', () => {
+  it('test loading kb rules', () => {
+    const rules = getKnowledgeBaseRules({release: 'mongod', version: '3.4.4'});
+    assert.equal('all', rules.release);
+  });
+});

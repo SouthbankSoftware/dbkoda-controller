@@ -25,7 +25,6 @@ import os from 'os';
 import _ from 'lodash';
 
 const common = {
-  os: 'linux',
   release: 'all', // ubuntu, centos, red hat, etc.
   version: 'all', // 15.0, 16.0, etc.
   cmd: 'vmstat $samplingRate', // command need to query os stats

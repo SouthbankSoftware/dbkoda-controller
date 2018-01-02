@@ -31,8 +31,8 @@ import errors from 'feathers-errors';
 import os from 'os';
 
 import type {ObservableWrapper, ObservaleValue} from '../ObservableWrapper';
-import {buildCommand, getKnowledgeBaseRules, items} from '../../knowledgeBase/ssh';
-
+import {getKnowledgeBaseRules, items} from '../../knowledgeBase/ssh';
+import {buildCommand} from '../../knowledgeBase/utils';
 
 export default class SSHCounter implements ObservableWrapper {
   osType: Object = {};
