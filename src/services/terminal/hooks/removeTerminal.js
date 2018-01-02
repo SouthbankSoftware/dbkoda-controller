@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T04:18:44+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-16T17:45:59+11:00
+ * @Last modified time: 2018-01-02T16:18:15+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -40,6 +40,8 @@ export default () =>
 
     const { type } = terminal;
 
+    // interrupt the quitting terminal
+    requireOperator(type, 'exec')(context, { _id, cmd: '\u0003' });
     requireOperator(type, 'destroy')(context, item);
 
     terminals.delete(_id);

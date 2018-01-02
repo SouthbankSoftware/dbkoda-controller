@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T09:43:34+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-03T14:04:57+11:00
+ * @Last modified time: 2018-01-02T16:24:08+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -36,6 +36,16 @@ export class Terminal {
 
   setup(_app, _path) {
     this.terminals = new Map();
+  }
+
+  destroy(_app, _path) {
+    const ps = [];
+
+    for (const terminalId of this.terminals.keys()) {
+      ps.push(this.remove(terminalId));
+    }
+
+    return Promise.all(ps);
   }
 
   emitError(id: string, error: string, level: 'warn' | 'error' = 'error') {
