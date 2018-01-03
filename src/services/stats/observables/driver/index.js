@@ -36,18 +36,20 @@ export default class MongoNativeDriver implements ObservableWrapper {
   mongoConnection: Object;
   db: Object;
   samplingRate: number;
-  items: string[] = ['topology'];
-  displayName: string = 'Topology Monitor';
+  items: string[] = ['serverStatus'];
+  displayName: string = 'Server Status';
   knowledgeBase: Object;
+  previousData: Object;
+  intervalId: number;
 
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
       this.observer = observer;
-      this.start(this.db);
+      this.intervalId = setInterval(() => this.start(this.db), this.samplingRate);
       return () => {
-        this.db.topology.removeListener('serverDescriptionChanged', this.knowledgeBase);
+        clearInterval(this.intevalId);
       };
     });
     return Promise.resolve();
@@ -61,6 +63,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
       this.observer.error('failed to find mongodb driver.');
       return;
     }
+    log.info('start getting stats.');
     db.admin().command({serverStatus: 1}, (err, data) => {
       if (!err) {
         this.knowledgeBase = getKnowledgeBaseRules({version: data.version, release: data.process});
@@ -76,11 +79,16 @@ export default class MongoNativeDriver implements ObservableWrapper {
   }
 
   postProcess(data: Object): void {
-    const value = this.knowledgeBase.parse(data);
+    const value = this.knowledgeBase.parse(this.previousData, data);
+    this.previousData = value.finals;
+    if (!value.data) {
+      // the first time is not parsing
+      return;
+    }
     this.observer.next({
       profileId: this.profileId,
       timestamp: (new Date()).getTime(),
-      value
+      value: {'serverStatus': value.data}
     });
   }
 

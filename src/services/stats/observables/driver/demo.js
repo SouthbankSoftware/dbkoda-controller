@@ -44,9 +44,10 @@ MongoClient.connect(url, function(err, db) {
   if (err) throw err;
 
   const monitor = new MongoNativeDriver();
-  monitor.init('id', {mongoConnection: {driver: db, dbVersion: '3.6'}});
+  monitor.samplingRate = 1000;
+  monitor.init({mongoConnection: {driver: db, dbVersion: '3.6'}});
   monitor.rxObservable.subscribe(
-    x => console.log('get sub ', JSON.stringify(x.value.statistics)),
+    x => console.log('get sub ', JSON.stringify(x)),
     (e) => console.log('error ',e)
   );
 });

@@ -47,20 +47,136 @@ const serverStatistics = (stats) => {
 };
 
 const simpleStats = (stats) => {
-  const serverStats = serverStatistics(stats);
   const returnStat = {};
-  serverStats.statistics.forEach((stat) => {
+  stats.statistics.forEach((stat) => {
     returnStat[stat.statistic] = stat.value;
   });
   return returnStat;
+};
+
+const statDelta = (instat1, instat2) => {
+  const stat1 = simpleStats(instat1);
+  const stat2 = simpleStats(instat2);
+  let delta;
+  let rate;
+  const statDelta = {};
+  statDelta.timeDelta = stat2.uptime - stat1.uptime;
+  // print("timedelta", statDelta.timeDelta);
+  Object.keys(stat2).forEach((key) => {
+    // print(key,typeof stat2[key]);
+    if (typeof stat2[key] === 'number') {
+      delta = stat2[key] - stat1[key];
+      rate = delta / statDelta.timeDelta;
+    } else {
+      delta = null;
+      rate = null;
+    }
+    statDelta[key] = {
+      lastValue: stat2[key],
+      firstValue: stat1[key],
+      delta,
+      rate
+    };
+  });
+  return statDelta;
+};
+
+const getField = (data, key, field) => {
+  if (data[key] && data[key][field]) {
+    return data[key][field];
+  }
+  return null;
 };
 
 const common = {
   release: 'all', // mongod, mongos, etc.
   version: 'all', // 3.2, 3.0, etc.
   samplingRate: 5, // define the sampling rate in seconds
-  parse: (data) => { // define the parse command output logic
-    return simpleStats(serverStatistics(data));
+  parse: (previous, newData) => { // define the parse command output logic
+    const finals = serverStatistics(newData);
+    const output = {finals};
+    if (previous) {
+      const data = {};
+      const deltas = statDelta(previous, finals);
+      // *********************************************
+      //  Network counters
+      // *********************************************
+      data.netIn = getField(deltas, 'network.bytesIn', 'rate');
+      data.netOut = getField(deltas, 'network.bytesOut', 'rate');
+
+      // ********************************************
+      // Activity counters
+      // ********************************************
+      data.qry = getField(deltas, 'opcounters.query', 'rate');
+      data.getmore = getField(deltas, 'opcounters.getmore', 'rate');
+      data.command = getField(deltas, 'opcounters.command', 'rate');
+      data.ins = getField(deltas, 'opcounters.insert', 'rate');
+      data.upd = getField(deltas, 'opcounters.update', 'rate');
+      data.del = getField(deltas, 'opcounters.delete', 'rate');
+
+      data.activeRead = finals['globalLock.activeClients.readers'];
+      data.activeWrite = finals['globalLock.activeClients.writers'];
+      data.queuedRead = finals['globalLock.currentQueue.readers'];
+      data.queuedWrite = finals['globalLock.currentQueue.writers'];
+      // var lockRe = /locks.*acquireCount.*floatApprox
+      //
+      // The "time acquiring" counts for locks seem to appoear only after some significant
+      // waits have occured.  Sometimes it's timeAcquiringMicros, and
+      // sometimes it's timeAcquireingMicros.*k.floatApprox
+      //
+      // print(deltas['opLatencies.reads.ops']);
+      if (getField(deltas, 'opLatencies.reads.ops', 'delta') > 0) {
+        data.readLatency =
+          getField(deltas, 'opLatencies.reads.latency', 'delta') /
+          getField(deltas, 'opLatencies.reads.ops', 'delta');
+      } else data.readLatency = 0;
+
+      if (getField(deltas, 'opLatencies.writes.ops', 'delta') > 0) {
+        data.writeLatency =
+          getField(deltas, 'opLatencies.writes.latency', 'delta') /
+          getField(deltas, 'opLatencies.writes.ops', 'delta');
+      } else data.writeLatency = 0;
+
+      if (getField(deltas, 'opLatencies.commands.ops', 'delta') > 0) {
+        data.cmdLatency =
+          getField(deltas, 'opLatencies.commands.latency', 'delta') /
+          getField(deltas, 'opLatencies.commands.ops', 'delta');
+      } else data.cmdLatency = 0;
+
+      data.connections = getField(deltas, 'connections.current', 'lastValue');
+      data.availableConnections = getField(deltas, 'connections.available', 'firstValue');
+      data.asserts =
+        getField(deltas, 'asserts.regular', 'rate') +
+        getField(deltas, 'asserts.warning', 'rate') +
+        getField(deltas, 'asserts.msg', 'rate') +
+        getField(deltas, 'asserts.user', 'rate') +
+        getField(deltas, 'asserts.rollovers', 'rate');
+
+      // *********************************************************
+      // Memory counters
+      // *********************************************************
+
+      data.cacheGets = getField(deltas, 'wiredTiger.cache.pages requested from the cache', 'rate');
+
+      data.cacheHighWater = getField(deltas, 'wiredTiger.cache.maximum bytes configured', 'lastValue');
+
+      data.cacheSize = getField(deltas, 'wiredTiger.cache.bytes currently in the cache', 'lastValue');
+
+      data.cacheReadQAvailable = getField(deltas, 'wiredTiger.concurrentTransactions.read.available', 'lastValue');
+      data.cacheReadQUssed = getField(deltas, 'wiredTiger.concurrentTransactions.read.out', 'lastValue');
+
+      data.cacheWriteQAvailable = getField(deltas, 'wiredTiger.concurrentTransactions.write.available', 'lastValue');
+      data.cacheWriteQUsed = getField(deltas, 'wiredTiger.concurrentTransactions.write.out', 'lastValue');
+
+      data.diskBlockReads = getField(deltas, 'wiredTiger.block-manager.blocks read', 'rate');
+      data.diskBlockWrites = getField(deltas, 'wiredTiger.block-manager.blocks written', 'rate');
+
+      data.logByteRate = getField(deltas, 'wiredTiger.log.log bytes written', 'rate');
+
+      data.logSyncTimeRate = getField(deltas, 'wiredTiger.log.log sync time duration (usecs)', 'rate');
+      output.data = data;
+    }
+    return output;
   }
 };
 
