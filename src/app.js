@@ -20,7 +20,7 @@
 
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-10-25T14:45:46+11:00
+ * @Last modified time: 2018-01-02T14:27:15+11:00
  */
 
 import moment from 'moment';
@@ -178,5 +178,30 @@ app
   )
   .configure(services)
   .configure(middleware);
+
+/**
+ * Stop app
+ *
+ * @param {Error} err - error object
+ * @return {Promise} resolve
+ */
+app.stop = (err) => {
+  process.stdout.write('\r');
+  l.notice('Stopping dbkoda Controller...');
+
+  if (err) {
+    l.error(err.stack);
+    return Promise.resolve();
+  }
+
+  const ps = [];
+  _.forOwn(app.services, (v, k) => {
+    if (_.has(v, 'destroy')) {
+      ps.push(v.destroy(app, k));
+    }
+  });
+
+  return Promise.all(ps);
+};
 
 export default app;

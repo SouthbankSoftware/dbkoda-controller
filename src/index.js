@@ -1,4 +1,10 @@
-/*
+/**
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2017-10-31T09:22:47+11:00
+ * @Email:  root@guiguan.net
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-01-02T16:17:08+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,15 +24,24 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-06-08T18:41:03+10:00
- */
-
 import app from './app';
 
 const port = app.get('port');
 let server = null;
+
+const handleShutdown = (err) => {
+  // Exitpoint
+  app.stop(err).then(() => {
+    l.notice('Stopped dbkoda Controller');
+    process.exit(err ? 1 : 0);
+  });
+};
+
+// register shutting down events
+process.on('SIGINT', handleShutdown);
+process.on('SIGTERM', handleShutdown);
+process.on('SIGHUP', handleShutdown);
+process.on('SIGQUIT', handleShutdown);
 
 if (process.env.NODE_ENV !== 'production') {
   // in non-production mode, enable source map for stack tracing
@@ -36,6 +51,4 @@ if (process.env.NODE_ENV !== 'production') {
   server = app.listen(port, 'localhost');
 }
 
-server.on('listening', () =>
-  l.notice(`dbKoda Controller is ready at ${app.get('host')}:${port}`)
-);
+server.on('listening', () => l.notice(`dbKoda Controller is ready at ${app.get('host')}:${port}`));
