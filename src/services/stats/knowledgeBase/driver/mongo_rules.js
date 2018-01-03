@@ -60,9 +60,7 @@ const common = {
   version: 'all', // 3.2, 3.0, etc.
   samplingRate: 5, // define the sampling rate in seconds
   parse: (data) => { // define the parse command output logic
-    const output = {timestamp: (new Date()).getTime()};
-    output.value = simpleStats(data);
-    return output;
+    return simpleStats(serverStatistics(data));
   }
 };
 

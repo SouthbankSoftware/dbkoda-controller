@@ -69,11 +69,14 @@ const sshOpts = {
 // };
 
 const counter = new SSHCounter();
-counter.init('1', {'mongoConnection': sshOpts});
 counter.samplingRate = 1;
-counter.rxObservable.subscribe(
-  x => console.log('get sub ', x),
-  (e) => console.log('complete1',e)
-);
+counter.profileId = 1;
+counter.init({'mongoConnection': sshOpts}).then(() => {
+  counter.rxObservable.subscribe(
+    x => console.log('get sub ', x),
+    (e) => console.log('complete1',e)
+  );
+})
 
-setTimeout(() => counter.setSamplingRate(15), 3000);
+
+// setTimeout(() => counter.setSamplingRate(15), 3000);

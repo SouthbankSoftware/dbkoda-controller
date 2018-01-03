@@ -40,8 +40,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
   displayName: string = 'Topology Monitor';
   knowledgeBase: Object;
 
-  init(profileId: string, options: Object): Promise<*> {
-    this.profileId = profileId;
+  init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
@@ -65,15 +64,23 @@ export default class MongoNativeDriver implements ObservableWrapper {
     db.admin().command({serverStatus: 1}, (err, data) => {
       if (!err) {
         this.knowledgeBase = getKnowledgeBaseRules({version: data.version, release: data.process});
-        l.info(this.knowledgeBase);
         if (!this.knowledgeBase) {
           return Promise.reject('Cant find knowledge base');
         }
-        this.knowledgeBase.parse(data);
+        this.postProcess(data);
       } else {
         log.info('cant run serverStatus command through driver.');
         this.observer.error('this is not mongodb replicaset connection.');
       }
+    });
+  }
+
+  postProcess(data: Object): void {
+    const value = this.knowledgeBase.parse(data);
+    this.observer.next({
+      profileId: this.profileId,
+      timestamp: (new Date()).getTime(),
+      value
     });
   }
 

@@ -36,8 +36,7 @@ export default class TopologyMonitor implements ObservableWrapper {
   displayName: string = 'Topology Monitor';
   knowledgeBase: Object;
 
-  init(profileId: string, options: Object): Promise<*> {
-    this.profileId = profileId;
+  init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
     this.knowledgeBase = getKnowledgeBaseRules(this.mongoConnection.dbVersion);
