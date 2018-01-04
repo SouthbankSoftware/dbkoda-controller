@@ -44,7 +44,7 @@ export const constructors = {
     // can be null
     constructor: (wrapper: ObservableWrapper) => {
       wrapper.displayName = 'Dummy 1';
-      wrapper.items = ['item-1', 'item-2', 'item-3'];
+      wrapper.items = ['cpu', 'item-2', 'item-3'];
     },
   },
   dummy2: {

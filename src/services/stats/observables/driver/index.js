@@ -1,4 +1,7 @@
 /**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2017-12-12T14:21:24+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -22,9 +25,10 @@ import {Observable, Observer} from 'rxjs';
 
 import type {ObservaleValue} from '../ObservableWrapper';
 import {ObservableWrapper} from '../ObservableWrapper';
-import {getKnowledgeBaseRules} from '../../knowledgeBase/topology';
+import {getKnowledgeBaseRules} from '../../knowledgeBase/driver';
 
-export default class TopologyMonitor implements ObservableWrapper {
+
+export default class MongoNativeDriver implements ObservableWrapper {
   rxObservable: ?Observable<ObservaleValue> = null;
   type: string = 'Unknown';
   observer: Observer<ObservaleValue>;
@@ -39,10 +43,6 @@ export default class TopologyMonitor implements ObservableWrapper {
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
-    this.knowledgeBase = getKnowledgeBaseRules(this.mongoConnection.dbVersion);
-    if (!this.knowledgeBase) {
-      return Promise.reject('Cant find knowledge base');
-    }
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
       this.observer = observer;
       this.start(this.db);
@@ -57,34 +57,31 @@ export default class TopologyMonitor implements ObservableWrapper {
    * start listening on topology change
    */
   start(db: Object) {
-    if (!db || !db.topology) {
+    if (!db) {
       this.observer.error('failed to find mongodb driver.');
       return;
     }
-    db.admin().command({replSetGetStatus: 1}, (err) => {
+    db.admin().command({serverStatus: 1}, (err, data) => {
       if (!err) {
-        log.info('start monitoring topology');
-        db.topology.on('serverDescriptionChanged', this.topologyListener.bind(this));
+        this.knowledgeBase = getKnowledgeBaseRules({version: data.version, release: data.process});
+        if (!this.knowledgeBase) {
+          return Promise.reject('Cant find knowledge base');
+        }
+        this.postProcess(data);
       } else {
-        log.info('cant monitor single/shard cluster');
+        log.info('cant run serverStatus command through driver.');
         this.observer.error('this is not mongodb replicaset connection.');
       }
     });
   }
 
-  topologyListener(event: Object) {
-    console.log('received serverDescriptionChanged,', event);
-    if (event && event.newDescription && event.newDescription.type !== 'Unknown') {
-      log.info('replicaset topology was changed');
-      this.knowledgeBase.parse(this.db).then((members) => {
-        log.info('new members:', members);
-        this.observer.next({
-          profileId: this.profileId,
-          timestamp: (new Date()).getTime(),
-          value: {topology: members}
-        });
-      }).catch(err => this.observer.error(err));
-    }
+  postProcess(data: Object): void {
+    const value = this.knowledgeBase.parse(data);
+    this.observer.next({
+      profileId: this.profileId,
+      timestamp: (new Date()).getTime(),
+      value
+    });
   }
 
   destroy(): Promise<*> {
