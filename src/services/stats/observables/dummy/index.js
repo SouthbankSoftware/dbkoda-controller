@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:23:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-28T18:18:51+11:00
+ * @Last modified time: 2018-01-04T12:04:16+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -46,6 +46,10 @@ export default class Dummy implements ObservableWrapper {
   simulateWarnAt = null;
   simulateFatalErrorAt = null;
   simulateCompletionAt = null;
+  errorTimeoutId: ?number;
+  warnTimeoutId: ?number;
+  fatalErrorTimeoutId: ?number;
+  completionTimeoutId: ?number;
 
   _getRandomNumberInInterval = (min: number, max: number) => {
     return Math.random() * (max - min) + min;
@@ -53,14 +57,14 @@ export default class Dummy implements ObservableWrapper {
 
   _simulateSamplingDelay = () => {
     const min = 0;
-    const max = this.samplingRate * 0.15;
+    const max = this.samplingRate * 0.1;
 
     return this._getRandomNumberInInterval(min, max);
   };
 
   _simulateInitTime = () => {
     const min = 0;
-    const max = this.samplingRate * 0.5;
+    const max = this.samplingRate * 0.3;
 
     return this._getRandomNumberInInterval(min, max);
   };
@@ -73,17 +77,48 @@ export default class Dummy implements ObservableWrapper {
   };
 
   init(_options: { mongoConnection: MongoConnection }): Promise<*> {
+    let counter = 0;
+    let _observer = null;
+
+    if (this.simulateErrorAt) {
+      this.errorTimeoutId = setTimeout(() => {
+        const err = new Error('Test error');
+        this.debug && l.error(`Observable ${this.displayName} error`, err);
+        this.emitError(err.message, 'error'); // or simply `this.emitError(err.message)`
+      }, this.simulateErrorAt);
+    }
+
+    if (this.simulateWarnAt) {
+      this.warnTimeoutId = setTimeout(() => {
+        const err = new Error('Test warn');
+        this.debug && l.warn(`Observable ${this.displayName} warn`, err);
+        this.emitError(err.message, 'warn');
+      }, this.simulateWarnAt);
+    }
+
+    if (this.simulateFatalErrorAt) {
+      this.fatalErrorTimeoutId = setTimeout(() => {
+        if (_observer) {
+          _observer.error(new Error('Test fatal error'));
+        }
+      }, this.simulateFatalErrorAt);
+    }
+
+    if (this.simulateCompletionAt) {
+      this.completionTimeoutId = setTimeout(() => {
+        if (_observer) {
+          _observer.complete();
+        }
+      }, this.simulateCompletionAt);
+    }
+
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
       // whenever this observable is subscribed
 
       // allocate inexpensive resources
       let intervalId;
-      let errorTimeoutId;
-      let warnTimeoutId;
-      let fatalErrorTimeoutId;
-      let completionTimeoutId;
+      _observer = observer;
 
-      let counter = 0;
       const exec = () => {
         const _exec = () =>
           setTimeout(() => {
@@ -93,8 +128,10 @@ export default class Dummy implements ObservableWrapper {
               // values to be observed
               value: _.reduce(
                 this.items,
-                (acc, v, i) => {
-                  acc[v] = counter + i;
+                (acc, v) => {
+                  const seq = Number(v.substring(5));
+
+                  acc[v] = counter + seq;
                   return acc;
                 },
                 {},
@@ -110,34 +147,6 @@ export default class Dummy implements ObservableWrapper {
         intervalId = setInterval(_exec, this.samplingRate);
       };
 
-      if (this.simulateErrorAt) {
-        errorTimeoutId = setTimeout(() => {
-          const err = new Error('Test error');
-          this.debug && l.error(`Observable ${this.displayName} error`, err);
-          this.emitError(err.message, 'error'); // or simply `this.emitError(err.message)`
-        }, this.simulateErrorAt);
-      }
-
-      if (this.simulateWarnAt) {
-        warnTimeoutId = setTimeout(() => {
-          const err = new Error('Test warn');
-          this.debug && l.warn(`Observable ${this.displayName} warn`, err);
-          this.emitError(err.message, 'warn');
-        }, this.simulateWarnAt);
-      }
-
-      if (this.simulateFatalErrorAt) {
-        fatalErrorTimeoutId = setTimeout(() => {
-          observer.error(new Error('Test fatal error'));
-        }, this.simulateFatalErrorAt);
-      }
-
-      if (this.simulateCompletionAt) {
-        completionTimeoutId = setTimeout(() => {
-          observer.complete();
-        }, this.simulateCompletionAt);
-      }
-
       // start execution when someone is subscribed to this observable
       exec();
 
@@ -145,21 +154,14 @@ export default class Dummy implements ObservableWrapper {
         // whenever this observable is unsubscribed
 
         // recycle any inexpensive resources allocated earlier
+        _observer = null;
         // $FlowFixMe
         clearInterval(intervalId);
         intervalId = null;
-        clearTimeout(errorTimeoutId);
-        errorTimeoutId = null;
-        clearTimeout(warnTimeoutId);
-        warnTimeoutId = null;
-        clearTimeout(fatalErrorTimeoutId);
-        fatalErrorTimeoutId = null;
-        clearTimeout(completionTimeoutId);
-        completionTimeoutId = null;
       };
     });
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       // init any expensive resources here
       setTimeout(resolve, this._simulateInitTime());
     });
@@ -169,7 +171,16 @@ export default class Dummy implements ObservableWrapper {
     // IMPORTANT
     this.rxObservable = null;
 
-    return new Promise((resolve) => {
+    clearTimeout(this.errorTimeoutId);
+    this.errorTimeoutId = null;
+    clearTimeout(this.warnTimeoutId);
+    this.warnTimeoutId = null;
+    clearTimeout(this.fatalErrorTimeoutId);
+    this.fatalErrorTimeoutId = null;
+    clearTimeout(this.completionTimeoutId);
+    this.completionTimeoutId = null;
+
+    return new Promise(resolve => {
       // destroy any expensive resources allocated in init
       setTimeout(resolve, this._simulateDestroyTime());
     });

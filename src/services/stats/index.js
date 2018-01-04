@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:17:22+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-28T17:39:52+11:00
+ * @Last modified time: 2018-01-03T23:45:10+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -50,12 +50,13 @@ export class Stats {
       samplingRate: number,
       subscription: ?Subscription,
       debug: boolean,
+      _debouncedUpdate: () => void,
     },
   >;
   events: string[];
 
   constructor(_options: *) {
-    this.events = ['data', 'error', 'warn'];
+    this.events = ['data', 'error'];
   }
 
   setup(_app: *, _path: *) {
@@ -132,7 +133,7 @@ export class Stats {
           .then(() => {
             wrapper.rxObservable = null;
           })
-          .catch((err) => {
+          .catch(err => {
             l.error(
               `Error happened when trying to destroy observable ${wrapper.displayName} of profile ${
                 wrapper.profileId
@@ -190,14 +191,17 @@ export class Stats {
         ),
       )
       .subscribe({
-        next: (v) => {
+        next: v => {
           if (observableManifest.debug) {
             l.debug(`Stats: ${JSON.stringify(v)}`);
           }
           // $FlowFixMe
-          this.emit('data', v);
+          this.emit('data', {
+            profileId,
+            payload: _.pick(v, ['timestamp', 'value']),
+          });
         },
-        error: (err) => {
+        error: err => {
           for (const wrapper of wrappers) {
             this.destroyObservableWrapper(wrapper);
           }
