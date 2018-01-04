@@ -52,8 +52,7 @@ export default class SSHCounter implements ObservableWrapper {
   intervalId: number;
 
   constructor() {
-    this.rxObservable = new Rx.Subject();
-    this.items = items;
+    this.items = ['cpu', 'memory'];
   }
 
   init(options: Object): Promise<*> {
