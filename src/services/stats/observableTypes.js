@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:44:18+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-03T15:52:09+11:00
+ * @Last modified time: 2018-01-04T12:13:58+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -39,12 +39,15 @@ import { ObservableWrapper } from './observables/ObservableWrapper';
  * }
  */
 export const constructors = {
+  ssh: {
+    path: 'ssh',
+  },
   dummy1: {
     path: 'dummy',
     // can be null
     constructor: (wrapper: ObservableWrapper) => {
       wrapper.displayName = 'Dummy 1';
-      wrapper.items = ['cpu', 'item-2', 'item-3'];
+      wrapper.items = ['item-1', 'item-2', 'item-3'];
     },
   },
   dummy2: {
