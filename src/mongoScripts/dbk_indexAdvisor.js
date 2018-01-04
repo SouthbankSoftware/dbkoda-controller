@@ -96,6 +96,23 @@ dbkInx.quick_explain = function(explainPlan) {
   return output;
 };
 
+dbkInx.findNamespace = function(object) {
+   return (dbkInx.findKeyValue('namespace', object));
+};
+
+dbkInx.findKeyValue = function(key, object) {
+  // Find namespace within the plan (for instnace if this is a sharded plan)
+    if (object.hasOwnProperty(key)) {
+        return (object[key]);
+    }
+
+    for (var i = 0; i < Object.keys(object).length; i++) {
+        if (typeof object[Object.keys(object)[i]] == 'object') {
+            return dbkInx.findKeyValue(key, object[Object.keys(object)[i]]);
+        }
+    }
+};
+
 dbkInx.adviseAllCachedPlans = function() {
   db.getCollectionNames().forEach(function(collectionName) {
     // eslint-disable-line
@@ -262,7 +279,12 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
 
   // Function to generate indexes to match a given filter
   filterParser = function(filter) {
+    if (dbkInx.debug) {
+      print('filterParser:');
+      printjson(filter);
+    }
     var firstArg = Object.keys(filter)[0];
+    if (dbkInx.debug) print(firstArg);
     if (firstArg === '$or') {
       var orCount = 0;
       filter.$or.forEach(function(subfilter) {
@@ -279,6 +301,7 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
       });
     } else if (firstArg !== '$nor') {
       // Not equals can't be supported by index
+      if (dbkInx.debug) print('filter', filter);
       var keys = Object.keys(filter);
       // printjson(filter);
       keys.forEach(function(key) {
@@ -290,6 +313,7 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   };
 
   var checkInputStage = function(step, depth) {
+    if (dbkInx.debug) print('Stage', step.stage);
     if ('inputStage' in step) {
       checkInputStage(step.inputStage, depth + 1);
     }
@@ -297,6 +321,10 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
       step.inputStages.forEach(function(inputStage) {
         checkInputStage(inputStage, depth + 1);
       });
+    }
+    if ('shards' in step) {
+       if (dbkInx.debug) print('Processing only first shard');
+      checkInputStage(step.shards[0].winningPlan, depth + 1);
     }
     //
     // We should have got every index we need other than for a sort already.  Only
@@ -333,8 +361,12 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
       }
     }
   };
-
-  var baseIndexes = filterParser(explainPlan.queryPlanner.parsedQuery);
+  var parsedQuery = dbkInx.findKeyValue('parsedQuery', explainPlan);
+  if (dbkInx.debug) {
+    print('parsedQuery:');
+    printjson(parsedQuery);
+  }
+  var baseIndexes = filterParser(parsedQuery);
   // printjson(baseIndexes);
   checkInputStage(explainPlan.queryPlanner.winningPlan, 1);
 
@@ -356,13 +388,7 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
     printjson(indKeys);
   }
 
-  // Check for existing indexes
-  var dbName = explainPlan.queryPlanner.namespace.split('.')[0];
-  var collectionName = explainPlan.queryPlanner.namespace.split('.')[1];
-  var indexes = db.
-    getSiblingDB(dbName).
-    getCollection(collectionName).
-    getIndexes();
+  var indexes = dbkInx.existingIndexes(explainPlan);
 
   var advisedIndexes = [];
   indKeys.forEach(function(suggestedInx) {
@@ -374,6 +400,27 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
   return advisedIndexes;
 };
 
+// Existing indexes for the collection being explained
+dbkInx.existingIndexes = function(explainPlan) {
+  var dbName;
+  var collectionName;
+  var namespace;
+  // Work out the dbName and the collectionName
+  if ('namespace' in explainPlan.queryPlanner) { namespace = explainPlan.queryPlanner.namespace; } else { namespace = dbkInx.findNamespace(explainPlan); }
+  if (namespace) {
+        dbName = namespace.split('.')[0];
+        collectionName = namespace.split('.')[1];
+      var indexes = db.
+    getSiblingDB(dbName).
+    getCollection(collectionName).
+    getIndexes();
+  }
+  if (dbkInx.debug) {
+    print('dbName', dbName);
+    print('collectionName', collectionName);
+  }
+  return (indexes);
+};
 //
 // Function to check for an existing index or a index with the same leading keys
 //
@@ -464,7 +511,6 @@ dbkInx.redundantDbIndexes = function(dbName) {
     var redundant = dbkInx.existingRedundantIndexes(indexes);
     if (redundant.length > 0) {
       redundant.forEach(function(r) {
-
         var redundantIndex = {
           dbName: dbName,
           collection: collection,
@@ -496,17 +542,14 @@ dbkInx.firstElements = function(object, N) {
 //
 dbkInx.suggestIndexesAndRedundants = function(explainPlan) {
     // Check for existing indexes
-  var dbName = explainPlan.queryPlanner.namespace.split('.')[0];
-  var collectionName = explainPlan.queryPlanner.namespace.split('.')[1];
-  var existIndexes = db.
-    getSiblingDB(dbName).
-    getCollection(collectionName).
-    getIndexes();
-    // printjson(existIndexes);
-    var newIndexes = dbkInx.suggestIndexKeys(explainPlan);
-    var redundantIndexes = dbkInx.proposedRedundantIndexes(existIndexes, newIndexes);
-    return ({
+
+  // See if we can find existing indexes
+  var existIndexes = dbkInx.existingIndexes(explainPlan);
+
+  var newIndexes = dbkInx.suggestIndexKeys(explainPlan);
+  var redundantIndexes = dbkInx.proposedRedundantIndexes(existIndexes, newIndexes);
+  return ({
       newIndexes:newIndexes,
       redundantIndexes:redundantIndexes
-    });
+  });
 };
