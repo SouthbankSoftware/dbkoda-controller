@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:30:35+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-18T10:32:44+11:00
+ * @Last modified time: 2018-01-03T16:27:04+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -45,7 +45,7 @@ export default () =>
 
       const activeWrappers = service.findObservableWrappers(observableManifest, {
         items,
-        active: true,
+        active: true
       });
 
       let p;
@@ -58,7 +58,7 @@ export default () =>
             l.debug(`Removing observable ${wrapper.displayName} of profile ${profileId}...`);
 
             return service.destroyObservableWrapper(wrapper);
-          }),
+          })
         );
       } else {
         p = Promise.resolve();
@@ -66,13 +66,15 @@ export default () =>
 
       return p.then(() => {
         if (service.countActiveObservableWrappers(observableManifest) === 0) {
-          l.debug(`Removing observable manifest for profile ${profileId}...`);
+          if (observableManifests.has(profileId)) {
+            l.debug(`Removing observable manifest for profile ${profileId}...`);
 
-          observableManifests.delete(profileId);
+            observableManifests.delete(profileId);
+          }
         } else {
           service.updateObservableManifest(observableManifest);
         }
       });
     },
-    { idAlias: 'profileId' },
+    { idAlias: 'profileId' }
   );

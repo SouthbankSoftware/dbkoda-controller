@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:31:05+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-18T10:32:31+11:00
+ * @Last modified time: 2018-01-03T17:04:32+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -31,7 +31,7 @@ import _ from 'lodash';
 import errors from 'feathers-errors';
 import processItems from '~/hooks/processItems';
 
-const listObservableWrapper = (observableWrapper) => {
+const listObservableWrapper = observableWrapper => {
   const result = _.pick(observableWrapper, ['id', 'rxObservable', 'displayName', 'items']);
 
   result.rxObservable = result.rxObservable ? 'active' : null;
@@ -42,7 +42,7 @@ const listObservableWrapper = (observableWrapper) => {
 const listObservableManifest = (observableManifest, context, item) => {
   const { items, active } = item;
   const { service } = context;
-  const result = _.omit(observableManifest, ['index']);
+  const result = _.omit(observableManifest, ['index', '_debouncedUpdate']);
 
   const wrappers = service.findObservableWrappers(observableManifest, { items, active });
 

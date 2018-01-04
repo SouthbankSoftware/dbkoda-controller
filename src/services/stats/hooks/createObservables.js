@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:29:50+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-28T17:43:51+11:00
+ * @Last modified time: 2018-01-03T17:02:57+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -30,6 +30,8 @@ import _ from 'lodash';
 import processItems from '~/hooks/processItems';
 import config from '~/config';
 import { constructors } from '../observableTypes';
+
+const DEBOUNCE_DELAY = 500;
 
 export default () =>
   processItems(
@@ -85,6 +87,11 @@ export default () =>
 
       // $FlowFixMe
       observableManifest.debug = debug;
+      // $FlowFixMe
+      observableManifest._debouncedUpdate = _.debounce(
+        service.updateObservableManifest.bind(service, observableManifest),
+        DEBOUNCE_DELAY,
+      );
 
       const ps = [];
 
@@ -105,14 +112,15 @@ export default () =>
             ps.push(wrapper.init({ mongoConnection: connections[profileId] }));
           }
         },
-        onInvalidItem: (item) => {
+        onInvalidItem: item => {
           throw new Error(`No observable supports observing item \`${item}\``);
         },
       });
 
-      return Promise.all(ps).then((result) => {
+      return Promise.all(ps).then(result => {
         if (result.length > 0) {
-          service.updateObservableManifest(observableManifest);
+          // $FlowFixMe
+          observableManifest._debouncedUpdate();
         }
       });
     },

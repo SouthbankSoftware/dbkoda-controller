@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T09:43:34+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-03T14:04:57+11:00
+ * @Last modified time: 2018-01-03T23:30:39+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -31,7 +31,7 @@ import hooks from './hooks';
 
 export class Terminal {
   constructor(_options) {
-    this.events = ['data', 'error', 'warn'];
+    this.events = ['data', 'error'];
   }
 
   setup(_app, _path) {
