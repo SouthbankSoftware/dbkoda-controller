@@ -156,7 +156,8 @@ export const loadCommands = () => {
   }
   let configPath = process.env.CONFIG_PATH;
   if (!configPath) {
-    configPath = path.resolve(os.homedir(), '.dbKoda', 'config.yml');
+    configPath = (process.env.UAT == 'true') ? '/tmp/config.yml' : path.resolve(os.homedir(), '.dbKoda', 'config.yml');
+    console.log('configPath:', configPath);
   }
   const config = loadConfigFromYamlFile(configPath);
   if (config.mongoCmd) {
