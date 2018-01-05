@@ -73,7 +73,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
         this.postProcess(data);
       } else {
         log.info('cant run serverStatus command through driver.');
-        this.emitError('this is not mongodb replicaset connection.');
+        this.emitError('cant run serverStatus command through driver.');
       }
     });
   }
