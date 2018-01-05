@@ -60,7 +60,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
    */
   start(db: Object) {
     if (!db) {
-      this.observer.error('failed to find mongodb driver.');
+      this.emitError('failed to find mongodb driver.');
       return;
     }
     log.info('start getting stats.');
@@ -73,13 +73,15 @@ export default class MongoNativeDriver implements ObservableWrapper {
         this.postProcess(data);
       } else {
         log.info('cant run serverStatus command through driver.');
-        this.observer.error('this is not mongodb replicaset connection.');
+        this.emitError('this is not mongodb replicaset connection.');
       }
     });
   }
 
   postProcess(data: Object): void {
+    l.debug('get driver status:', data);
     const value = this.knowledgeBase.parse(this.previousData, data);
+    l.debug('parsed value', value);
     this.previousData = value.finals;
     if (!value.data) {
       // the first time is not parsing
@@ -96,6 +98,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
     if (this.db.topology) {
       this.db.topology.close();
     }
+    this.rxObservable = null;
     return Promise.resolve();
   }
 }

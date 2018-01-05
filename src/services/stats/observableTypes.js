@@ -42,6 +42,12 @@ export const constructors = {
   ssh: {
     path: 'ssh',
   },
+  topology: {
+    path: 'topology',
+  },
+  driver: {
+    path: 'driver',
+  },
   dummy1: {
     path: 'dummy',
     // can be null

@@ -67,7 +67,7 @@ export default class TopologyMonitor implements ObservableWrapper {
         db.topology.on('serverDescriptionChanged', this.topologyListener.bind(this));
       } else {
         log.info('cant monitor single/shard cluster');
-        this.observer.error('this is not mongodb replicaset connection.');
+        this.emitError('this is not a mongodb replicaset connection.');
       }
     });
   }
@@ -83,7 +83,7 @@ export default class TopologyMonitor implements ObservableWrapper {
           timestamp: (new Date()).getTime(),
           value: {topology: members}
         });
-      }).catch(err => this.observer.error(err));
+      }).catch(err => this.emitError(err));
     }
   }
 

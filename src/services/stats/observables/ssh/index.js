@@ -162,7 +162,7 @@ export default class SSHCounter implements ObservableWrapper {
               return reject(`Unsupported Operation System ${this.osType.os}`);
             }
             if (this.samplingRate) {
-              this.knowledgeBase.samplingRate = this.samplingRate;
+              this.knowledgeBase.samplingRate = this.samplingRate / 1000;
             }
             this.statsCmd = buildCommand(this.knowledgeBase);
             if (!this.statsCmd) {
@@ -258,7 +258,9 @@ export default class SSHCounter implements ObservableWrapper {
 
   postProcess(output: Object) {
     try {
+      log.debug('get command output ', output);
       const o = this.knowledgeBase.parse(output);
+      log.debug('get output from knowledge base', o.value);
       if (o && o.value) {
         const nextObj = _.pick(o, ['value', 'timestamp']);
         nextObj.profileId = this.profileId;
