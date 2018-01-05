@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-05T14:00:00+11:00
+ * @Last modified time: 2018-01-05T16:45:16+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,11 +21,11 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {Observable, Observer} from 'rxjs';
+import { Observable, Observer } from 'rxjs';
 
-import type {ObservaleValue} from '../ObservableWrapper';
-import {ObservableWrapper} from '../ObservableWrapper';
-import {getKnowledgeBaseRules} from '../../knowledgeBase/topology';
+import type { ObservaleValue } from '../ObservableWrapper';
+import { ObservableWrapper } from '../ObservableWrapper';
+import { getKnowledgeBaseRules } from '../../knowledgeBase/topology';
 
 export default class TopologyMonitor implements ObservableWrapper {
   rxObservable: ?Observable<ObservaleValue> = null;
@@ -44,7 +44,7 @@ export default class TopologyMonitor implements ObservableWrapper {
     this.db = this.mongoConnection.driver;
     this.knowledgeBase = getKnowledgeBaseRules(this.mongoConnection.dbVersion);
     if (!this.knowledgeBase) {
-      return Promise.reject('Cant find knowledge base');
+      return Promise.reject(new Error('Cant find knowledge base'));
     }
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
       this.observer = observer;
@@ -64,7 +64,7 @@ export default class TopologyMonitor implements ObservableWrapper {
       this.observer.error('failed to find mongodb driver.');
       return;
     }
-    db.admin().command({replSetGetStatus: 1}, (err) => {
+    db.admin().command({ replSetGetStatus: 1 }, err => {
       if (!err) {
         log.info('start monitoring topology');
         db.topology.on('serverDescriptionChanged', this.topologyListener);
@@ -80,19 +80,22 @@ export default class TopologyMonitor implements ObservableWrapper {
     if (event && event.newDescription) {
       log.info('replicaset topology was changed');
       if (event.newDescription.type !== 'Unknown') {
-        this.knowledgeBase.parse(this.db).then((members) => {
-          log.info('new members:', members);
-          this.observer.next({
-            profileId: this.profileId,
-            timestamp: (new Date()).getTime(),
-            value: {topology: members}
-          });
-        }).catch(err => this.emitError(err));
+        this.knowledgeBase
+          .parse(this.db)
+          .then(members => {
+            log.info('new members:', members);
+            this.observer.next({
+              profileId: this.profileId,
+              timestamp: new Date().getTime(),
+              value: { topology: members },
+            });
+          })
+          .catch(err => this.emitError(err));
       } else {
         this.observer.next({
           profileId: this.profileId,
-          timestamp: (new Date()).getTime(),
-          value: {topology: 'Unknown'}
+          timestamp: new Date().getTime(),
+          value: { topology: 'Unknown' },
         });
       }
     }

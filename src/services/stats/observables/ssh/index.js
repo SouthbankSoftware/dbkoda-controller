@@ -1,4 +1,7 @@
 /**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-01-05T16:55:11+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -20,9 +23,9 @@
 
 /* eslint-disable class-methods-use-this */
 
-import Rx, {Observable, Observer} from 'rxjs';
+import { Observable, Observer } from 'rxjs';
 // $FlowFixMe
-import {Client} from 'ssh2';
+import { Client } from 'ssh2';
 import _ from 'lodash';
 // $FlowFixMe
 import sshTunnel from 'open-ssh-tunnel';
@@ -30,9 +33,9 @@ import sshTunnel from 'open-ssh-tunnel';
 import errors from 'feathers-errors';
 import os from 'os';
 
-import type {ObservableWrapper, ObservaleValue} from '../ObservableWrapper';
-import {getKnowledgeBaseRules, items} from '../../knowledgeBase/ssh';
-import {buildCommand} from '../../knowledgeBase/utils';
+import type { ObservableWrapper, ObservaleValue } from '../ObservableWrapper';
+import { getKnowledgeBaseRules } from '../../knowledgeBase/ssh';
+import { buildCommand } from '../../knowledgeBase/utils';
 
 export default class SSHCounter implements ObservableWrapper {
   osType: Object = {};
@@ -57,20 +60,25 @@ export default class SSHCounter implements ObservableWrapper {
 
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
-    return this.create(this.profileId)
-      .then(() => {
-        this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
-          this.observer = observer;
-          this.createShell();
-          return () => {
-            this.pause();
-          };
-        });
+    return this.create(this.profileId).then(() => {
+      this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
+        this.knowledgeBase.samplingRate = this.samplingRate / 1000;
+        this.statsCmd = buildCommand(this.knowledgeBase);
+        if (!this.statsCmd) {
+          this.emitError('Cant find command from knowledge base on ' + this.osType);
+        }
+        this.observer = observer;
+        this.createShell();
+        return () => {
+          this.pause();
+        };
       });
+    });
   }
 
   createSshTunnel(params: Object): Promise<*> {
-    if (params.sshTunnel && !params.sshTunnel) { // disable ssh tunnel for now
+    if (params.sshTunnel && !params.sshTunnel) {
+      // disable ssh tunnel for now
       const sshOpts = {
         host: params.sshHost, // ip address of the ssh server
         port: 22, // Number(params.sshPort), // port of the ssh server
@@ -100,9 +108,8 @@ export default class SSHCounter implements ObservableWrapper {
   createConnection(connObj: Object): Promise<*> {
     let sshOpts = {};
     return new Promise((resolve, reject) => {
-      this
-        .createSshTunnel(connObj)
-        .then((res) => {
+      this.createSshTunnel(connObj)
+        .then(res => {
           if (res) {
             // ssh tunnel case
             sshOpts.host = connObj.localHost;
@@ -115,7 +122,7 @@ export default class SSHCounter implements ObservableWrapper {
           }
           this.createSshConnection(sshOpts, resolve, reject);
         })
-        .catch((err) => {
+        .catch(err => {
           log.error(err);
         });
     });
@@ -135,7 +142,7 @@ export default class SSHCounter implements ObservableWrapper {
       .on('ready', () => {
         log.info('SSH Client :: ready');
         this.exeCmd('uname -s')
-          .then((osType) => {
+          .then(osType => {
             if (osType) {
               this.osType.osType = osType.toLowerCase().trim();
               if (this.osType.osType === 'linux') {
@@ -143,11 +150,11 @@ export default class SSHCounter implements ObservableWrapper {
               }
             }
           })
-          .then((release) => {
+          .then(release => {
             log.info(release);
             if (release) {
               const splitted = release.split(os.platform() === 'win32' ? '\n\r' : '\n');
-              splitted.forEach((str) => {
+              splitted.forEach(str => {
                 if (str.toLowerCase().match(/name=/)) {
                   this.osType.release = this.getValueFromPair(str);
                 }
@@ -161,17 +168,10 @@ export default class SSHCounter implements ObservableWrapper {
             if (!this.knowledgeBase || !this.knowledgeBase.cmd) {
               return reject(`Unsupported Operation System ${this.osType.os}`);
             }
-            if (this.samplingRate) {
-              this.knowledgeBase.samplingRate = this.samplingRate / 1000;
-            }
-            this.statsCmd = buildCommand(this.knowledgeBase);
-            if (!this.statsCmd) {
-              return reject('Cant find command from knowledge base on ', this.osType);
-            }
             resolve();
           });
       })
-      .on('error', (err) => {
+      .on('error', err => {
         reject(new errors.BadRequest('Client Error: ' + err.message));
       })
       .connect(_.omit(sshOpts, 'cwd'));
@@ -184,14 +184,17 @@ export default class SSHCounter implements ObservableWrapper {
         if (err || !stream) {
           return reject(err);
         }
-        stream.on('close', () => {
-          resolve(output);
-        }).on('data', (data) => {
-          output += data.toString('utf8');
-        }).stderr.on('data', (data) => {
-          log.error(data.toString('utf8'));
-          resolve(null);
-        });
+        stream
+          .on('close', () => {
+            resolve(output);
+          })
+          .on('data', data => {
+            output += data.toString('utf8');
+          })
+          .stderr.on('data', data => {
+            log.error(data.toString('utf8'));
+            resolve(null);
+          });
       });
     });
   }
@@ -209,13 +212,13 @@ export default class SSHCounter implements ObservableWrapper {
             return reject(err);
           }
           stream.setEncoding('utf8');
-          stream.on('data', (data) => {
+          stream.on('data', data => {
             this.postProcess(data);
           });
           stream.on('finish', () => {
             log.info('Stream :: finish');
           });
-          stream.stderr.on('data', (err) => {
+          stream.stderr.on('data', err => {
             log.error('Stream :: strerr :: Data :', err);
             this.emitError(err, 'error');
           });
@@ -225,14 +228,13 @@ export default class SSHCounter implements ObservableWrapper {
           if (this.knowledgeBase.cmd.indexOf('$samplingRate') >= 0) {
             this.execute();
           } else {
-            this.intervalId = setInterval(() => this.execute(), this.samplingRate * 1000);
+            this.intervalId = setInterval(() => this.execute(), this.samplingRate);
           }
           return resolve();
-        }
+        },
       );
     });
   }
-
 
   execute() {
     if (!this.stream) {
@@ -301,10 +303,9 @@ export default class SSHCounter implements ObservableWrapper {
       this.samplingRate = rate;
       this.statsCmd = buildCommand(this.knowledgeBase);
       try {
-        this.createShell()
-          .then(() => {
-            this.execute();
-          });
+        this.createShell().then(() => {
+          this.execute();
+        });
       } catch (err) {
         log.error(err);
         this.emitError(err, 'error');
