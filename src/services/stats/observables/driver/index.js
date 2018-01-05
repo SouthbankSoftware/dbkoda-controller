@@ -49,7 +49,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
       this.observer = observer;
       this.intervalId = setInterval(() => this.start(this.db), this.samplingRate);
       return () => {
-        clearInterval(this.intervalId);
+        this.pause();
       };
     });
     return Promise.resolve();
@@ -72,7 +72,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
         }
         this.postProcess(data);
       } else {
-        log.info('cant run serverStatus command through driver.');
+        log.info('cant run serverStatus command through driver.', err);
         this.emitError('cant run serverStatus command through driver.');
       }
     });
@@ -94,10 +94,12 @@ export default class MongoNativeDriver implements ObservableWrapper {
     });
   }
 
+  pause() {
+    clearInterval(this.intervalId);
+  }
+
   destroy(): Promise<*> {
-    if (this.db.topology) {
-      this.db.topology.close();
-    }
+    this.pause();
     this.rxObservable = null;
     return Promise.resolve();
   }

@@ -50,7 +50,7 @@ export default class TopologyMonitor implements ObservableWrapper {
       this.observer = observer;
       this.start(this.db);
       return () => {
-        this.db.topology.removeListener('serverDescriptionChanged', this.topologyListener);
+        this.pause();
       };
     });
     return Promise.resolve();
@@ -69,8 +69,8 @@ export default class TopologyMonitor implements ObservableWrapper {
         log.info('start monitoring topology');
         db.topology.on('serverDescriptionChanged', this.topologyListener);
       } else {
-        log.info('cant monitor single/shard cluster');
-        this.emitError('this is not a mongodb replicaset connection.');
+        log.error('cant monitor single/shard cluster,', err);
+        this.emitError('Failed to get mongodb topology.');
       }
     });
   }
@@ -98,10 +98,14 @@ export default class TopologyMonitor implements ObservableWrapper {
     }
   };
 
-  destroy(): Promise<*> {
-    if (this.db.topology) {
-      this.db.topology.close();
+  pause() {
+    if (this.db && this.db.topology) {
+      this.db.topology.removeListener('serverDescriptionChanged', this.topologyListener);
     }
+  }
+
+  destroy(): Promise<*> {
+    this.pause();
     return Promise.resolve();
   }
 }
