@@ -34,7 +34,7 @@ const MongoClient = require('mongodb').MongoClient;
 const TopologyMonitor = require('../../services/stats/observables/topology');
 
 let url = 'mongodb://10.0.0.24:27019,10.0.0.24:27020,10.0.0.24:27021/admin?replicaSet=replset';
-url = 'mongodb://localhost:27018'
+url = 'mongodb://localhost:28017,localhost:28018,localhost:28019/admin?replicaSet=replset';
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
 

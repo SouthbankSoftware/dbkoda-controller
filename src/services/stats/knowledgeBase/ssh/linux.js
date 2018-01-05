@@ -78,7 +78,7 @@ const common = {
           };
           data.cpu = data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st;
           const totalMemory = data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache + data.details.memory.free;
-          let usedMemory = data.details.memory.swpd + data.details.memory.buff;
+          let usedMemory = data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache;
           if (usedMemory > totalMemory) {
             usedMemory = totalMemory;
           }
