@@ -49,7 +49,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
       this.observer = observer;
       this.intervalId = setInterval(() => this.start(this.db), this.samplingRate);
       return () => {
-        clearInterval(this.intevalId);
+        clearInterval(this.intervalId);
       };
     });
     return Promise.resolve();
@@ -64,7 +64,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
       return;
     }
     log.info('start getting stats.');
-    db.admin().command({serverStatus: 1}, (err, data) => {
+    db.admin().command({serverStatus: 1}, {}, (err, data) => {
       if (!err) {
         this.knowledgeBase = getKnowledgeBaseRules({version: data.version, release: data.process});
         if (!this.knowledgeBase) {

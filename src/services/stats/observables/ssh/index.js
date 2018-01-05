@@ -179,8 +179,11 @@ export default class SSHCounter implements ObservableWrapper {
 
   exeCmd(cmd: string): Promise<*> {
     let output = '';
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.client.exec(cmd, (err, stream) => {
+        if (err || !stream) {
+          return reject(err);
+        }
         stream.on('close', () => {
           resolve(output);
         }).on('data', (data) => {
