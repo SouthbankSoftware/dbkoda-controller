@@ -77,16 +77,24 @@ export default class TopologyMonitor implements ObservableWrapper {
 
   topologyListener = (event: Object) => {
     console.log('received serverDescriptionChanged,', event);
-    if (event && event.newDescription && event.newDescription.type !== 'Unknown') {
+    if (event && event.newDescription) {
       log.info('replicaset topology was changed');
-      this.knowledgeBase.parse(this.db).then((members) => {
-        log.info('new members:', members);
+      if (event.newDescription.type !== 'Unknown') {
+        this.knowledgeBase.parse(this.db).then((members) => {
+          log.info('new members:', members);
+          this.observer.next({
+            profileId: this.profileId,
+            timestamp: (new Date()).getTime(),
+            value: {topology: members}
+          });
+        }).catch(err => this.emitError(err));
+      } else {
         this.observer.next({
           profileId: this.profileId,
           timestamp: (new Date()).getTime(),
-          value: {topology: members}
+          value: {topology: 'Unknown'}
         });
-      }).catch(err => this.emitError(err));
+      }
     }
   };
 
