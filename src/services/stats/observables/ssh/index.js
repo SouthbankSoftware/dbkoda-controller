@@ -55,7 +55,7 @@ export default class SSHCounter implements ObservableWrapper {
   intervalId: number;
 
   constructor() {
-    this.items = ['cpu', 'memory'];
+    this.items = ['cpu', 'memory', 'io'];
   }
 
   init(options: Object): Promise<*> {
