@@ -83,6 +83,7 @@ const common = {
             usedMemory = totalMemory;
           }
           data.memory = parseFloat((usedMemory / totalMemory) * 100, 10);
+          data.io = data.details.io;
           output.value = data;
         }
       }
