@@ -1,4 +1,7 @@
 /**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-01-05T14:00:00+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -47,7 +50,7 @@ export default class TopologyMonitor implements ObservableWrapper {
       this.observer = observer;
       this.start(this.db);
       return () => {
-        this.db.topology.removeListener('serverDescriptionChanged', this.knowledgeBase);
+        this.db.topology.removeListener('serverDescriptionChanged', this.topologyListener);
       };
     });
     return Promise.resolve();
@@ -64,7 +67,7 @@ export default class TopologyMonitor implements ObservableWrapper {
     db.admin().command({replSetGetStatus: 1}, (err) => {
       if (!err) {
         log.info('start monitoring topology');
-        db.topology.on('serverDescriptionChanged', this.topologyListener.bind(this));
+        db.topology.on('serverDescriptionChanged', this.topologyListener);
       } else {
         log.info('cant monitor single/shard cluster');
         this.emitError('this is not a mongodb replicaset connection.');
@@ -72,7 +75,7 @@ export default class TopologyMonitor implements ObservableWrapper {
     });
   }
 
-  topologyListener(event: Object) {
+  topologyListener = (event: Object) => {
     console.log('received serverDescriptionChanged,', event);
     if (event && event.newDescription) {
       log.info('replicaset topology was changed');
@@ -93,7 +96,7 @@ export default class TopologyMonitor implements ObservableWrapper {
         });
       }
     }
-  }
+  };
 
   destroy(): Promise<*> {
     if (this.db.topology) {
