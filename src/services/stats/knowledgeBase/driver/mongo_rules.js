@@ -82,16 +82,16 @@ const statDelta = (instat1, instat2) => {
 };
 
 const getField = (data, key, field) => {
-  if (data[key] && data[key][field]) {
+  if (key in data && field in data[key]) {
     return data[key][field];
   }
+  log.error(`cant find key ${key}`);
   return null;
 };
 
 const common = {
   release: 'all', // mongod, mongos, etc.
   version: 'all', // 3.2, 3.0, etc.
-  samplingRate: 5, // define the sampling rate in seconds
   parse: (previous, newData) => { // define the parse command output logic
     const finals = serverStatistics(newData);
     const output = {finals};

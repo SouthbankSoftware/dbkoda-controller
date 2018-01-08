@@ -64,7 +64,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
       return;
     }
     log.info('start getting stats.');
-    db.admin().command({serverStatus: 1}, {}, (err, data) => {
+    db.command({serverStatus: 1}, {}, (err, data) => {
       if (!err) {
         this.knowledgeBase = getKnowledgeBaseRules({version: data.version, release: data.process});
         if (!this.knowledgeBase) {

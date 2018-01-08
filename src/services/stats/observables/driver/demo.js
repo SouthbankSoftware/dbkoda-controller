@@ -24,6 +24,10 @@
 
 /* eslint-disable */
 
+import {getKnowledgeBaseRules} from '../../knowledgeBase/driver';
+import flat from 'flat';
+import _ from 'lodash';
+
 const MongoNativeDriver = require('./index');
 
 global.log = {
@@ -38,11 +42,19 @@ global.l = global.log;
 const MongoClient = require('mongodb').MongoClient;
 
 let url = 'mongodb://10.0.0.24:27019,10.0.0.24:27020,10.0.0.24:27021/admin?replicaSet=replset';
-// url = 'mongodb://localhost'
+url = 'mongodb://localhost';
+url = 'mongodb://10.0.0.25:40011';  // 3.4
+// url = 'mongodb://10.0.0.25:40012';  // 3.0
+// url = 'mongodb://10.0.0.25:40013';  // 3.2
+// url = 'mongodb://10.0.0.25:40014';  // 3.6
 
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
-
+  // db.admin().command({serverStatus: 1}, {}, (err, data) => {
+  //   _.forOwn(flat(data), (v, k) => {
+  //     console.log(k);
+  //   });
+  // });
   const monitor = new MongoNativeDriver();
   monitor.samplingRate = 1000;
   monitor.init({mongoConnection: {driver: db, dbVersion: '3.6'}});

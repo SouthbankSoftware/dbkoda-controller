@@ -28,7 +28,6 @@ const common = {
   release: 'all', // ubuntu, centos, red hat, etc.
   version: 'all', // 15.0, 16.0, etc.
   cmd: 'vmstat $samplingRate', // command need to query os stats
-  samplingRate: 5, // define the sampling rate in seconds
   parse: (d) => { // define the parse command output logic
     log.debug('post process ', d);
     // parse the vmstat command output

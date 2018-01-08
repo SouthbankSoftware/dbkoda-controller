@@ -69,8 +69,9 @@ const sshOpts = {
 // };
 
 const counter = new SSHCounter();
-counter.samplingRate = 1;
+counter.samplingRate = 1000;
 counter.profileId = 1;
+counter.emitError = (err) => console.error(err);
 counter.init({'mongoConnection': sshOpts}).then(() => {
   counter.rxObservable.subscribe(
     x => console.log('get sub ', x),
