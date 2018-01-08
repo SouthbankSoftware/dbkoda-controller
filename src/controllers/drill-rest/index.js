@@ -296,7 +296,7 @@ class DrillRestController {
           form: {sql: params.queries.join('\n')},
           json: true
         }).then((res) => {
-          log.info('execute sql return ', res);
+          log.info('execute sql return');
           resolve(res);
         }).catch((err) => {
           log.error('executing sql failed', err);
