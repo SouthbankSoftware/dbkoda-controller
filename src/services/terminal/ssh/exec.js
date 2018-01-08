@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T16:05:54+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-02T16:36:04+11:00
+ * @Last modified time: 2018-01-08T15:25:15+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -35,6 +35,5 @@ export default (context, item) => {
     stream.write(cmd);
   } else {
     l.warn(`Sending command to non-existing SSH Terminal ${_id} stream`);
-    service.emitError(_id, 'Sending command to non-existing SSH stream', 'warn');
   }
 };
