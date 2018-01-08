@@ -50,10 +50,10 @@ const sshTunnelOpts = {
 
 const sshOpts = {
   sshOpts: {
-    host: '10.0.0.25',
+    host: 'localhost',
     port: 22,
-    username: 'core',
-    password: process.env.EC2_SHARD_CLUSTER_PASSWORD,
+    username: 'joey',
+    password: 'ctccadm',
 
   }
 };

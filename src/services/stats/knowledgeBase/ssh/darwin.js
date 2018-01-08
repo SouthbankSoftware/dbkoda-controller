@@ -26,11 +26,15 @@ const common = {
   os: 'darwin',
   release: 'all',
   version: 'all',
-  cmd: 'vm_stat $samplingRate', // command need to query os stats
-  samplingRate: 5,
+  cmd: 'ps -A -o %cpu,%mem | awk \'{ cpu += $1; mem += $2} END {print cpu , mem}\'', // command need to query os stats
   parse: (d) => {
     console.log('get data, ', d);
-    // TODO: parse darwin output
+    const output = {timestamp: (new Date()).getTime()};
+    if (d && d.indexOf(' ') > 0) {
+      const split = d.split(' ');
+      output.value = {cpu: split[0].replace(/\n/g, ''), memory: split[1].replace(/\n/g, '')};
+    }
+    return output;
   }
 };
 
