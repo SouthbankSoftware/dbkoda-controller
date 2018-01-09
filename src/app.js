@@ -120,7 +120,7 @@ function checkJavaVersion(callback) {
   }
   if (spawn.stderr) {
     const data = spawn.stderr.toString().split('\n')[0];
-    const javaVersion = new RegExp('java version').test(data)
+    const javaVersion = new RegExp(/(java version)|(openjdk version)/).test(data)
       ? data.split(' ')[2].replace(/"/g, '')
       : false;
     if (javaVersion != false) {
