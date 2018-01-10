@@ -116,6 +116,10 @@ describe('test knowledge base rules', () => {
     matched = findRules({osType: 'linux', release: 'ubuntu', version: '16.0.1'}, rules);
     assert.equal(matched.release, 'ubuntu');
     assert.equal(matched.version, '16.0.1');
+
+    matched = findRules({osType: 'linux', release: 'ubuntu', version: '16.0'}, rules);
+    assert.equal(matched.release, 'ubuntu');
+    assert.equal(matched.version, '16.0.1');
   });
 
   it('test case sensitive match', () => {

@@ -60,7 +60,7 @@ export const findRules = ({osType, release, version}, rules) => {
   }
   const matchedVersion = [];
   matchedRelease.forEach((rel) => {
-    if (version.indexOf(rel.version) >= 0) {
+    if (rel.version && rel.version.indexOf(version) >= 0) {
       matchedVersion.push(rel);
     }
     if (rel.version === 'all') {
