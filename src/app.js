@@ -20,7 +20,7 @@
 
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-02T14:27:15+11:00
+ * @Last modified time: 2018-01-11T21:33:40+11:00
  */
 
 import moment from 'moment';
@@ -102,14 +102,6 @@ global.UAT = process.env.UAT === 'true';
     transports,
   });
   global.log = global.l;
-
-  process.on('unhandledRejection', (reason) => {
-    l.error('Unhandled rejection: ', reason);
-  });
-
-  process.on('uncaughtException', (err) => {
-    l.error('Unhandled error: ', err);
-  });
 })();
 
 function checkJavaVersion(callback) {
@@ -142,6 +134,23 @@ checkJavaVersion((err, ver) => {
 // require here so code from this point can use winston logger
 const middleware = require('./middleware');
 const services = require('./services');
+
+// override default setup behaviour
+app.setup = () => {
+  const ps = [];
+  _.forOwn(app.services, (v, k) => {
+    if (_.has(v, 'setup')) {
+      ps.push(v.setup(app, k));
+    }
+  });
+
+  Promise.all(ps)
+    .then(() => {
+      app._isSetup = true;
+      app.emit('ready');
+    })
+    .catch(e => l.error(e.stack));
+};
 
 app
   .use(compress())
