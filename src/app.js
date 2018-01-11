@@ -104,12 +104,11 @@ global.UAT = process.env.UAT === 'true';
   global.log = global.l;
 
   process.on('unhandledRejection', (reason) => {
-    log.error(reason);
+    l.error('Unhandled rejection: ', reason);
   });
 
   process.on('uncaughtException', (err) => {
-    log.error(err.stack);
-    throw err;
+    l.error('Unhandled error: ', err);
   });
 })();
 
