@@ -88,9 +88,9 @@ class MongoShell extends EventEmitter {
 
   _escapeSpecialCharacters(text: string) {
     // only windows needs this escaping and node-pty escaped for us on other platforms
-    if (os.platform === 'win32') {
-      const result = text.replace('"', '""');
-      return `"${result}"`;
+    if (os.platform() === 'win32') {
+      const result = text.replace(/[\^&<>|]/g, '^$&');
+      return result;
     }
 
     return text;
