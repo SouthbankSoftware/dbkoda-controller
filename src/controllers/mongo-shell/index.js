@@ -1,4 +1,9 @@
-/*
+/**
+ * This class is used to create a wrapper on top of mongo shell and listen on its pty channels.
+ *
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-01-15T14:25:18+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,10 +22,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 /* eslint-disable class-methods-use-this */
-/**
- * this class is used to create a wrapper on top of mongo shell and listen on its pty channels.
- */
+
 // import fs from 'fs';
 import _ from 'lodash';
 import { loadCommands } from '../../config';
@@ -82,6 +86,16 @@ class MongoShell extends EventEmitter {
     }
   }
 
+  _escapeSpecialCharacters(text: string) {
+    // only windows needs this escaping and node-pty escaped for us on other platforms
+    if (os.platform === 'win32') {
+      const result = text.replace('"', '""');
+      return `"${result}"`;
+    }
+
+    return text;
+  }
+
   createMongoShellParameters() {
     const ver = this.shellVersion
       .trim()
@@ -121,9 +135,9 @@ class MongoShell extends EventEmitter {
     }
     const { username, password } = connection;
     if (username) {
-      params = params.concat(['--username', username]);
+      params = params.concat(['--username', this._escapeSpecialCharacters(username)]);
       if (password) {
-        params = params.concat(['--password', password]);
+        params = params.concat(['--password', this._escapeSpecialCharacters(password)]);
       }
     }
     if (connection.authenticationDatabase) {
