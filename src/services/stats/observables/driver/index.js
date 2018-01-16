@@ -81,7 +81,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
   postProcess(data: Object): void {
     l.debug('get driver status:', data);
     const value = this.knowledgeBase.parse(this.previousData, data);
-    l.debug('parsed value', value);
+    l.debug('parsed value', value.data);
     this.previousData = value.finals;
     if (!value.data) {
       // the first time is not parsing

@@ -85,7 +85,7 @@ export const getField = (data, key, field) => {
   if (key in data && field in data[key]) {
     return data[key][field];
   }
-  log.error(`cant find key ${key}`);
+  log.debug(`cant find key ${key}`);
   return null;
 };
 

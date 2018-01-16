@@ -291,27 +291,4 @@ export default class SSHCounter implements ObservableWrapper {
     this.emitError('ssh connection doesnt exist', 'error');
     return Promise.reject();
   }
-
-  setSamplingRate(rate: number): void {
-    log.info('change sampling rate');
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-    }
-    if (this.stream) {
-      this.stream.close();
-      this.knowledgeBase.samplingRate = rate;
-      this.samplingRate = rate;
-      this.statsCmd = buildCommand(this.knowledgeBase);
-      try {
-        this.createShell().then(() => {
-          this.execute();
-        });
-      } catch (err) {
-        log.error(err);
-        this.emitError(err, 'error');
-      }
-    } else {
-      this.emitError('ssh connection doesnt exist', 'error');
-    }
-  }
 }
