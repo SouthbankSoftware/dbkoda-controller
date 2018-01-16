@@ -1,4 +1,9 @@
-/*
+/**
+ * This class is used to create a wrapper on top of mongo shell and listen on its pty channels.
+ *
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-01-15T14:25:18+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,10 +22,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 /* eslint-disable class-methods-use-this */
-/**
- * this class is used to create a wrapper on top of mongo shell and listen on its pty channels.
- */
+
 // import fs from 'fs';
 import _ from 'lodash';
 import { loadCommands } from '../../config';
@@ -81,6 +85,16 @@ class MongoShell extends EventEmitter {
     }
   }
 
+  _escapeSpecialCharacters(text: string) {
+    // only windows needs this escaping and node-pty escaped for us on other platforms
+    if (os.platform() === 'win32') {
+      const result = text.replace(/[\^&<>|]/g, '^$&');
+      return result;
+    }
+
+    return text;
+  }
+
   createMongoShellParameters() {
     const ver = this.shellVersion
       .trim()
@@ -93,7 +107,7 @@ class MongoShell extends EventEmitter {
       params.push('--host');
       if (connection.options && connection.options.replicaSet) {
         params = params.concat([
-          connection.options.replicaSet + '/' + connection.hosts,
+          connection.options.replicaSet + '/' + connection.hosts
         ]);
       } else {
         params = params.concat([connection.hosts]);
@@ -120,15 +134,15 @@ class MongoShell extends EventEmitter {
     }
     const { username, password } = connection;
     if (username) {
-      params = params.concat(['--username', username]);
+      params = params.concat(['--username', this._escapeSpecialCharacters(username)]);
       if (password) {
-        params = params.concat(['--password', password]);
+        params = params.concat(['--password', this._escapeSpecialCharacters(password)]);
       }
     }
     if (connection.authenticationDatabase) {
       params = params.concat([
         '--authenticationDatabase',
-        connection.authenticationDatabase,
+        connection.authenticationDatabase
       ]);
     }
     return params;
@@ -153,6 +167,17 @@ class MongoShell extends EventEmitter {
       throw err;
     }
 
+    if (this.shellVersion.match(/^([012]).*/gim)) {
+      log.error('Invalid Mongo binary Version Detected.');
+      const err = new Error(
+        'Mongo Binary Version (' +
+          this.shellVersion +
+          ') is not supported, please upgrade to a Mongo Binary version of at least 3.0'
+      );
+      err.responseCode = 'MONGO_BINARY_INVALID_VERSION';
+      throw err;
+    }
+
     const mongoCmd = configObj.mongoCmd;
 
     const parameters = this.createMongoShellParameters();
@@ -167,7 +192,7 @@ class MongoShell extends EventEmitter {
     if (os.platform() !== 'win32') {
       _.assign(PtyOptions, {
         uid: process.getuid(),
-        gid: process.getgid(),
+        gid: process.getgid()
       });
     }
 
@@ -179,7 +204,7 @@ class MongoShell extends EventEmitter {
       this.shell = spawn(
         mongoCmdArray[0],
         [...mongoCmdArray.slice(1), ...parameters],
-        PtyOptions,
+        PtyOptions
       );
     } catch (error) {
       console.error(error);
@@ -203,7 +228,7 @@ class MongoShell extends EventEmitter {
     this.parser.on('command-ended', this.commandEnded.bind(this));
     this.parser.on(
       'incomplete-command-ended',
-      this.incompleteCommandEnded.bind(this),
+      this.incompleteCommandEnded.bind(this)
     );
 
     // handle shell output
@@ -417,7 +442,7 @@ class MongoShell extends EventEmitter {
         const chunk = 1;
         while (cmdQueue.length > 0) {
           temparray = cmdQueue.splice(0, chunk);
-          const joinCmd = (temparray.join(sep));
+          const joinCmd = temparray.join(sep);
           this.commandQueue.push(joinCmd);
         }
         this.runCommandFromQueue();

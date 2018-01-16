@@ -20,7 +20,7 @@
 
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-10-25T14:45:46+11:00
+ * @Last modified time: 2018-01-11T21:33:40+11:00
  */
 
 import moment from 'moment';
@@ -102,15 +102,6 @@ global.UAT = process.env.UAT === 'true';
     transports,
   });
   global.log = global.l;
-
-  process.on('unhandledRejection', (reason) => {
-    log.error(reason);
-  });
-
-  process.on('uncaughtException', (err) => {
-    log.error(err.stack);
-    throw err;
-  });
 })();
 
 function checkJavaVersion(callback) {
@@ -120,7 +111,7 @@ function checkJavaVersion(callback) {
   }
   if (spawn.stderr) {
     const data = spawn.stderr.toString().split('\n')[0];
-    const javaVersion = new RegExp('java version').test(data)
+    const javaVersion = new RegExp(/(java version)|(openjdk version)/).test(data)
       ? data.split(' ')[2].replace(/"/g, '')
       : false;
     if (javaVersion != false) {
@@ -143,6 +134,23 @@ checkJavaVersion((err, ver) => {
 // require here so code from this point can use winston logger
 const middleware = require('./middleware');
 const services = require('./services');
+
+// override default setup behaviour
+app.setup = () => {
+  const ps = [];
+  _.forOwn(app.services, (v, k) => {
+    if (_.has(v, 'setup')) {
+      ps.push(v.setup(app, k));
+    }
+  });
+
+  Promise.all(ps)
+    .then(() => {
+      app._isSetup = true;
+      app.emit('ready');
+    })
+    .catch(e => l.error(e.stack));
+};
 
 app
   .use(compress())
@@ -178,5 +186,30 @@ app
   )
   .configure(services)
   .configure(middleware);
+
+/**
+ * Stop app
+ *
+ * @param {Error} err - error object
+ * @return {Promise} resolve
+ */
+app.stop = (err) => {
+  process.stdout.write('\r');
+  l.notice('Stopping dbkoda Controller...');
+
+  if (err) {
+    l.error(err.stack);
+    return Promise.resolve();
+  }
+
+  const ps = [];
+  _.forOwn(app.services, (v, k) => {
+    if (_.has(v, 'destroy')) {
+      ps.push(v.destroy(app, k));
+    }
+  });
+
+  return Promise.all(ps);
+};
 
 export default app;

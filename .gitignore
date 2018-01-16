@@ -40,6 +40,4 @@ all-in-one.js
 
 nohup\.out
 
-yarn\.lock
-
 .nyc_output

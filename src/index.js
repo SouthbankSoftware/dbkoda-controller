@@ -1,4 +1,10 @@
-/*
+/**
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2017-10-31T09:22:47+11:00
+ * @Email:  root@guiguan.net
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-01-11T21:45:21+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,24 +24,45 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-06-08T18:41:03+10:00
- */
-
 import app from './app';
 
 const port = app.get('port');
-let server = null;
 
+const onUnhandledRejection = reason => {
+  l.error('Unhandled rejection: ', reason);
+};
+
+const onUncaughtException = err => {
+  l.error('Unhandled error: ', err);
+};
+
+const handleShutdown = err => {
+  process.removeListener('unhandledRejection', onUnhandledRejection);
+  process.removeListener('uncaughtException', onUncaughtException);
+
+  // Exitpoint
+  app.stop(err).then(() => {
+    l.notice('Stopped dbkoda Controller');
+    process.exit(err ? 1 : 0);
+  });
+};
+
+app.once('ready', () => {
+  // register shutting down events
+  process.on('SIGINT', handleShutdown);
+  process.on('SIGTERM', handleShutdown);
+  process.on('SIGHUP', handleShutdown);
+  process.on('SIGQUIT', handleShutdown);
+
+  process.on('unhandledRejection', onUnhandledRejection);
+  process.on('uncaughtException', onUncaughtException);
+
+  l.notice(`dbKoda Controller is ready at ${app.get('host')}:${port}`);
+});
 if (process.env.NODE_ENV !== 'production') {
   // in non-production mode, enable source map for stack tracing
   require('source-map-support/register');
-  server = app.listen(port);
+  app.listen(port);
 } else {
-  server = app.listen(port, 'localhost');
+  app.listen(port, 'localhost');
 }
-
-server.on('listening', () =>
-  l.notice(`dbKoda Controller is ready at ${app.get('host')}:${port}`)
-);
