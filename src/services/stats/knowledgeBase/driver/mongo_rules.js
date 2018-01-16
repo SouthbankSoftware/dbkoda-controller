@@ -22,13 +22,13 @@
  */
 
 
-import commonRules from './common';
+import {parseStats} from './common';
 
 const rules = [{
   release: 'all', // mongod, mongos, etc.
   version: 'all', // 3.2, 3.0, etc.
   parse: (previous, newData) => { // define the parse command output logic
-    return commonRules.parseStats(previous, newData);
+    return parseStats(previous, newData);
   }
 }];
 
