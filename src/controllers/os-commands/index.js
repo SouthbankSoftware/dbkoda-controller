@@ -1,7 +1,7 @@
 /**
  * Created by joey on 21/7/17.
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-16T16:18:23+11:00
+ * @Last modified time: 2018-01-17T16:11:37+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -25,10 +25,8 @@
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import { loadCommands } from '../../config';
-
-const findCommandParameters = cmd => {
-  return cmd.trim().split(/\s+/g);
-};
+import { escapeDoubleQuotes } from './processDoubleQuotes';
+import tokeniseCmdString from './tokeniseCmdString';
 
 class OSCommandsController extends EventEmitter {
   constructor() {
@@ -59,13 +57,13 @@ class OSCommandsController extends EventEmitter {
     }
     const { connect, shellId } = this.requestQueue[0];
     let { cmd } = this.requestQueue[0];
-    const id = connect.id;
+    const { id } = connect;
     const { username, password } = connect;
     this.requestQueue.shift();
     if (username && password) {
-      cmd = cmd.replace('-p ******', `-p ${password}`);
+      cmd = cmd.replace('-p ******', `-p "${escapeDoubleQuotes(password)}"`);
     }
-    const params = findCommandParameters(cmd);
+    const params = tokeniseCmdString(cmd);
     const mongoCmd = configObj[params[0] + 'Cmd'] ? configObj[params[0] + 'Cmd'] : params[0];
     params.splice(0, 1);
     try {
@@ -122,7 +120,6 @@ class OSCommandsController extends EventEmitter {
 }
 
 module.exports.OSCommandsController = OSCommandsController;
-module.exports.findCommandParameters = findCommandParameters;
 
 OSCommandsController.COMMAND_OUTPUT_EVENT = 'os-command-output';
 OSCommandsController.COMMAND_FINISH_EVENT = 'os-command-finish';
