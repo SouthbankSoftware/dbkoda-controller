@@ -1,4 +1,10 @@
-/*
+/**
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2017-08-30T14:10:42+10:00
+ * @Email:  root@guiguan.net
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-01-17T16:45:37+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,19 +23,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * Created by joey on 28/8/17.
- */
 
-const assert = require('assert');
-
-const {findCommandParameters} = require('../../../../src/controllers/os-commands');
+import assert from 'assert';
+import tokeniseCmdString from '~/controllers/os-commands/tokeniseCmdString';
 
 describe('mongo-command test suite', () => {
-  it('test mongo commands argument parser', () => {
-    const params = findCommandParameters('mongodump --host localhost --port 27017 --db agg --collection   products --numParallelCollections 4 -o "/Users/joey/Downloads/test db/dump" ');
-    assert.equal(params.length, 13);
-    assert.equal(params[0], 'mongodump');
-    assert.equal(params[12], '/Users/joey/Downloads/test db/dump');
+  it('can properly tokenise command string', () => {
+    const input =
+      '  mongodump --host "10.211.55.2" --port "27017" --db "SampleCollections" -u "test" -p "^&&&<>\';| \\"test\\"" --collection "Sakila_customers" --authenticationDatabase "admin" --numParallelCollections "4" -o "/Users/guiguan/Downloads/dump"  ';
+    const output = tokeniseCmdString(input);
+
+    assert.deepEqual(output, [
+      'mongodump',
+      '--host',
+      '10.211.55.2',
+      '--port',
+      '27017',
+      '--db',
+      'SampleCollections',
+      '-u',
+      'test',
+      '-p',
+      '^&&&<>\';| "test"',
+      '--collection',
+      'Sakila_customers',
+      '--authenticationDatabase',
+      'admin',
+      '--numParallelCollections',
+      '4',
+      '-o',
+      '/Users/guiguan/Downloads/dump',
+    ]);
   });
 });
