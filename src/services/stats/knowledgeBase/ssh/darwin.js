@@ -21,21 +21,63 @@
  * Created by joey on 20/12/17.
  */
 
+const getMegabyteValue = (value) => {
+  if (value.indexOf('G') > 0) {
+    return parseInt(value.replace('G', ''), 10) * 1024;
+  }
+  if (value.indexOf('M') > 0) {
+    return parseInt(value.replace('M', ''), 10);
+  }
+};
 
 const common = {
   os: 'darwin',
   release: 'all',
   version: 'all',
-  cmd: 'ps -A -o %cpu,%mem | awk \'{ cpu += $1; mem += $2} END {print cpu , mem}\'', // command need to query os stats
+  // cmd: 'ps -A -o %cpu,%mem | awk \'{ cpu += $1; mem += $2} END {print cpu , mem}\'', // command need to query os stats
+  cmd: 'top -l 1 -n 0',
   parse: (d) => {
-    console.log('get data, ', d);
-    const output = {timestamp: (new Date()).getTime()};
-    if (d && d.indexOf(' ') > 0) {
-      const split = d.split(' ');
-      output.value = {cpu: split[0].replace(/\n/g, ''), memory: split[1].replace(/\n/g, '')};
-    }
+    l.info('get data ', d);
+    const split = d.split('\n');
+    const output = {};
+    split && split.forEach((str) => {
+      if (!output.value) {
+        output.value = {};
+      }
+      if (str.indexOf('CPU usage:') >= 0) {
+        // parse cpu output
+        let left = str.replace(/CPU usage:/, '');
+        l.info('left:', left);
+        left = left.split(',');
+        if (left && left.length > 2) {
+          const user = parseFloat(left[0].substr(0, left[0].indexOf('%')).trim());
+          const system = parseFloat(left[0].substr(0, left[1].indexOf('%')).trim());
+          const idle = parseFloat(left[0].substr(0, left[2].indexOf('%')).trim());
+          output.value.cpu = user + system;
+          output.value.cpuDetail = {user, system, idle};
+        }
+      } else if (str.indexOf('PhysMem:') >= 0) {
+        // parse memory output
+        const left = str.replace(/PhysMem:/, '').split(',');
+        let used = left[0].trim().split(' ')[0];
+        let unUsed = left[1].trim().split(' ')[0];
+        used = getMegabyteValue(used);
+        unUsed = getMegabyteValue(unUsed);
+        output.value.memory = used / (used + unUsed) * 100;
+        output.value.memoryDetail = {used, unUsed};
+      }
+    });
     return output;
   }
+  // parse: (d) => {
+  //   console.log('get data, ', d);
+  //   const output = {timestamp: (new Date()).getTime()};
+  //   if (d && d.indexOf(' ') > 0) {
+  //     const split = d.split(' ');
+  //     output.value = {cpu: split[0].replace(/\n/g, ''), memory: split[1].replace(/\n/g, '')};
+  //   }
+  //   return output;
+  // }
 };
 
 export default [common];
