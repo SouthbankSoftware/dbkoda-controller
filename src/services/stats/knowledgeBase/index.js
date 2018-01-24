@@ -24,5 +24,6 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-export mongoNativeDriverKnowledge from './mongoNativeDriver';
+export mongoNativeDriverKnowledge from './driver';
 export sshKnowledge from './ssh';
+export topologyKnowledge from './topology';

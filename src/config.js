@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-24T11:50:00+11:00
+ * @Last modified time: 2017-12-22T12:49:54+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -120,6 +120,7 @@ export const loadConfigFromYamlFile = (p) => {
     drillControllerCmd: null,
     showWelcomePageAtStart: true,
     telemetryEnabled: true,
+    performancePanelSamplingRate: 5000,
     sshCounterInterval: 2,
     sshCounterCmd: 'vmstat'
   };

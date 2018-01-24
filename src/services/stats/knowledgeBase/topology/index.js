@@ -18,30 +18,34 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Created by joey on 11/12/17.
+ * Created by joey on 20/12/17.
  */
-/* eslint-disable */
+import _ from 'lodash';
 
+export const items = ['topology'];
 
-global.log = {
-  info: msg => console.log(msg),
-  error: msg => console.error(msg),
-  debug: msg => console.debug(msg),
+const rules = [{
+  serverVersion: 'all',
+  parse: (db) => {
+    return new Promise((resolve, reject) => {
+      db.admin().command({replSetGetStatus: 1}, (err, result) => {
+        if (!result || err) {
+          reject(err);
+          return;
+        }
+        resolve(result.members);
+      });
+    }).catch((err) => {
+      log.error('failed to get replica set ', err);
+      this.observer.error(err);
+    });
+  }
+}];
+
+export const getKnowledgeBaseRules = (serverVersion) => {
+  const matched = _.find(rules, {serverVersion});
+  if (!matched && rules.length > 0) {
+    return rules[0];
+  }
+  return matched;
 };
-global.l = global.log;
-
-const MongoClient = require('mongodb').MongoClient;
-const TopologyMonitor = require('../../services/stats/observables/topology');
-
-let url = 'mongodb://10.0.0.24:27019,10.0.0.24:27020,10.0.0.24:27021/admin?replicaSet=replset';
-url = 'mongodb://localhost:28017,localhost:28018,localhost:28019/admin?replicaSet=replset';
-MongoClient.connect(url, function(err, db) {
-  if (err) throw err;
-
-  const monitor = new TopologyMonitor();
-  monitor.init({mongoConnection: {driver: db, dbVersion: '3.6'}});
-  monitor.rxObservable.subscribe(
-    x => console.log('get sub ', x),
-    (e) => console.log('error ',e)
-  )
-});

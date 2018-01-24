@@ -1,7 +1,4 @@
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:21:24+11:00
- *
+/*
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -20,7 +17,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+ * Created by joey on 2/1/18.
+ */
 
-import { mongoNativeDriverKnowledge } from '../../knowledgeBase';
 
-export const { items } = mongoNativeDriverKnowledge;
+import {parseStats} from './common';
+
+const rules = [{
+  release: 'all', // mongod, mongos, etc.
+  version: 'all', // 3.2, 3.0, etc.
+  parse: (previous, newData) => { // define the parse command output logic
+    return parseStats(previous, newData);
+  }
+}];
+
+export default rules;

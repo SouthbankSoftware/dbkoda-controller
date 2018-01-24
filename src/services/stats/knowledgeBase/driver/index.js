@@ -1,7 +1,4 @@
 /**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:20:41+11:00
- *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -22,4 +19,30 @@
  */
 
 /* List of indentifiers/keys for items to be observed */
+
+import {findRules} from '../utils';
+import mongoRules from './mongo_rules';
+
 export const items = ['numConnections', 'insertOpCounter'];
+
+/**
+ * define the mongo stats knowledgebase rules.
+ *
+ * @type {{all}}  mongo server should be same for all os types
+ */
+export const rules = {
+  // all match all os types
+  'all': mongoRules
+};
+
+/**
+ * find the knowledge base rules
+ *
+ * @param release could be mongod, mongos etc.
+ * @param version   the mongo server version
+ * @returns {*}
+ */
+export const getKnowledgeBaseRules = ({release, version}) => {
+  const rule = findRules({osType: 'all', release, version}, rules);
+  return {...rule};
+};

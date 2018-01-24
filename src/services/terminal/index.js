@@ -31,7 +31,7 @@ import hooks from './hooks';
 
 export class Terminal {
   constructor(_options) {
-    this.events = ['data', 'error', 'warn'];
+    this.events = ['data', 'error'];
   }
 
   setup(_app, _path) {

@@ -176,8 +176,8 @@ const csiStateHandler = {
       num = params[0];
     }
     parser.bufferY -= num;
-    if (parser.bufferY < -1) {
-      parser.bufferY = -1;
+    if (parser.bufferY < 0) {
+      parser.bufferY = 0;
       parser.buffers = [];
     } else {
       parser.buffers = parser.buffers.splice(parser.bufferY, num);

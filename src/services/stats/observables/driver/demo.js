@@ -18,10 +18,17 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Created by joey on 11/12/17.
+ * Created by joey on 2/1/18.
  */
+
+
 /* eslint-disable */
 
+import {getKnowledgeBaseRules} from '../../knowledgeBase/driver';
+import flat from 'flat';
+import _ from 'lodash';
+
+const MongoNativeDriver = require('./index');
 
 global.log = {
   info: msg => console.log(msg),
@@ -30,18 +37,29 @@ global.log = {
 };
 global.l = global.log;
 
+
+
 const MongoClient = require('mongodb').MongoClient;
-const TopologyMonitor = require('../../services/stats/observables/topology');
 
 let url = 'mongodb://10.0.0.24:27019,10.0.0.24:27020,10.0.0.24:27021/admin?replicaSet=replset';
-url = 'mongodb://localhost:28017,localhost:28018,localhost:28019/admin?replicaSet=replset';
+url = 'mongodb://localhost';
+url = 'mongodb://10.0.0.25:40011';  // 3.4
+// url = 'mongodb://10.0.0.25:40012';  // 3.0
+// url = 'mongodb://10.0.0.25:40013';  // 3.2
+// url = 'mongodb://10.0.0.25:40014';  // 3.6
+
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
-
-  const monitor = new TopologyMonitor();
+  // db.admin().command({serverStatus: 1}, {}, (err, data) => {
+  //   _.forOwn(flat(data), (v, k) => {
+  //     console.log(k);
+  //   });
+  // });
+  const monitor = new MongoNativeDriver();
+  monitor.samplingRate = 1000;
   monitor.init({mongoConnection: {driver: db, dbVersion: '3.6'}});
   monitor.rxObservable.subscribe(
-    x => console.log('get sub ', x),
+    x => console.log('get sub ', JSON.stringify(x)),
     (e) => console.log('error ',e)
-  )
+  );
 });

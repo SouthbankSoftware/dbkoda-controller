@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:50:05+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-15T18:25:06+11:00
+ * @Last modified time: 2017-12-28T18:19:45+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -36,43 +36,60 @@ export type ObservaleValue = {
 };
 
 export interface ObservableWrapper {
+  /**---------------------
+   * Managed by Controller
+   *----------------------*/
   /**
-   * Underlie RxJs Observable instance
-   *
-   * You should manage it
+   * Id of this observable wrapper instance
    */
-  rxObservable: ?Observable<ObservaleValue>;
-  /**
-   * Name of this observable type for displaying purpose
-   *
-   * You should manage it
-   */
-  displayName: string;
+  id: string;
   /**
    * Sampling rate, number of milliseconds between samples
    *
-   * You can define your own ES6 setter if you want to execute extra logic whenever sampling rate
-   * is changed:
-   * ```
-   *   set samplingRate(rate: number) {
-   *     ...
-   *   }
-   * ```
-   *
-   * Controller will provide and manage it
+   * READ ONLY
    */
   samplingRate: number;
   /**
-   * List of keys that this observable type supports
+   * Profile Id this observable wrapper belongs to
    *
-   * You should manage it
+   * READ ONLY
+   */
+  profileId: UUID;
+  /**
+   * Whether to print out debug message
+   *
+   * READ ONLY
+   */
+  debug: boolean;
+  /**
+   * Emit error to user without finalising underlie RxJs Observable of this wrapper instance
+   */
+  emitError: (error: string, level: 'warn' | 'error') => void;
+
+  /**--------------
+   * Managed by You
+   *---------------*/
+  /**
+   * Underlie RxJs Observable instance
+   */
+  rxObservable: ?Observable<ObservaleValue>;
+  /**
+   * Name of this observable wrapper instance for displaying purpose
+   */
+  displayName: string;
+  /**
+   * List of keys that this observable wrapper instance supports
    */
   items: string[];
-  /* Initialise current observable. `rxObservable` should be created after this */
-  init(profileId: UUID, options: { mongoConnection: MongoConnection }): Promise<*>;
+  /* Initialise rxObservable for current observable wrapper instance. `rxObservable` should be set
+   * after this
+   */
+  init(options: {
+    mongoConnection: MongoConnection,
+  }): Promise<*>;
   /**
-   * Destroy current observable. Any created resources should be recyled. `rxObservable` should be
-   * set back to `null`
+   * Destroy rxObservable for current observable wrapper instance. Any created resources should be
+   * recyled. `rxObservable` should be set back to `null`
    */
   destroy(): Promise<*>;
 }

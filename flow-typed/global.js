@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-10-02T13:50:52+11:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T13:28:43+11:00
+ * @Last modified time: 2017-12-19T14:41:34+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -25,6 +25,7 @@
 
 /* eslint-disable */
 
-/** Global types */
+declare var l: any;
+
 declare type UUID = string;
 declare var log: Function;

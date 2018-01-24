@@ -18,30 +18,16 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Created by joey on 11/12/17.
+ * Created by joey on 2/1/18.
  */
-/* eslint-disable */
 
+const {getKnowledgeBaseRules} = require('../../../../../../src/services/stats/knowledgeBase/driver');
 
-global.log = {
-  info: msg => console.log(msg),
-  error: msg => console.error(msg),
-  debug: msg => console.debug(msg),
-};
-global.l = global.log;
+const assert = require('assert');
 
-const MongoClient = require('mongodb').MongoClient;
-const TopologyMonitor = require('../../services/stats/observables/topology');
-
-let url = 'mongodb://10.0.0.24:27019,10.0.0.24:27020,10.0.0.24:27021/admin?replicaSet=replset';
-url = 'mongodb://localhost:28017,localhost:28018,localhost:28019/admin?replicaSet=replset';
-MongoClient.connect(url, function(err, db) {
-  if (err) throw err;
-
-  const monitor = new TopologyMonitor();
-  monitor.init({mongoConnection: {driver: db, dbVersion: '3.6'}});
-  monitor.rxObservable.subscribe(
-    x => console.log('get sub ', x),
-    (e) => console.log('error ',e)
-  )
+describe('test knowledge base rules', () => {
+  it('test loading kb rules', () => {
+    const rules = getKnowledgeBaseRules({release: 'mongod', version: '3.4.4'});
+    assert.equal('all', rules.release);
+  });
 });

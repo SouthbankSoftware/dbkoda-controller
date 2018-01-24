@@ -108,6 +108,8 @@ class MongoConnectionController {
     let db;
     let dbVersion;
     let tunnel;
+
+    console.log('conn params', params);
     const sshOpts = this.getTunnelParams(params);
     return new Promise((resolve, reject) => {
       this.createTunnel(sshOpts)
