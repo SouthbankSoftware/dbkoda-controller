@@ -93,6 +93,20 @@ const commandParsers = {
   'disk': (output) => {
     // parse disk command output
     log.debug('disk output:', output);
+    const lines = output.split('\n');
+    const o = {timestamp: (new Date()).getTime()};
+    try {
+      if (lines.length > 1) {
+        const items = lines[1].split(' ').filter(x => x.trim() !== '');
+        if (items.length > 4) {
+          o.value = {disk: parseInt(items[4].replace('%', ''), 10)};
+        }
+      }
+    } catch (err) {
+      log.error(err);
+    }
+    log.debug('disk output value:', o);
+    return o;
   }
 };
 
