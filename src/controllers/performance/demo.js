@@ -52,8 +52,8 @@ const sshOpts = {
   sshOpts: {
     host: 'localhost',
     port: 22,
-    username: 'joey',
-    password: 'ctccadm',
+    username: 'admin',
+    password: '',
 
   }
 };
