@@ -29,7 +29,6 @@ const os = require('os');
 const assert = require('assert');
 const _ = require('lodash');
 const path = require('path');
-const fs = require('fs');
 
 const extension = os.platform() === 'win32' ? '.exe' : '';
 
@@ -99,12 +98,6 @@ describe('configure path tests', () => {
     const p = path.join(__dirname, '/config_mongo_exe.yml');
     const config = loadConfigFromYamlFile(p);
     assert.equal(config.mongoCmd, 'mongo.exe');
-  });
-
-  it('load none existed file', () => {
-    const config = loadConfigFromYamlFile('xxxxx');
-    assert.equal(config.mongoCmd, config.mongoCmd); // File should now be written as passed in
-    fs.unlinkSync('xxxxx');
   });
 
   it('load commands from file', () => {
