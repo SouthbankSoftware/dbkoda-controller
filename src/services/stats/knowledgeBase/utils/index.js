@@ -104,3 +104,11 @@ export const buildCommand = (obj) => {
   });
   return command;
 };
+
+export const buildCommands = (knowledgebase) => {
+  const cmds = {};
+  _.forOwn(knowledgebase.cmds, (v, k) => {
+    cmds[k] = buildCommand({cmd: v});
+  });
+  return cmds;
+};

@@ -50,10 +50,10 @@ const sshTunnelOpts = {
 
 const sshOpts = {
   sshOpts: {
-    host: 'localhost',
+    host: '10.0.0.24',
     port: 22,
-    username: 'joey',
-    password: 'ctccadm',
+    username: 'admin',
+    password: 'DBEnvy2016',
 
   }
 };
@@ -69,7 +69,7 @@ const sshOpts = {
 // };
 
 const counter = new SSHCounter();
-counter.samplingRate = 1000;
+counter.samplingRate = 3000;
 counter.profileId = 1;
 counter.emitError = (err) => console.error(err);
 counter.init({'mongoConnection': sshOpts}).then(() => {

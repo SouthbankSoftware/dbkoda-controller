@@ -24,16 +24,15 @@
 import os from 'os';
 import _ from 'lodash';
 
-const common = {
-  release: 'all', // ubuntu, centos, red hat, etc.
-  version: 'all', // 15.0, 16.0, etc.
-  cmd: 'vmstat $samplingRate', // command need to query os stats
-  parse: (d) => { // define the parse command output logic
-    log.debug('post process ', d);
+const commandParsers = {
+  'cpuMemory': (d) => {
     // parse the vmstat command output
     const splited = d.split(os.platform() === 'win32' ? '\n\r' : '\n');
+    if (!splited || splited.length < 4) {
+      return;
+    }
     const output: any = {timestamp: (new Date()).getTime()};
-    splited.forEach((line) => {
+    const line = splited[3];
       if (line.match(/procs/) && line.match(/memory/)) {
         // this is header, ignore
       } else if (line.match(/swpd/ && line.match(/buff/))) {
@@ -76,6 +75,9 @@ const common = {
             }
           };
           data.cpu = data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st;
+          if (data.cpu > 100) {
+            data.cpu = 100;
+          }
           const totalMemory = data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache + data.details.memory.free;
           let usedMemory = data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache;
           if (usedMemory > totalMemory) {
@@ -86,8 +88,24 @@ const common = {
           output.value = data;
         }
       }
-    });
     return output;
+  },
+  'disk': (output) => {
+    // parse disk command output
+    log.debug('disk output:', output);
+  }
+};
+
+const common = {
+  release: 'all', // ubuntu, centos, red hat, etc.
+  version: 'all', // 15.0, 16.0, etc.
+  cmds: {
+    'cpuMemory': 'vmstat 1 2', // command need to query os stats
+    'disk': 'df /',
+  },
+  parse: (key, output) => { // define the parse command output logic, the key is defined in knowledge base
+    log.debug('post process ', key, output);
+    return commandParsers[key](output);
   }
 };
 

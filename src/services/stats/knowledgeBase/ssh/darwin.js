@@ -30,13 +30,8 @@ const getMegabyteValue = (value) => {
   }
 };
 
-const common = {
-  os: 'darwin',
-  release: 'all',
-  version: 'all',
-  // cmd: 'ps -A -o %cpu,%mem | awk \'{ cpu += $1; mem += $2} END {print cpu , mem}\'', // command need to query os stats
-  cmd: 'top -l 1 -n 0',
-  parse: (d) => {
+const commandParsers = {
+  'cpuMemory': (d) => {
     l.info('get data ', d);
     const split = d.split('\n');
     const output = {};
@@ -68,6 +63,23 @@ const common = {
       }
     });
     return output;
+  },
+  'disk': (d) => {
+    log.debug('get disk output ', d);
+  },
+};
+
+const common = {
+  os: 'darwin',
+  release: 'all',
+  version: 'all',
+  // cmd: 'ps -A -o %cpu,%mem | awk \'{ cpu += $1; mem += $2} END {print cpu , mem}\'',
+  cmds: {
+    cpuMemory: 'top -l 1 -n 0', // command need to query os stats
+    disk: 'df /',
+  },
+  parse: (k, d) => { // the key is defined in knowledge base per command
+    return commandParsers[k](d);
   }
   // parse: (d) => {
   //   console.log('get data, ', d);
