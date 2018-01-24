@@ -66,6 +66,23 @@ const commandParsers = {
   },
   'disk': (d) => {
     log.debug('get disk output ', d);
+    const lines = d.split('\n');
+    const o = {timestamp: (new Date()).getTime()};
+    try {
+      if (lines.length > 1) {
+        const items = lines[1].split(' ').filter(x => x.trim() !== '');
+        if (items.length > 3) {
+          const used = parseInt(items[2], 10);
+          const available = parseInt(items[3], 10);
+          const per = used / (used + available) * 100;
+          o.value = {disk: per, detail: {used, available}};
+        }
+      }
+    } catch (err) {
+      log.error(err);
+    }
+    log.debug('disk output value:', o);
+    return o;
   },
 };
 
