@@ -1,25 +1,14 @@
 # dbKoda Controller
 *dbKoda Controller built with state of the art Feathers stack*
 
-<p align="left">
-  <a href="https://david-dm.org/SouthbankSoftware/dbkoda-controller">
-    <img src="https://img.shields.io/david/SouthbankSoftware/dbkoda-controller.svg?style=flat-square">
-  </a>
-  <a href="https://david-dm.org/SouthbankSoftware/dbkoda-controller?type=dev">
-    <img src="https://img.shields.io/david/dev/SouthbankSoftware/dbkoda-controller.svg?style=flat-square">
-  </a>
-</p>
+[![CQUTesting](https://img.shields.io/travis/SouthbankSoftware/dbkoda-controller.svg?style=flat-square&label=CQUTesting)](https://travis-ci.org/SouthbankSoftware/dbkoda-controller)
+[![dependencies](https://img.shields.io/david/SouthbankSoftware/dbkoda-controller.svg?style=flat-square)](https://david-dm.org/SouthbankSoftware/dbkoda-controller)
+[![devDependencies](https://img.shields.io/david/dev/SouthbankSoftware/dbkoda-controller.svg?style=flat-square)](https://david-dm.org/SouthbankSoftware/dbkoda-controller?type=dev)
 
-## Requirements
+## Requirement
+* Node 8.9.1+
+* Yarn 1.3.2+
 
-* Yarn 0.21.3+
-
-## Setup
-
-* Run `yarn install` or `npm install` to install dependencies.
-
-
-## Run Steps
-
-* Note: Currently for dev mode the UI and controller must be run seperately.
-* You can run `yarn dev` or `npm run dev` to start the controller.
+## Usage
+1. `yarn install`
+2. `yarn dev`
