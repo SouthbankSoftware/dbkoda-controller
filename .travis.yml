@@ -2,11 +2,11 @@
 # @Date:   2018-01-25T18:14:56+11:00
 # @Email:  root@guiguan.net
 # @Last modified by:   guiguan
-# @Last modified time: 2018-01-26T00:05:13+11:00
+# @Last modified time: 2018-01-26T00:16:39+11:00
 
 os: linux
 dist: trusty
-sudo: false
+sudo: required
 language: node_js
 # Node version specified in .nvmrc
 node_js: null
