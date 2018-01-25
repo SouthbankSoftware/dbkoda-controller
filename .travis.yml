@@ -2,11 +2,11 @@
 # @Date:   2018-01-25T18:14:56+11:00
 # @Email:  root@guiguan.net
 # @Last modified by:   guiguan
-# @Last modified time: 2018-01-26T00:16:39+11:00
+# @Last modified time: 2018-01-26T00:24:12+11:00
 
 os: linux
 dist: trusty
-sudo: required
+sudo: false
 language: node_js
 # Node version specified in .nvmrc
 node_js: null
@@ -16,7 +16,7 @@ git:
   submodules: false
 
 install:
-  - pip install mtools pymongo numpy
+  - sudo pip install mtools pymongo numpy
 
 script:
   - set -e
