@@ -2,7 +2,7 @@
 # @Date:   2018-01-25T18:14:56+11:00
 # @Email:  root@guiguan.net
 # @Last modified by:   guiguan
-# @Last modified time: 2018-01-26T10:48:40+11:00
+# @Last modified time: 2018-01-26T10:51:31+11:00
 
 os: linux
 dist: trusty
@@ -18,7 +18,7 @@ git:
 cache: pip
 
 install:
-  - sudo pip install mtools pymongo numpy psutil
+  - sudo -H pip install mtools pymongo numpy psutil
   - mongo --version
 
 script:
