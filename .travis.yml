@@ -2,7 +2,7 @@
 # @Date:   2018-01-25T18:14:56+11:00
 # @Email:  root@guiguan.net
 # @Last modified by:   guiguan
-# @Last modified time: 2018-01-26T00:33:48+11:00
+# @Last modified time: 2018-01-26T10:40:34+11:00
 
 os: linux
 dist: trusty
@@ -17,12 +17,12 @@ git:
 
 install:
   - sudo pip install mtools pymongo numpy
-  - which mongo && mongo --version
-  - exit 1
+  - mongo --version
 
 script:
   - set -e
   - yarn install --no-progress
+  - mkdir -p ~/.dbKoda
   - yarn test
 
 notifications:
