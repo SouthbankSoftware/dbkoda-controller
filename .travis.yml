@@ -25,7 +25,7 @@ script:
   - set -e
   - yarn install --no-progress
   - mkdir -p ~/.dbKoda
-  - yarn mocha --grep 'single server inspector test'
+  - yarn test:integration --grep 'single server inspector test'
 
 notifications:
   slack:
