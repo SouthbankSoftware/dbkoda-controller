@@ -1,3 +1,26 @@
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-01-29T15:13:18+11:00
+ *
+ * dbKoda - a modern, open source code editor, for MongoDB.
+ * Copyright (C) 2017-2018 Southbank Software
+ *
+ * This file is part of dbKoda.
+ *
+ * dbKoda is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * dbKoda is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 const winston = require('winston');
 const {launchSingleInstance, killMongoInstance, generateMongoData} = require('test-utils');
 const assert = require('assert');
@@ -23,8 +46,8 @@ describe('test run shell command', () => {
       this.timeout(TIMEOUT * 3);
       launchSingleInstance(port);
       setTimeout(() => {
-        generateMongoData(port, 'test', 'user', '--num 1000');
-        generateMongoData(port, 'users', 'user', '--num 2000');
+        generateMongoData(port, 'test', 'user', 1000);
+        generateMongoData(port, 'users', 'user', 2000);
         setTimeout(() => {
           connection
             .create(

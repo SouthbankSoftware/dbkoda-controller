@@ -1,0 +1,35 @@
+# @Author: Guan Gui <guiguan>
+# @Date:   2018-01-25T18:14:56+11:00
+# @Email:  root@guiguan.net
+# @Last modified by:   guiguan
+# @Last modified time: 2018-01-29T15:40:48+11:00
+
+os: linux
+dist: trusty
+sudo: required
+language: node_js
+# Node version specified in .nvmrc
+node_js: null
+
+git:
+  depth: 3
+  submodules: false
+
+cache: pip
+
+install:
+  - sudo -H pip install mtools pymongo numpy psutil python-dateutil
+  - mongo --version
+
+script:
+  - set -e
+  - yarn install --no-progress
+  - mkdir -p ~/.dbKoda
+  - yarn test
+
+notifications:
+  slack:
+    rooms:
+      - secure: t9MoPvS+2jvj4pJnPW/4Rm4j1WlGejLt2rx2h4dUbYu/1sHK5h8F/4MHPzDrHFjztSRIbohj4dKoYvPdQbGMaT0XlM59ivKcYODigvo23w/Vn6fr8G3yyh/QSlWVHs/At6JI3/9k04dNS8vWVm1Bto48EUbIq/t+c2ECHvFonmkclnSwktnPpmD4elLDqUZ/hqbs5FX4gpq4vAZElrv6pcF/vwuLx7uFVo/PgLZsse3ZBaD4rmoCHkHyZLN6W7T8fSOP+viyM6DdckIg0QrLPbub1rRleJSIo3sln88gW8FSDy8b/6C5jSuj4RRVBo3eZX5FKBgkBgqjapoIKwjeVmmwmdKkDUM2Zgd0W67o671XGphA/HzXgB/043BrJVhBrrRqPafCUzuxuV/D6ZNpCn4bT40VX2jb+CcLkkUuO7vp8dBxIydOLBYHtri+J867MS2cCvxte8o4t2S+tLBZ4mmgbvO+Je61hFGkU6jyw68rzUjq/rYJIe4d547LryA4ENTnzxosi7RMPqhK0YASnCr2Snd9mBVA64a1noVIW+sN04oI5mmp91Wq+fkN351xOm/WjZugCBrCzAwedOYbrKUVZdlUJPAH68FP/h7aGIMx4qzxdHzusR3eLF9WFq+2HbjGct3fTAc+UUM9JtJxCReNoUza8VmOluaQPFNX//I=
+    template:
+      - 'Code quality and unit testing for build <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>) of <https://github.com/%{repository_slug}/tree/%{branch}|%{repository_slug}@%{branch}> by %{author} %{result} in %{duration}: %{commit_message}'
