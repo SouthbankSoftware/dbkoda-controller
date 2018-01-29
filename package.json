@@ -133,6 +133,6 @@
     "rimraf": "^2.6.2",
     "source-map-support": "^0.5.0",
     "strip-comments": "^0.4.4",
-    "test-utils": "^1.0.21"
+    "test-utils": "^1.1.0"
   }
 }
