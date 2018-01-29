@@ -2,7 +2,7 @@
 # @Date:   2018-01-25T18:14:56+11:00
 # @Email:  root@guiguan.net
 # @Last modified by:   guiguan
-# @Last modified time: 2018-01-26T10:57:25+11:00
+# @Last modified time: 2018-01-29T15:40:48+11:00
 
 os: linux
 dist: trusty
@@ -25,7 +25,7 @@ script:
   - set -e
   - yarn install --no-progress
   - mkdir -p ~/.dbKoda
-  - yarn test:integration --grep 'single server inspector test'
+  - yarn test
 
 notifications:
   slack:
