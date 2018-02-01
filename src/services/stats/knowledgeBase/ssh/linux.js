@@ -140,8 +140,8 @@ const common = {
   release: 'all', // ubuntu, centos, red hat, etc.
   version: 'all', // 15.0, 16.0, etc.
   cmds: {
-    // 'cpuMemory': 'vmstat 1 2', // command need to query os stats
-    // 'disk': 'df /',
+    'cpuMemory': 'vmstat 1 2', // command need to query os stats
+    'disk': 'df /',
     'network': 'ifconfig `route | grep \'^default\' | grep -o \'[^ ]*$\'`'
   },
   parse: (key, output) => { // define the parse command output logic, the key is defined in knowledge base
