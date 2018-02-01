@@ -51,12 +51,11 @@ export default class SSHCounter implements ObservableWrapper {
   displayName = 'SSH Stats';
   samplingRate: number;
   knowledgeBase: Object;
-  statsCmd: string;
   statsCmds: Object;
   intervalId: number;
 
   constructor() {
-    this.items = ['cpu', 'memory', 'disk'];
+    this.items = ['cpu', 'memory', 'disk', 'network'];
   }
 
   init(options: Object): Promise<*> {

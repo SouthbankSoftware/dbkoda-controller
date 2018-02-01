@@ -102,6 +102,37 @@ const commandParsers = {
     }
     log.debug('disk output value:', o);
     return o;
+  },
+  'network': (output) => {
+    log.debug('network output ', output);
+    const splited = output.split('\n');
+    let download = 0;
+    let upload = 0;
+    splited.forEach((str) => {
+      let value = null;
+      if (str.indexOf('RX') >= 0 || str.indexOf('TX') >= 0) {
+        if (str.indexOf('bytes:') >= 0) {
+          const matched = str.match(/bytes:(\d+)/);
+          if (matched && matched.length > 1) {
+            value = matched[1];
+          }
+        } else if (str.indexOf('byte ')) {
+          const matched = str.match(/bytes[\s]*(\d+)/);
+          if (matched && matched.length > 1) {
+            value = matched[1];
+          }
+        }
+      }
+      if (value !== null) {
+        if (str.indexOf('RX') >= 0) {
+          download = value;
+        } else {
+          upload = value;
+        }
+      }
+    });
+    log.debug(`network ${download} ${upload}.`);
+    return {timestamp: (new Date()).getTime(), value: {network: {upload, download}}};
   }
 };
 
@@ -109,8 +140,9 @@ const common = {
   release: 'all', // ubuntu, centos, red hat, etc.
   version: 'all', // 15.0, 16.0, etc.
   cmds: {
-    'cpuMemory': 'vmstat 1 2', // command need to query os stats
-    'disk': 'df /',
+    // 'cpuMemory': 'vmstat 1 2', // command need to query os stats
+    // 'disk': 'df /',
+    'network': 'ifconfig `route | grep \'^default\' | grep -o \'[^ ]*$\'`'
   },
   parse: (key, output) => { // define the parse command output logic, the key is defined in knowledge base
     log.debug('post process ', key, output);

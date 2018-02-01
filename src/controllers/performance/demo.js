@@ -25,8 +25,8 @@
 
 global.log = {
   info: msg => console.log(msg),
-  error: msg => console.error(msg),
-  debug: msg => console.debug(msg),
+  error: msg => console.log(msg),
+  debug: msg => console.log(msg),
 };
 global.l = global.log;
 
@@ -50,9 +50,9 @@ const sshTunnelOpts = {
 
 const sshOpts = {
   sshOpts: {
-    host: '10.0.0.24',
+    host: '10.0.0.25',
     port: 22,
-    username: 'admin',
+    username: 'core',
     password: 'DBEnvy2016',
 
   }
