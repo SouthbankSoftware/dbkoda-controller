@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:23:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-04T12:04:16+11:00
+ * @Last modified time: 2018-01-31T22:47:24+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -77,7 +77,6 @@ export default class Dummy implements ObservableWrapper {
   };
 
   init(_options: { mongoConnection: MongoConnection }): Promise<*> {
-    let counter = 0;
     let _observer = null;
 
     if (this.simulateErrorAt) {
@@ -129,15 +128,12 @@ export default class Dummy implements ObservableWrapper {
               value: _.reduce(
                 this.items,
                 (acc, v) => {
-                  const seq = Number(v.substring(5));
-
-                  acc[v] = counter + seq;
+                  acc[v] = this._getRandomNumberInInterval(0, 100);
                   return acc;
                 },
                 {},
               ),
             });
-            counter += 1;
           }, this._simulateSamplingDelay());
 
         _exec();
