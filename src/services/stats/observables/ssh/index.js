@@ -23,9 +23,9 @@
 
 /* eslint-disable class-methods-use-this */
 
-import { Observable, Observer } from 'rxjs';
+import {Observable, Observer} from 'rxjs';
 // $FlowFixMe
-import { Client } from 'ssh2';
+import {Client} from 'ssh2';
 import _ from 'lodash';
 // $FlowFixMe
 import sshTunnel from 'open-ssh-tunnel';
@@ -33,9 +33,9 @@ import sshTunnel from 'open-ssh-tunnel';
 import errors from 'feathers-errors';
 import os from 'os';
 
-import type { ObservableWrapper, ObservaleValue } from '../ObservableWrapper';
-import { getKnowledgeBaseRules } from '../../knowledgeBase/ssh';
-import { buildCommands } from '../../knowledgeBase/utils';
+import type {ObservableWrapper, ObservaleValue} from '../ObservableWrapper';
+import {getKnowledgeBaseRules, items} from '../../knowledgeBase/ssh';
+import {buildCommands} from '../../knowledgeBase/utils';
 
 export default class SSHCounter implements ObservableWrapper {
   osType: Object = {};
@@ -53,9 +53,13 @@ export default class SSHCounter implements ObservableWrapper {
   knowledgeBase: Object;
   statsCmds: Object;
   intervalId: number;
+  historyData: Object = {};
 
   constructor() {
-    this.items = ['cpu', 'memory', 'disk', 'network'];
+    this.items = items;
+    this.items.forEach((item) => {
+      this.historyData[item] = {};
+    });
   }
 
   init(options: Object): Promise<*> {
@@ -275,11 +279,27 @@ export default class SSHCounter implements ObservableWrapper {
   postProcess(output: Object, k: string) {
     try {
       log.debug('get command output ', output);
-      const o = this.knowledgeBase.parse(k, output);
+      const params = {output};
+      const o = this.knowledgeBase.parse(k, params);
       if (o && o.value) {
         const nextObj = _.pick(o, ['value', 'timestamp']);
         nextObj.profileId = this.profileId;
         nextObj.value = _.pick(o.value, this.items);
+        let firstTime = false;
+        _.keys(nextObj.value).forEach((key) => {
+          if (typeof nextObj.value[key] === 'number' && (!this.historyData[key].maximum || nextObj.value[key] > this.historyData[key].maximum)) {
+            this.historyData[key].maximum = nextObj.value[key];
+          }
+          firstTime = this.historyData[key].previous === undefined;
+          this.historyData[key].previous = nextObj.value[key];
+        });
+        if (k === 'network') {
+          if (!firstTime) {
+            nextObj.value[k] = parseFloat(nextObj.value[k] / this.historyData[k].maximum, 10) * 100;
+          } else {
+            nextObj.value[k] = 0;
+          }
+        }
         this.observer.next(nextObj);
       }
     } catch (err) {

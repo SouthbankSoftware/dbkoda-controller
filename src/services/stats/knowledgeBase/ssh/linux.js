@@ -25,14 +25,14 @@ import os from 'os';
 import _ from 'lodash';
 
 const commandParsers = {
-  'cpuMemory': (d) => {
-    log.debug('cpu memory output:', d);
+  'cpuMemory': ({output}) => {
+    log.debug('cpu memory output:', output);
     // parse the vmstat command output
-    const splited = d.split(os.platform() === 'win32' ? '\n\r' : '\n');
+    const splited = output.split(os.platform() === 'win32' ? '\n\r' : '\n');
     if (!splited || splited.length < 4) {
       return;
     }
-    const output: any = {timestamp: (new Date()).getTime()};
+    const o: any = {timestamp: (new Date()).getTime()};
     const line = splited[3];
     const items = _.without(line.split(' '), '');
     if (items.length >= 17) {
@@ -81,11 +81,11 @@ const commandParsers = {
       }
       data.memory = parseFloat((usedMemory / totalMemory) * 100, 10);
       data.io = data.details.io;
-      output.value = data;
+      o.value = data;
     }
-    return output;
+    return o;
   },
-  'disk': (output) => {
+  'disk': ({output}) => {
     // parse disk command output
     log.debug('disk output:', output);
     const lines = output.split('\n');
@@ -103,7 +103,7 @@ const commandParsers = {
     log.debug('disk output value:', o);
     return o;
   },
-  'network': (output) => {
+  'network': ({output}) => {
     log.debug('network output ', output);
     const splited = output.split('\n');
     let download = 0;
@@ -124,15 +124,19 @@ const commandParsers = {
         }
       }
       if (value !== null) {
-        if (str.indexOf('RX') >= 0) {
-          download = value;
-        } else {
-          upload = value;
+        try {
+          if (str.indexOf('RX') >= 0) {
+            download = parseInt(value, 10);
+          } else {
+            upload = parseInt(value, 10);
+          }
+        } catch (e) {
+          log.warn(`can't parse ${value} to int`);
         }
       }
     });
     log.debug(`network ${download} ${upload}.`);
-    return {timestamp: (new Date()).getTime(), value: {network: {upload, download}}};
+    return {timestamp: (new Date()).getTime(), value: {network: download + upload, detail: {upload, download}}};
   }
 };
 
