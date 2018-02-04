@@ -23,7 +23,7 @@
 import {findRules} from '../utils';
 import mongoRules from './mongo_rules';
 
-export const items = ['numConnections', 'insertOpCounter'];
+export const items = ['serverStatus'];
 
 /**
  * define the mongo stats knowledgebase rules.
