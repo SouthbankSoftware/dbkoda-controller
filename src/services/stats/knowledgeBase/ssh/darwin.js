@@ -33,7 +33,7 @@ const getMegabyteValue = (value) => {
 const commandParsers = {
   'cpuMemory': (d) => {
     l.info('get data ', d);
-    const split = d.split('\n');
+    const split = d.output.split('\n');
     const output = {};
     split && split.forEach((str) => {
       if (!output.value) {
@@ -66,7 +66,7 @@ const commandParsers = {
   },
   'disk': (d) => {
     log.debug('get disk output ', d);
-    const lines = d.split('\n');
+    const lines = d.output.split('\n');
     const o = {timestamp: (new Date()).getTime()};
     try {
       if (lines.length > 1) {

@@ -103,7 +103,7 @@ const commandParsers = {
     log.debug('disk output value:', o);
     return o;
   },
-  'network': ({output}) => {
+  'network': ({output, samplingRate}) => {
     log.debug('network output ', output);
     const splited = output.split('\n');
     let download = 0;
@@ -136,7 +136,7 @@ const commandParsers = {
       }
     });
     log.debug(`network ${download} ${upload}.`);
-    return {timestamp: (new Date()).getTime(), value: {network: download + upload, detail: {upload, download}}};
+    return {timestamp: (new Date()).getTime(), value: {network: {upload, download, samplingRate}}};
   }
 };
 
@@ -148,9 +148,9 @@ const common = {
     'disk': 'df /',
     'network': 'ifconfig `route | grep \'^default\' | grep -o \'[^ ]*$\'`'
   },
-  parse: (key, output) => { // define the parse command output logic, the key is defined in knowledge base
+  parse: (key, output, samplingRate) => { // define the parse command output logic, the key is defined in knowledge base
     log.debug('post process ', key, output);
-    return commandParsers[key](output);
+    return commandParsers[key]({...output, samplingRate});
   }
 };
 
