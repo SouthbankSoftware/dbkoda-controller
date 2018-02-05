@@ -64,6 +64,7 @@
     "ajv-keywords": "^2.1.1",
     "archiver": "^2.1.0",
     "babel-polyfill": "^6.26.0",
+    "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",
     "chokidar": "^1.7.0",
     "compression": "^1.7.1",
