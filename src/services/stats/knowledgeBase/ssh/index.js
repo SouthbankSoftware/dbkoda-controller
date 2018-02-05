@@ -26,7 +26,7 @@ import linuxStats from './linux';
 import darwinStats from './darwin';
 import {findRules} from '../utils';
 
-export const items = ['cpu', 'memory', 'disk', 'network'];
+export const items = ['cpu', 'memory', 'disk', 'network', 'io'];
 
 export const rules = {
   linux: linuxStats,
