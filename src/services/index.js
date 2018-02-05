@@ -48,6 +48,7 @@ import mongoCmdValidator from './mongo-cmd-validator';
 import remoteExecService from './remote-execution';
 import drill from './drill';
 import Performance from './performance';
+import masterPass from './master-pass';
 
 module.exports = function() {
   const app = this;
@@ -81,4 +82,5 @@ module.exports = function() {
   app.configure(remoteExecService);
   app.configure(drill);
   app.configure(Performance);
+  app.configure(masterPass);
 };
