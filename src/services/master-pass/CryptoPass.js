@@ -52,7 +52,10 @@ export default class CryptoPass {
         });
   }
 
-  compareVerifyHash(masterHash: string): Promise<boolean> {
+  compareVerifyHash(masterHash: string, verifyHash: ?string): Promise<boolean> {
+    if (verifyHash) {
+      return bcrypt.compare(masterHash, verifyHash);
+    }
     return bcrypt.compare(masterHash, this._verifyHash);
   }
 
