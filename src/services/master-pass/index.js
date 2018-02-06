@@ -71,7 +71,15 @@ export class MasterPass {
       .then((verifyHash) => {
         return this.store.initStore(verifyHash)
           .then(() => {
-            return Promise.resolve(this.store.syncStore(profileIds));
+            return this.store.getPassword('verify').then((storeVerifyHash) => {
+              return this.cryptoPass.compareVerifyHash(masterPassword, storeVerifyHash)
+              .then((compareOk) => {
+                if (!compareOk) {
+                  throw new errors.NotAuthenticated('Unable to init store with the specified master password.');
+                }
+                return Promise.resolve(this.store.syncStore(profileIds));
+              });
+            });
           });
       })
       .catch((error) => {
@@ -83,10 +91,7 @@ export class MasterPass {
   patch(_id: string, _data: { password: string }, _params: {}): Promise<boolean> {
     const profileId = _id;
     const { password } = _data;
-    console.log(`patch: ${profileId}, ${password}`);
-    console.log(`patch: encrypt(${password})`);
     const encryptedPwd: string = this.cryptoPass.encrypt(password);
-    console.log(`patch: setPassword(${profileId}, ${encryptedPwd})`);
     return this.store.setPassword(profileId, encryptedPwd);
   }
 
