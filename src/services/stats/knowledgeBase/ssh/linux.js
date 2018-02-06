@@ -58,8 +58,8 @@ const commandParsers = {
             bo: intItems[9], // Blocks sent to a block device (blocks/s).
           },
           system: {
-            in: intItems[10], // The number of interrupts per second, including the clock.
-            cs: intItems[11], // The number of context switches per second
+            in: intItems[10] * 1024, // The number of interrupts per second, including the clock.
+            cs: intItems[11] * 1024, // The number of context switches per second
           },
           cpu: {
             us: intItems[12], //  Time spent running non-kernel code. (user time, including nice time)
