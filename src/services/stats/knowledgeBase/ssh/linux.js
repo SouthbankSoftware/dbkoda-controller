@@ -25,7 +25,7 @@ import os from 'os';
 import _ from 'lodash';
 
 const commandParsers = {
-  'cpuMemory': ({output}) => {
+  'cpuMemory': ({output, samplingRate}) => {
     log.debug('cpu memory output:', output);
     // parse the vmstat command output
     const splited = output.split(os.platform() === 'win32' ? '\n\r' : '\n');
@@ -58,8 +58,8 @@ const commandParsers = {
             bo: intItems[9], // Blocks sent to a block device (blocks/s).
           },
           system: {
-            in: intItems[10], // The number of interrupts per second, including the clock.
-            cs: intItems[11], // The number of context switches per second
+            in: intItems[10] * 1024, // The number of interrupts per second, including the clock.
+            cs: intItems[11] * 1024, // The number of context switches per second
           },
           cpu: {
             us: intItems[12], //  Time spent running non-kernel code. (user time, including nice time)
@@ -80,30 +80,30 @@ const commandParsers = {
         usedMemory = totalMemory;
       }
       data.memory = parseFloat((usedMemory / totalMemory) * 100, 10);
-      data.io = data.details.io;
+      data.disk = {'download': data.details.io.bi, 'upload': data.details.io.bo, samplingRate};
       o.value = data;
     }
     return o;
   },
-  'disk': ({output}) => {
-    // parse disk command output
-    log.debug('disk output:', output);
-    const lines = output.split('\n');
-    const o = {timestamp: (new Date()).getTime()};
-    try {
-      if (lines.length > 1) {
-        const items = lines[1].split(' ').filter(x => x.trim() !== '');
-        if (items.length > 4) {
-          o.value = {disk: parseInt(items[4].replace('%', ''), 10)};
-        }
-      }
-    } catch (err) {
-      log.error(err);
-    }
-    log.debug('disk output value:', o);
-    return o;
-  },
-  'network': ({output}) => {
+  // 'disk': ({output}) => {
+  //   // parse disk command output
+  //   log.debug('disk output:', output);
+  //   const lines = output.split('\n');
+  //   const o = {timestamp: (new Date()).getTime()};
+  //   try {
+  //     if (lines.length > 1) {
+  //       const items = lines[1].split(' ').filter(x => x.trim() !== '');
+  //       if (items.length > 4) {
+  //         o.value = {disk: parseInt(items[4].replace('%', ''), 10)};
+  //       }
+  //     }
+  //   } catch (err) {
+  //     log.error(err);
+  //   }
+  //   log.debug('disk output value:', o);
+  //   return o;
+  // },
+  'network': ({output, samplingRate}) => {
     log.debug('network output ', output);
     const splited = output.split('\n');
     let download = 0;
@@ -136,7 +136,7 @@ const commandParsers = {
       }
     });
     log.debug(`network ${download} ${upload}.`);
-    return {timestamp: (new Date()).getTime(), value: {network: download + upload, detail: {upload, download}}};
+    return {timestamp: (new Date()).getTime(), value: {network: {upload, download, samplingRate}}};
   }
 };
 
@@ -145,12 +145,12 @@ const common = {
   version: 'all', // 15.0, 16.0, etc.
   cmds: {
     'cpuMemory': 'vmstat 1 2', // command need to query os stats
-    'disk': 'df /',
+    // 'disk': 'df /',
     'network': 'ifconfig `route | grep \'^default\' | grep -o \'[^ ]*$\'`'
   },
-  parse: (key, output) => { // define the parse command output logic, the key is defined in knowledge base
+  parse: (key, output, samplingRate) => { // define the parse command output logic, the key is defined in knowledge base
     log.debug('post process ', key, output);
-    return commandParsers[key](output);
+    return commandParsers[key]({...output, samplingRate});
   }
 };
 

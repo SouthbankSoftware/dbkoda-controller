@@ -33,7 +33,7 @@ const getMegabyteValue = (value) => {
 const commandParsers = {
   'cpuMemory': (d) => {
     l.info('get data ', d);
-    const split = d.split('\n');
+    const split = d.output.split('\n');
     const output = {};
     split && split.forEach((str) => {
       if (!output.value) {
@@ -66,20 +66,17 @@ const commandParsers = {
   },
   'disk': (d) => {
     log.debug('get disk output ', d);
-    const lines = d.split('\n');
     const o = {timestamp: (new Date()).getTime()};
-    try {
-      if (lines.length > 1) {
-        const items = lines[1].split(' ').filter(x => x.trim() !== '');
-        if (items.length > 3) {
-          const used = parseInt(items[2], 10);
-          const available = parseInt(items[3], 10);
-          const per = used / (used + available) * 100;
-          o.value = {disk: per, detail: {used, available}};
+    if (d && d.output) {
+      const splited = d.output.split(/\s+/).filter(x => x);
+      if (splited.length > 2) {
+        try {
+          const v = parseFloat(splited[2].trim(), 10);
+          o.value = {disk: v};
+        } catch (e) {
+          log.warn(e);
         }
       }
-    } catch (err) {
-      log.error(err);
     }
     log.debug('disk output value:', o);
     return o;
@@ -93,10 +90,10 @@ const common = {
   // cmd: 'ps -A -o %cpu,%mem | awk \'{ cpu += $1; mem += $2} END {print cpu , mem}\'',
   cmds: {
     cpuMemory: 'top -l 1 -n 0', // command need to query os stats
-    disk: 'df /',
+    disk: 'iostat -c 2|tail -n 1',
   },
-  parse: (k, d) => { // the key is defined in knowledge base per command
-    return commandParsers[k](d);
+  parse: (k, d, samplingRate) => { // the key is defined in knowledge base per command
+    return commandParsers[k]({...d, samplingRate});
   }
   // parse: (d) => {
   //   console.log('get data, ', d);

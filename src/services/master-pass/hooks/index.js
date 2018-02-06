@@ -1,6 +1,8 @@
 /**
+ * @Author: guiguan
+ * @Date:   2017-09-22T09:43:34+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:20:51+11:00
+ * @Last modified time: 2017-11-16T17:46:58+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,28 +23,30 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import normaliseItems from '~/hooks/normaliseItems';
+import validateItems from './validateItems';
 
-import linuxStats from './linux';
-import darwinStats from './darwin';
-import {findRules} from '../utils';
-
-export const items = ['cpu', 'memory', 'disk', 'network', 'io'];
-
-export const rules = {
-  linux: linuxStats,
-  darwin: darwinStats
+const before = {
+  all: [normaliseItems(), validateItems()],
+  find: [],
+  get: [],
+  create: [],
+  update: [],
+  patch: [],
+  remove: [],
 };
 
+const after = {
+  all: [],
+  find: [],
+  get: [],
+  create: [],
+  update: [],
+  patch: [],
+  remove: [],
+};
 
-/**
- * find the knowledge base rules
- *
- * @param osType  the operation system type, could be linux, mac, windows
- * @param release could be centos, ubuntu, coreos etc.
- * @param version   the os version
- * @returns {*}
- */
-export const getKnowledgeBaseRules = ({osType, release, version}) => {
-  const rule = findRules({osType, release, version}, rules);
-  return {...rule};
+export default {
+  before,
+  after,
 };
