@@ -35,15 +35,54 @@ class SupportBundleService {
       description: 'A service for creating support bundles.',
       get: {
         description: 'create a support bundle and return location.',
-        parameters: [],
-      },
+        parameters: []
+      }
     };
   }
 
-  async get() {
+  async get(getCreatedDate) {
+    if (getCreatedDate) {
+      const dateFolderCreated = await this._getCreatedDate();
+      return Promise.resolve(dateFolderCreated);
+    }
     const bundlePath = await this._createBundle();
     l.info('Returning support bundle location to UI.');
     return Promise.resolve(bundlePath);
+  }
+
+  _getCreatedDate() {
+    return new Promise((resolve, reject) => {
+      try {
+        const folderStat = fs.statSync(path.resolve(os.homedir(), '.dbKoda'));
+        let birth = folderStat.birthtime;
+        // Get birth.
+        birth = JSON.stringify(birth);
+        birth = new Date(birth.substr(0, 8));
+
+        // Get today.
+        let today = new Date();
+        let dd = today.getDate();
+        let mm = today.getMonth() + 1; // January is 0!
+        const yyyy = today.getFullYear();
+
+        if (dd < 10) {
+          dd = '0' + dd;
+        }
+
+        if (mm < 10) {
+          mm = '0' + mm;
+        }
+
+        today = mm + '/' + dd + '/' + yyyy;
+        today = new Date(today);
+        let daysSinceBirth = today - birth;
+        daysSinceBirth /= 1000 * 60 * 60 * 24;
+        resolve({ dateCreated: birth, daysSinceCreation: daysSinceBirth });
+      } catch (e) {
+        l.error(e);
+        reject(e);
+      }
+    });
   }
 
   _bundleFiles(bundlePath, filePaths) {
@@ -53,20 +92,20 @@ class SupportBundleService {
 
         const output = fs.createWriteStream(bundlePath);
         const archive = archiver('zip', {
-          zlib: { level: 7 }, // Sets compression level
+          zlib: { level: 7 } // Sets compression level
         });
 
         // listen for all archive data to be written.
         output.on('close', () => {
           l.info(archive.pointer() + ' total byes');
           l.info(
-            'archiver has been finalized and the output file descriptor has closed.',
+            'archiver has been finalized and the output file descriptor has closed.'
           );
           resolve(bundlePath);
         });
 
         // good practice to catch warnings
-        archive.on('warning', (err) => {
+        archive.on('warning', err => {
           if (err.code === 'ENOENT') {
             l.warn(err);
           } else {
@@ -74,7 +113,7 @@ class SupportBundleService {
           }
         });
 
-        archive.on('error', (err) => {
+        archive.on('error', err => {
           reject(err);
         });
 
@@ -84,7 +123,7 @@ class SupportBundleService {
         if (fs.existsSync(filePaths.statePath)) {
           l.info('Appending State Store...');
           archive.append(fs.createReadStream(filePaths.statePath), {
-            name: 'stateStore.json',
+            name: 'stateStore.json'
           });
         }
 
@@ -92,7 +131,7 @@ class SupportBundleService {
         if (fs.existsSync(filePaths.configPath)) {
           l.info('Appending Config...');
           archive.append(fs.createReadStream(filePaths.configPath), {
-            name: 'config.yml',
+            name: 'config.yml'
           });
         }
 
@@ -100,7 +139,7 @@ class SupportBundleService {
         if (fs.existsSync(filePaths.controllerLogPath)) {
           l.info('Appending Controller Log...');
           archive.append(fs.createReadStream(filePaths.controllerLogPath), {
-            name: 'controllerLog.txt',
+            name: 'controllerLog.txt'
           });
         }
 
@@ -108,7 +147,7 @@ class SupportBundleService {
         if (filePaths.dbKodaLogPath && fs.existsSync(filePaths.dbKodaLogPath)) {
           l.info('Appending App Log...');
           archive.append(fs.createReadStream(filePaths.dbKodaLogPath), {
-            name: 'applicationLog.txt',
+            name: 'applicationLog.txt'
           });
         }
 
@@ -129,7 +168,7 @@ class SupportBundleService {
               mongoVersion = 'UNKNOWN';
             } else {
               const output = execSync(configObj.mongoVersionCmd, {
-                encoding: 'utf8',
+                encoding: 'utf8'
               });
               mongoVersion = output;
               const mongoVStr = output.split('\n');
@@ -159,7 +198,7 @@ class SupportBundleService {
               osRelease +
               '", "mongoShellVersion": "' +
               mongoVersion.replace('MongoDB shell version v', '') +
-              '"}',
+              '"}'
           );
 
           archive.append(
@@ -170,7 +209,7 @@ class SupportBundleService {
               '", "mongoShellVersion": "' +
               mongoVersion.replace('MongoDB shell version v', '') +
               '"}',
-            { name: 'systemInfo.json' },
+            { name: 'systemInfo.json' }
           );
         }
 
@@ -190,14 +229,14 @@ class SupportBundleService {
       const statePath = path.resolve(
         os.homedir(),
         '.dbKoda',
-        'stateStore.json',
+        'stateStore.json'
       );
       let isBundlePathValid = false;
       let bundleNumber = 1;
       let bundlePath = path.resolve(
         os.homedir(),
         '.dbKoda',
-        'supportBundle.zip',
+        'supportBundle.zip'
       );
 
       while (!isBundlePathValid) {
@@ -206,7 +245,7 @@ class SupportBundleService {
           bundlePath = path.resolve(
             os.homedir(),
             '.dbKoda',
-            'supportBundle-' + bundleNumber + '.zip',
+            'supportBundle-' + bundleNumber + '.zip'
           );
           bundleNumber += 1;
         } else {
@@ -226,7 +265,7 @@ class SupportBundleService {
           'AppData',
           'Roaming',
           'dbKoda',
-          'logs',
+          'logs'
         );
       } else {
         logPath = path.resolve(
@@ -234,7 +273,7 @@ class SupportBundleService {
           'Library',
           'Application Support',
           'dbKoda',
-          'logs',
+          'logs'
         );
       }
 
@@ -243,7 +282,7 @@ class SupportBundleService {
       const appLogList = [];
 
       l.info('Files in Log Directory:');
-      files.map((file) => {
+      files.map(file => {
         l.info(file);
         if (file.match(/controller/g)) {
           controllerLogList.push(file);
@@ -254,17 +293,17 @@ class SupportBundleService {
 
       controllerLogPath = path.join(
         logPath,
-        _.max(controllerLogList, (f) => {
+        _.max(controllerLogList, f => {
           const fullPath = path.join(logPath, f);
           return fs.statSync(fullPath).ctime;
-        }),
+        })
       );
       const dbKodaLogPath = path.join(
         logPath,
-        _.max(appLogList, (f) => {
+        _.max(appLogList, f => {
           const fullPath = path.join(logPath, f);
           return fs.statSync(fullPath).ctime;
-        }),
+        })
       );
 
       l.info('App Logs: ', dbKodaLogPath);
@@ -277,17 +316,17 @@ class SupportBundleService {
         controllerLogPath,
         dbKodaLogPath,
         statePath,
-        configPath,
+        configPath
       };
 
       // Create Support Bundle at Log Location.
       this._bundleFiles(bundlePath, filePaths)
-        .then((res) => {
+        .then(res => {
           // Return location of file.
           l.info('Support bundles at: ', res);
           resolve(res);
         })
-        .catch((err) => {
+        .catch(err => {
           l.error('Support bundle failed to create with err: ', err);
           reject(err);
         });
