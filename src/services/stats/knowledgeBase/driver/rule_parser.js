@@ -97,14 +97,26 @@ export const parseCalculations = (calculations, statsValues) => {
   if (!calculations) {
     return statsValues;
   }
-  return calculations.map((calculation) => {
+  const retValue = {...statsValues};
+  calculations.map((calculation) => {
+/*
+    if (calculation.ifZeroDivide !== undefined) {
+      const ast = parse(calculation.expression);
+      if (ast.children) {
+      }
+    }
+*/
     const expressionFunc = mkFunc(calculation.expression);
     const allVars = findAllVars(calculation.expression);
+    const params = {};
     allVars.forEach((variable) => {
-      l.info(variable);
+      if (statsValues[variable] !== undefined) {
+        params[variable] = statsValues[variable];
+      }
     });
-    expressionFunc({writeLatencyRate:5, writeOpsRate: 0});
+    retValue[calculation.name] = expressionFunc(params);
   });
+  return retValue;
 };
 
 export const parseDataByRules = (rules, stats, dbVersion, prevStats) => {

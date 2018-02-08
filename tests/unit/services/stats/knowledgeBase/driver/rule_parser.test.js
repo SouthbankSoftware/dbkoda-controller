@@ -20,7 +20,7 @@
 /**
  * Created by joey on 6/2/18.
  */
-const {checkVersion, getDataFromSourcePath, parseSingleStatDefValue, parseDataByRules, findAllVars} = require('../../../../../../src/services/stats/knowledgeBase/driver/rule_parser');
+const {checkVersion, getDataFromSourcePath, parseCalculations, parseSingleStatDefValue, parseDataByRules, findAllVars} = require('../../../../../../src/services/stats/knowledgeBase/driver/rule_parser');
 
 
 const assert = require('assert');
@@ -118,7 +118,10 @@ describe('test driver rules parser', () => {
         }
       ]
     };
-    const values = parseDataByRules(rules, {globalLock: {active: {readers: 100}}, opLatencies: {writes: {ops: 324, latency: 99}}}, '3.2.2', {globalLock: {active: {readers: 23}}, opLatencies: {writes: {ops: 88, latency: 2}}});
+    const values = parseDataByRules(rules, {
+      globalLock: {active: {readers: 100}},
+      opLatencies: {writes: {ops: 324, latency: 99}}
+    }, '3.2.2', {globalLock: {active: {readers: 23}}, opLatencies: {writes: {ops: 88, latency: 2}}});
     assert.equal(values.activeRead, 100);
     assert.equal(values.writeLatencyRate, 97);
     assert.equal(values.writeOpsRate, 236);
@@ -136,6 +139,73 @@ describe('test driver rules parser', () => {
     assert.equal(vars[1], 'b');
     assert.equal(vars[2], 'c');
     assert.equal(vars[3], 'd');
+  });
+
+  it('test parseCalculations', () => {
+    const value = parseCalculations([{
+      'name': 'writeLatency',
+      'expression': 'writeLatencyRate/writeOpsRate',
+    }], {writeLatencyRate: 10, writeOpsRate: 2});
+    assert.equal(value.writeLatency, 5);
+  });
+
+  it('test parse urles', () => {
+    const rules = {
+      'statisticDefinitions': [
+        {
+          'name': 'activeRead',
+          'type': 'final',
+          'defaultSource': 'globalLock.activeClients.readers',
+          'versions': [
+            {
+              'versionMask': '3.2.*',
+              'source': 'globalLock.active.readers'
+            }
+          ]
+        },
+        {
+          'name': 'writeOpsRate',
+          'type': 'rate',
+          'defaultSource': 'opLatencies.writes.ops'
+        },
+        {
+          'name': 'writeLatencyRate',
+          'type': 'rate',
+          'defaultSource': 'opLatencies.writes.latency'
+        }
+      ],
+      'calculations': [
+        {
+          'name': 'writeLatency',
+          'expression': 'writeLatencyRate/writeOpsRate',
+          'ifZeroDivide': 0
+        },
+        {
+          'name': 'networkLoad',
+          'expression': 'writeOpsRate'
+        }
+      ]
+    };
+    let values = parseDataByRules(rules, {}, '3.2.2', {});
+    assert.equal(values.activeRead, undefined);
+
+    values = parseDataByRules(rules, {
+        globalLock: {
+          activeClients: {readers: 10},
+          active: {
+            readers: 1
+          }
+        },
+        opLatencies: {writes: {ops: 33, latency: 44}},
+      },
+      '3.2.2',
+      {}
+    );
+    assert.equal(values.activeRead, 1);
+    assert.equal(values.writeLatencyRate, 44);
+    assert.equal(values.writeOpsRate, 33);
+    assert.equal(values.networkLoad, 33);
+    assert.equal(parseFloat(values.writeLatency, 10).toFixed(2), 1.33);
   });
 });
 
