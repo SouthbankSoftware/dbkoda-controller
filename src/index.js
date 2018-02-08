@@ -3,7 +3,7 @@
  * @Date:   2017-10-31T09:22:47+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-11T21:45:21+11:00
+ * @Last modified time: 2018-02-08T12:21:21+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,7 +26,8 @@
 
 import app from './app';
 
-const port = app.get('port');
+const _port = parseInt(process.env.CONTROLLER_PORT, 10);
+const port = !Number.isNaN(_port) ? _port : app.get('port');
 
 const onUnhandledRejection = reason => {
   l.error('Unhandled rejection: ', reason);
