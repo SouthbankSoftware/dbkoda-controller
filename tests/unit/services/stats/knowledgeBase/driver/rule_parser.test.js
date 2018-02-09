@@ -189,15 +189,26 @@ describe('test driver rules parser', () => {
     let values = parseDataByRules(rules, {}, '3.2.2', {});
     assert.equal(values.activeRead, undefined);
 
-    values = parseDataByRules(rules, {
-        globalLock: {
-          activeClients: {readers: 10},
-          active: {
-            readers: 1
-          }
-        },
-        opLatencies: {writes: {ops: 33, latency: 44}},
+    const stats = {
+      globalLock: {
+        activeClients: {readers: 10},
+        active: {
+          readers: 1
+        }
       },
+      opLatencies: {writes: {ops: 33, latency: 44}},
+    };
+
+    const prevStats = {
+      globalLock: {
+        activeClients: {readers: 10},
+        active: {
+          readers: 1
+        }
+      },
+      opLatencies: {writes: {ops: 33, latency: 44}},
+    };
+    values = parseDataByRules(rules, stats,
       '3.2.2',
       {}
     );
@@ -206,6 +217,26 @@ describe('test driver rules parser', () => {
     assert.equal(values.writeOpsRate, 33);
     assert.equal(values.networkLoad, 33);
     assert.equal(parseFloat(values.writeLatency, 10).toFixed(2), 1.33);
+
+    values = parseDataByRules(rules, stats,
+      '3.4',
+      {}
+    );
+    assert.equal(values.activeRead, 10);
+    assert.equal(values.writeLatencyRate, 44);
+    assert.equal(values.writeOpsRate, 33);
+    assert.equal(values.networkLoad, 33);
+    assert.equal(parseFloat(values.writeLatency, 10).toFixed(2), 1.33);
+
+    values = parseDataByRules(rules, stats,
+      '3.4',
+      prevStats
+    );
+    assert.equal(values.activeRead, 10);
+    assert.equal(values.writeLatencyRate, 0);
+    assert.equal(values.writeOpsRate, 0);
+    assert.equal(values.networkLoad, 0);
+    assert.equal(parseFloat(values.writeLatency, 10).toFixed(2), 0);
   });
 });
 

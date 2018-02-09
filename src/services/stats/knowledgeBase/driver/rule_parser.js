@@ -21,7 +21,7 @@
  * Created by joey on 6/2/18.
  */
 import _ from 'lodash';
-import rules from './rules.json';
+import mongoRules from './rules.js';
 
 const mkFunc = require('expression-parser/func');
 const parse = require('expression-parser/parse');
@@ -63,7 +63,7 @@ export const parseSingleStatDefValue = (stats, statDef, dbVersion) => {
   if (matchedVersion && matchedVersion.source) {
     return getDataFromSourcePath(stats, matchedVersion.source);
   }
-  return null;
+  return getDataFromSourcePath(stats, statDef.defaultSource);
 };
 
 export const parseStatDefValue = (stats, statDef, dbVersion, prevStats) => {
@@ -99,13 +99,6 @@ export const parseCalculations = (calculations, statsValues) => {
   }
   const retValue = {...statsValues};
   calculations.map((calculation) => {
-/*
-    if (calculation.ifZeroDivide !== undefined) {
-      const ast = parse(calculation.expression);
-      if (ast.children) {
-      }
-    }
-*/
     const expressionFunc = mkFunc(calculation.expression);
     const allVars = findAllVars(calculation.expression);
     const params = {};
@@ -114,7 +107,18 @@ export const parseCalculations = (calculations, statsValues) => {
         params[variable] = statsValues[variable];
       }
     });
-    retValue[calculation.name] = expressionFunc(params);
+    if (calculation.ifZeroDivide !== undefined) {
+      const ast = parse(calculation.expression);
+      if (ast.children[0].template === '#/#') {
+        const divideName = ast.children[0].children[1].template;
+        if (params[divideName] === 0) {
+          retValue[calculation.name] = calculation.ifZeroDivide;
+        }
+      }
+    }
+    if (retValue[calculation.name] === undefined) {
+      retValue[calculation.name] = expressionFunc(params);
+    }
   });
   return retValue;
 };
@@ -129,5 +133,20 @@ export const parseDataByRules = (rules, stats, dbVersion, prevStats) => {
 };
 
 export const parseData = (stats, prevStats, dbVersion) => {
-  return parseDataByRules(rules, stats, dbVersion, prevStats);
+  return parseDataByRules(mongoRules, stats, dbVersion, prevStats);
+};
+
+export const parseAllKeys = (rules) => {
+  const keys = [];
+  rules.statisticDefinitions.forEach((statDef) => {
+    keys.push(statDef.name);
+  });
+  rules.calculations.forEach((cal) => {
+    keys.push(cal.name);
+  });
+  return keys;
+};
+
+export const getAllItemKeys = () => {
+  return parseAllKeys(mongoRules);
 };

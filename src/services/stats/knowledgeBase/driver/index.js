@@ -21,9 +21,9 @@
 /* List of indentifiers/keys for items to be observed */
 
 import {findRules} from '../utils';
-import mongoRules from './mongo_rules';
+import {getAllItemKeys, parseData} from './rule_parser';
 
-export const items = ['serverStatus'];
+export const driverItems = getAllItemKeys();
 
 /**
  * define the mongo stats knowledgebase rules.
@@ -32,7 +32,14 @@ export const items = ['serverStatus'];
  */
 export const rules = {
   // all match all os types
-  'all': mongoRules
+  'all': [{
+    release: 'all', // mongod, mongos, etc.
+    version: 'all', // 3.2, 3.0, etc.
+    parse: (previous, newData, dbVersion) => { // define the parse command output logic
+      // return parseStats(previous, newData);
+      return parseData(newData, previous, dbVersion);
+    }
+  }]
 };
 
 /**

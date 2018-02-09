@@ -22,11 +22,11 @@
  */
 
 import {Observable, Observer} from 'rxjs';
+import _ from 'lodash';
 
 import type {ObservaleValue} from '../ObservableWrapper';
 import {ObservableWrapper} from '../ObservableWrapper';
-import {getKnowledgeBaseRules} from '../../knowledgeBase/driver';
-
+import {getKnowledgeBaseRules, driverItems} from '../../knowledgeBase/driver';
 
 export default class MongoNativeDriver implements ObservableWrapper {
   rxObservable: ?Observable<ObservaleValue> = null;
@@ -36,13 +36,14 @@ export default class MongoNativeDriver implements ObservableWrapper {
   mongoConnection: Object;
   db: Object;
   samplingRate: number;
-  items: string[] = ['serverStatus'];
+  items: string[] = driverItems;
   displayName: string = 'Server Status';
   knowledgeBase: Object;
   previousData: Object;
   intervalId: number;
 
   init(options: Object): Promise<*> {
+    l.debug('driver item', this.items);
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
@@ -81,16 +82,16 @@ export default class MongoNativeDriver implements ObservableWrapper {
   postProcess(data: Object): void {
     l.debug('get driver status:', data);
     const value = this.knowledgeBase.parse(this.previousData, data, data.version);
-    l.debug('parsed value', value.data);
-    this.previousData = value.finals;
-    if (!value.data) {
+    l.debug('parsed value', value);
+    this.previousData = data;
+    if (_.isEmpty(value)) {
       // the first time is not parsing
       return;
     }
     this.observer.next({
       profileId: this.profileId,
       timestamp: (new Date()).getTime(),
-      value: {'serverStatus': value.data}
+      value
     });
   }
 
