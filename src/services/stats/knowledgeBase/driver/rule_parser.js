@@ -68,13 +68,18 @@ export const parseSingleStatDefValue = (stats, statDef, dbVersion) => {
 
 export const parseStatDefValue = (stats, statDef, dbVersion, prevStats) => {
   let currentValue = parseSingleStatDefValue(stats, statDef, dbVersion);
-  if (statDef.type === 'rate' && prevStats) {
-    const prevValue = parseSingleStatDefValue(prevStats, statDef, dbVersion);
-    if (prevValue) {
-      currentValue -= prevValue;
-      if (currentValue < 0) {
-        currentValue = 0;
+  if (statDef.type === 'rate') {
+    if (prevStats) {
+      const prevValue = parseSingleStatDefValue(prevStats, statDef, dbVersion);
+      if (prevValue) {
+        currentValue -= prevValue;
+        if (currentValue < 0) {
+          currentValue = 0;
+        }
       }
+    } else {
+      // no previous value
+      return;
     }
   }
   return currentValue;

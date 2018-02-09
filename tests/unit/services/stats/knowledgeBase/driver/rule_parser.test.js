@@ -118,7 +118,13 @@ describe('test driver rules parser', () => {
         }
       ]
     };
-    const values = parseDataByRules(rules, {
+    let values = parseDataByRules(rules, {
+      globalLock: {active: {readers: 100}},
+      opLatencies: {writes: {ops: 324, latency: 99}}
+    }, '3.2.2');
+    assert.equal(values.writeOpsRate, undefined);
+
+    values = parseDataByRules(rules, {
       globalLock: {active: {readers: 100}},
       opLatencies: {writes: {ops: 324, latency: 99}}
     }, '3.2.2', {globalLock: {active: {readers: 23}}, opLatencies: {writes: {ops: 88, latency: 2}}});

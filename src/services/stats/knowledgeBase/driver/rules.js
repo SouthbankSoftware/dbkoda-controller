@@ -12,6 +12,11 @@ export default {
       ]
     },
     {
+      'name': 'bytesIn',
+      'type': 'rate',
+      'defaultSource': 'network.bytesIn',
+    },
+    {
       'name': 'writeOpsRate',
       'type': 'rate',
       'defaultSource': 'opLatencies.writes.ops'
