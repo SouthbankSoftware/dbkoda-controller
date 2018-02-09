@@ -50,12 +50,12 @@ export const replica34Stats = {
     'totalTime': 442731041000,
     'currentQueue': {
       'total': 0,
-      'readers': 0,
-      'writers': 0
+      'readers': 30,
+      'writers': 20
     },
     'activeClients': {
       'total': 19,
-      'readers': 0,
+      'readers': 30,
       'writers': 0
     }
   },
