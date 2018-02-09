@@ -1,0 +1,177 @@
+{
+	"info": {
+		"name": "dbkoda-controller-stats",
+		"_postman_id": "77e8593d-2db1-f7f0-3cbc-dcf9cd842c44",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "findAllObservables",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"profileId\": \"test\",\n\t\"items\": []\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/stats?active=true",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"stats"
+					],
+					"query": [
+						{
+							"key": "active",
+							"value": "true",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "findObservables",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"profileId\": \"test\",\n\t\"items\": []\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/stats/test?items[]=item-5&items[]=item-1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"stats",
+						"test"
+					],
+					"query": [
+						{
+							"key": "items[]",
+							"value": "item-5",
+							"equals": true
+						},
+						{
+							"key": "items[]",
+							"value": "item-1",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "createObservables",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"profileId\": \"test\",\n\t\"items\": [\"item-1\"],\n\t\"debug\": true\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/stats",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"stats"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "patchObservables",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"samplingRate\": 1000, \n\t\"debug\": true\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/stats/test",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"stats",
+						"test"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "removeObservables",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:3030/stats/test",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"stats",
+						"test"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
