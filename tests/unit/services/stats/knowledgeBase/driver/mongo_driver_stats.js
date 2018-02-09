@@ -21,7 +21,7 @@
  * Created by joey on 9/2/18.
  */
 
-export const replica34 = {
+export const replica34Stats = {
   'host': 'b76f12ba2740',
   'version': '3.4.7',
   'process': 'mongod',
