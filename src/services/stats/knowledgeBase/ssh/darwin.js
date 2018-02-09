@@ -81,6 +81,14 @@ const commandParsers = {
     log.debug('disk output value:', o);
     return o;
   },
+  'network': ({output, samplingRate}) => {
+    const splited = output.split(/\s+/);
+    if (splited.length >= 7) {
+      const income = splited[4];
+      const outcome = splited[6];
+      return {timestamp: (new Date()).getTime(), value: {network: {upload: outcome, download: income, samplingRate}}};
+    }
+  }
 };
 
 const common = {
@@ -91,6 +99,7 @@ const common = {
   cmds: {
     cpuMemory: 'top -l 1 -n 0', // command need to query os stats
     disk: 'iostat -c 2|tail -n 1',
+    network: 'netstat -I `route -n get default |grep interface|awk \'{print $2}\'` |tail -n 1'
   },
   parse: (k, d, samplingRate) => { // the key is defined in knowledge base per command
     return commandParsers[k]({...d, samplingRate});
