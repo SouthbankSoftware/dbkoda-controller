@@ -56,9 +56,12 @@ class SupportBundleService {
         const folderStat = fs.statSync(path.resolve(os.homedir(), '.dbKoda'));
         let birth = folderStat.birthtime;
         // Get birth.
+        l.debug(folderStat);
         birth = JSON.stringify(birth);
-        birth = new Date(birth.substr(0, 8));
-
+        l.debug(birth);
+        l.debug(birth.substr(1, 10));
+        birth = new Date(birth.substr(1, 10));
+        l.debug(birth);
         // Get today.
         let today = new Date();
         let dd = today.getDate();
