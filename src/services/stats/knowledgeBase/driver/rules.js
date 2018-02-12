@@ -14,12 +14,12 @@ export default {
         // Network in-out
         //
         {
-            name: 'bytesIn',
+            name: 'network_bytesInPs',
             type: 'rate',
             defaultSource: 'network.bytesIn'
         },
         {
-            name: 'bytesOut',
+            name: 'network_bytesOutPs',
             type: 'rate',
             defaultSource: 'network.bytesOut'
         },
@@ -28,27 +28,27 @@ export default {
         //
         // operations per second
         {
-            name: 'opCounterQuery',
+            name: 'operations_QueryPs',
             type: 'rate',
             defaultSource: 'opcounters.query'
         },
         {
-            name: 'opCounterCommand',
+            name: 'operations_CommandPs',
             type: 'rate',
             defaultSource: 'opcounters.command'
         },
         {
-            name: 'opCounterInsert',
+            name: 'operations_InsertPs',
             type: 'rate',
             defaultSource: 'opcounters.insert'
         },
         {
-            name: 'opCounterUpdate',
+            name: 'operations_UpdatePs',
             type: 'rate',
             defaultSource: 'opcounters.update'
         },
         {
-            name: 'opCounterDelete',
+            name: 'operations_DeletePs',
             type: 'rate',
             defaultSource: 'opcounters.delete'
         },
@@ -56,12 +56,12 @@ export default {
         // Connections
         //
         {
-            name: 'currentConnections',
+            name: 'connections_current',
             type: 'final',
             defaultSource: 'connections.current'
         },
         {
-            name: 'availableConnections',
+            name: 'connections_available',
             type: 'final',
             defaultSource: 'connections.available'
         },
@@ -69,111 +69,167 @@ export default {
         // Read/Write queues
         //
         {
-            name: 'activeReaders',
+            name: 'queue_readersActive',
             type: 'final',
             defaultSource: 'globalLock.activeClients.readers'
         },
         {
-            name: 'queuedReaders',
+            name: 'queue_readersQueued',
             type: 'final',
-            defaultSource: 'globalLock.activeClients.readers'
+            defaultSource: 'globalLock.currentQueue.readers'
         },
         {
-            name: 'activeWriters',
-            type: 'final',
-            defaultSource: 'globalLock.activeClients.writers'
-        },
-        {
-            name: 'queuedWriters',
+            name: 'queue_writersActive',
             type: 'final',
             defaultSource: 'globalLock.activeClients.writers'
         },
         {
-            name: 'activeTotal',
+              name: 'queue_writersQueued',
+            type: 'final',
+            defaultSource: 'globalLock.currentQueue.writers'
+        },
+        {
+            name: 'queue_totalActive',
             type: 'final',
             defaultSource: 'globalLock.activeClients.total'
         },
         {
-            name: 'queuedTotal',
+            name: 'queue_totalQueued',
             type: 'final',
-            defaultSource: 'globalLock.activeClients.total'
+            defaultSource: 'globalLock.currentQueue.total'
         },
         {
-            name: 'writeOpsRate',
+            name: 'latency_writeOpsPs',
             type: 'rate',
             defaultSource: 'opLatencies.writes.ops'
         },
         {
-            name: 'writeLatencyRate',
+            name: 'latency_writeWaitUsPs',
             type: 'rate',
             defaultSource: 'opLatencies.writes.latency'
         },
         {
-            name: 'readOpsRate',
+            name: 'latency_readOpsPs',
             type: 'rate',
             defaultSource: 'opLatencies.reads.ops'
         },
         {
-            name: 'readLatencyRate',
+            name: 'latency_readWaitUsPs',
             type: 'rate',
             defaultSource: 'opLatencies.reads.latency'
+        },
+        {
+            name: 'latency_commandOpsPs',
+            type: 'rate',
+            defaultSource: 'opLatencies.commands.ops'
+        },
+        {
+            name: 'latency_commandWaitUsPs',
+            type: 'rate',
+            defaultSource: 'opLatencies.commands.latency'
         },
         //
         // Blocks in/out wiredTiger cache
         //
         {
-            name: 'wtCacheRequestsRate',
+            name: 'wtCache_readRequestsPs',
             type: 'rate',
             defaultSource: 'wiredTiger.cache.pages requested from the cache'
         },
         {
-            name: 'wtReadintoCacheRate',
+            name: 'wtCache_readIntoCachePs',
             type: 'rate',
             defaultSource: 'wiredTiger.cache.pages read into cache'
-        }
+        },
         //
         // Wired Tiger transaction tickets
         //
-        // wiredTiger.concurrentTransactions.read.available
-        // wiredTiger.concurrentTransactions.read.out
-        // wiredTiger.concurrentTransactions.read.totalTickets
-        // wiredTiger.concurrentTransactions.write.available
-        // wiredTiger.concurrentTransactions.write.out
-        // wiredTiger.concurrentTransactions.write.totalTickets
-
+        {
+            name: 'wtTransactions_readAvailable',
+            type: 'final',
+            defaultSource: 'wiredTiger.concurrentTransactions.read.available'
+        },
+        {
+            name: 'wtTransactions_readOut',
+            type: 'final',
+            defaultSource: 'wiredTiger.concurrentTransactions.read.out'
+        },
+        {
+            name: 'wtTransactions_writeAvailable',
+            type: 'final',
+            defaultSource: 'wiredTiger.concurrentTransactions.write.available'
+        },
+        {
+            name: 'wtTransactions_writeOut',
+            type: 'final',
+            defaultSource: 'wiredTiger.concurrentTransactions.write.out'
+        },
         //
         // WiredTiger IOs
         //
-        // wiredTiger.connection.total fsync I/Os
-        // wiredTiger.connection.total read I/Os
-        // wiredTiger.connection.total write I/Os
-        //
-
+        {
+            name: 'wtIO_writeIOps',
+            type: 'rate',
+            defaultSource: 'wiredTiger.connection.total write I/Os'
+        },
+        {
+            name: 'wtIO_readIOps',
+            type: 'rate',
+            defaultSource: 'wiredTiger.connection.total read I/Os'
+        },
+        {
+            name: 'wtIO_fsyncIOps',
+            type: 'rate',
+            defaultSource: 'wiredTiger.connection.total fsync I/Os'
+        },
         //
         // WiredTiger readLatencyRate
         //
-        // wiredTiger.cache.application threads page read from disk to cache count
-        // wiredTiger.cache.application threads page read from disk to cache time (usecs)
-        // wiredTiger.cache.application threads page write from cache to disk count
-        // wiredTiger.cache.application threads page write from cache to disk time (usecs)
+        {
+            name: 'wtIO_diskToCachePs',
+            type: 'rate',
+            defaultSource: 'wiredTiger.cache.application threads page read from disk to cache count'
+        },
+        {
+            name: 'wtIO_diskToCacheUsPs',
+            type: 'rate',
+            defaultSource: 'wiredTiger.cache.application threads page read from disk to cache time (usecs)'
+        },
+        {
+            name: 'wtIO_cacheToDiskPs',
+            type: 'rate',
+            defaultSource: 'wiredTiger.cache.application threads page write from cache to disk count'
+        },
+        {
+            name: 'wtIO_cacheToDiskUsPs',
+            type: 'rate',
+            defaultSource: 'wiredTiger.cache.application threads page write from cache to disk time (usecs)'
+        }
     ],
     calculations: [{
-            name: 'writeAvgLatency',
-            expression: 'writeLatencyRate/writeOpsRate',
+            name: 'latency_writeAvgLatencyMs',
+            expression: '(latency_writeWaitUsPs/1000)/latency_writeOpsPs',
             ifZeroDivide: 0
         },
         {
-                name: 'readAvgLatency',
-                expression: 'readLatencyRate/readOpsRate',
+                name: 'latency_readAvgLatencyMs',
+                expression: '(latency_readWaitUsPs/1000)/latency_readOpsPs',
                 ifZeroDivide: 0
         },
+
         {
-            name: 'networkLoad',
-            expression: 'writeOpsRate'
+            name: 'wtCache_MissPct',
+            expression: 'wtCache_readIntoCachePs*100/wtCache_readRequestsPs',
+            ifZeroDivide: 0
         },
         {
-            name: 'wiredTigerCacheMissPct',
-            expression: 'wtReadintoCacheRate*100/wtCacheRequestsRate',
+            name: 'wtIO_readLatencyMs',
+            expression: '(wtIO_diskToCacheUsPs/1000)/wtIO_diskToCachePs',
+            ifZeroDivide: 0
+        },
+        {
+            name: 'wtIO_writeLatencyMs',
+            expression: '(wtIO_cacheToDiskUsPs/1000)/wtIO_cacheToDiskPs',
             ifZeroDivide: 0
         }
     ]
