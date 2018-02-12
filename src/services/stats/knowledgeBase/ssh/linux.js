@@ -110,29 +110,28 @@ const commandParsers = {
     let upload = 0;
     splited.forEach((str) => {
       let value = null;
-      if (str.indexOf('RX') >= 0 || str.indexOf('TX') >= 0) {
-        if (str.indexOf('bytes:') >= 0) {
-          const matched = str.match(/bytes:(\d+)/);
-          if (matched && matched.length > 1) {
-            value = matched[1];
+      try {
+        if (str.indexOf('RX') >= 0 && str.indexOf('TX') >= 0 && str.indexOf('bytes:') >= 0) {
+          if (str.indexOf('bytes:') >= 0) {
+            const matched = str.match(/bytes:(\d+)/g);
+            if (matched && matched.length > 1) {
+              download = parseInt(matched[0].replace(/bytes:/, ''), 10);
+              upload = parseInt(matched[1].replace(/bytes:/, ''), 10);
+            }
           }
-        } else if (str.indexOf('byte ')) {
+        } else if (str.indexOf('RX') >= 0 || str.indexOf('TX') >= 0) {
           const matched = str.match(/bytes[\s]*(\d+)/);
           if (matched && matched.length > 1) {
             value = matched[1];
+            if (str.indexOf('RX') >= 0) {
+              download = parseInt(value, 10);
+            } else {
+              upload = parseInt(value, 10);
+            }
           }
         }
-      }
-      if (value !== null) {
-        try {
-          if (str.indexOf('RX') >= 0) {
-            download = parseInt(value, 10);
-          } else {
-            upload = parseInt(value, 10);
-          }
-        } catch (e) {
-          log.warn(`can't parse ${value} to int`);
-        }
+      } catch (e) {
+        log.warn(e);
       }
     });
     log.debug(`network ${download} ${upload}.`);
