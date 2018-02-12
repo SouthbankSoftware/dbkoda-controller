@@ -59,7 +59,7 @@ MongoClient.connect(url, function(err, db) {
   monitor.samplingRate = 5000;
   monitor.init({mongoConnection: {driver: db, dbVersion: '3.6'}});
   monitor.rxObservable.subscribe(
-    x => console.log('get sub ', JSON.stringify(x)),
+    x => console.log('get sub ', JSON.stringify(x,null,4)),
     (e) => console.log('error ',e)
   );
 });
