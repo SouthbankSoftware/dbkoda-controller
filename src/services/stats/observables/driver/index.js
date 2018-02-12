@@ -28,6 +28,8 @@ import type {ObservaleValue} from '../ObservableWrapper';
 import {ObservableWrapper} from '../ObservableWrapper';
 import {getKnowledgeBaseRules, driverItems} from '../../knowledgeBase/driver';
 
+const MAX_HISTORY_SIZE = 720;
+
 export default class MongoNativeDriver implements ObservableWrapper {
   rxObservable: ?Observable<ObservaleValue> = null;
   type: string = 'Unknown';
@@ -41,6 +43,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
   knowledgeBase: Object;
   previousData: Object;
   intervalId: number;
+  historyData: Object[] = [];
 
   init(options: Object): Promise<*> {
     l.debug('driver item', this.items);
@@ -88,6 +91,10 @@ export default class MongoNativeDriver implements ObservableWrapper {
       // the first time is not parsing
       return;
     }
+    this.historyData.push(value);
+    if (this.historyData.length > MAX_HISTORY_SIZE) {
+      this.historyData.splice(0, MAX_HISTORY_SIZE - this.historyData.length + 1);
+    }
     this.observer.next({
       profileId: this.profileId,
       timestamp: (new Date()).getTime(),
@@ -102,6 +109,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
   destroy(): Promise<*> {
     this.pause();
     this.rxObservable = null;
+    this.historyData = [];
     return Promise.resolve();
   }
 }
