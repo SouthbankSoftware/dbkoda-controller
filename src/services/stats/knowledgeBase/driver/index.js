@@ -35,9 +35,9 @@ export const rules = {
   'all': [{
     release: 'all', // mongod, mongos, etc.
     version: 'all', // 3.2, 3.0, etc.
-    parse: (previous, newData, dbVersion) => { // define the parse command output logic
+    parse: (previous, newData, dbVersion, samplingRate) => { // define the parse command output logic
       // return parseStats(previous, newData);
-      return parseData(newData, previous, dbVersion);
+      return parseData(newData, previous, dbVersion, samplingRate);
     }
   }]
 };
