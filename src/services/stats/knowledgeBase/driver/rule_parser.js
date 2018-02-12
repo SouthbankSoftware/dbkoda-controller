@@ -66,13 +66,13 @@ export const parseSingleStatDefValue = (stats, statDef, dbVersion) => {
   return getDataFromSourcePath(stats, statDef.defaultSource);
 };
 
-export const parseStatDefValue = (stats, statDef, dbVersion, prevStats) => {
+export const parseStatDefValue = (stats, statDef, dbVersion, prevStats, samplingRate = 1000) => {
   let currentValue = parseSingleStatDefValue(stats, statDef, dbVersion);
   if (statDef.type === 'rate') {
     if (prevStats) {
       const prevValue = parseSingleStatDefValue(prevStats, statDef, dbVersion);
       if (prevValue) {
-        currentValue -= prevValue;
+        currentValue = (currentValue - prevValue) / samplingRate * 1000;
         if (currentValue < 0) {
           currentValue = 0;
         }
@@ -128,17 +128,17 @@ export const parseCalculations = (calculations, statsValues) => {
   return retValue;
 };
 
-export const parseDataByRules = (rules, stats, dbVersion, prevStats) => {
+export const parseDataByRules = (rules, stats, dbVersion, prevStats, samplingRate) => {
   const statsValues = {};
   rules.statisticDefinitions.forEach((statDef) => {
-    const value = parseStatDefValue(stats, statDef, dbVersion, prevStats);
+    const value = parseStatDefValue(stats, statDef, dbVersion, prevStats, samplingRate);
     statsValues[statDef.name] = value;
   });
   return parseCalculations(rules.calculations, statsValues);
 };
 
-export const parseData = (stats, prevStats, dbVersion) => {
-  return parseDataByRules(mongoRules, stats, dbVersion, prevStats);
+export const parseData = (stats, prevStats, dbVersion, samplingRate) => {
+  return parseDataByRules(mongoRules, stats, dbVersion, prevStats, samplingRate);
 };
 
 export const parseAllKeys = (rules) => {

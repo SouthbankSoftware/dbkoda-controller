@@ -121,16 +121,16 @@ describe('test driver rules parser', () => {
     let values = parseDataByRules(rules, {
       globalLock: {active: {readers: 100}},
       opLatencies: {writes: {ops: 324, latency: 99}}
-    }, '3.2.2');
+    }, '3.2.2', undefined, 5000);
     assert.equal(values.writeOpsRate, undefined);
 
     values = parseDataByRules(rules, {
       globalLock: {active: {readers: 100}},
       opLatencies: {writes: {ops: 324, latency: 99}}
-    }, '3.2.2', {globalLock: {active: {readers: 23}}, opLatencies: {writes: {ops: 88, latency: 2}}});
+    }, '3.2.2', {globalLock: {active: {readers: 23}}, opLatencies: {writes: {ops: 88, latency: 2}}}, 5000);
     assert.equal(values.activeRead, 100);
-    assert.equal(values.writeLatencyRate, 97);
-    assert.equal(values.writeOpsRate, 236);
+    assert.equal(parseFloat(values.writeLatencyRate, 10).toFixed(2), 19.4);
+    assert.equal(values.writeOpsRate.toFixed(2), 47.2);
   });
 
   it('test findAllVars', () => {
