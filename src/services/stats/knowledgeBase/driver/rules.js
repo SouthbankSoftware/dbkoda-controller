@@ -17,6 +17,11 @@ export default {
       defaultSource: 'network.bytesIn'
     },
     {
+      name: 'bytesOut',
+      type: 'rate',
+      defaultSource: 'network.bytesOut'
+    },
+    {
       name: 'opCounterQuery',
       type: 'rate',
       defaultSource: 'opcounters.query'
@@ -50,6 +55,16 @@ export default {
       name: 'writeLatencyRate',
       type: 'rate',
       defaultSource: 'opLatencies.writes.latency'
+    },
+    {
+      name: 'wtReadintoCacheRate',
+      type: 'rate',
+      defaultSource: 'wiredTiger.cache.pages read into cache'
+    },
+    {
+      name: 'wtCacheRequestsRate',
+      type: 'rate',
+      defaultSource: 'wiredTiger.cache.pages requested from the cache'
     }
   ],
   calculations: [
@@ -61,6 +76,11 @@ export default {
     {
       name: 'networkLoad',
       expression: 'writeOpsRate'
+    },
+    {
+      name: 'wiredTigerCacheMissPct',
+      expression: 'wtReadintoCacheRate*100/wtCacheRequestsRate',
+      ifZeroDivide: 0
     }
   ]
 };
