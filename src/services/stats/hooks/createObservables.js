@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:29:50+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-03T17:02:57+11:00
+ * @Last modified time: 2018-02-13T12:08:05+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -31,7 +31,7 @@ import processItems from '~/hooks/processItems';
 import config from '~/config';
 import { constructors } from '../observableTypes';
 
-const DEBOUNCE_DELAY = 500;
+const DEBOUNCE_DELAY = 1000;
 
 export default () =>
   processItems(
@@ -58,14 +58,17 @@ export default () =>
             wrapper.id = k;
             // $FlowFixMe
             Object.defineProperty(wrapper, 'samplingRate', {
-              get: () => observableManifest.samplingRate,
+              get: () => observableManifest.samplingRate
             });
             // $FlowFixMe
             Object.defineProperty(wrapper, 'profileId', {
-              get: () => observableManifest.profileId,
+              get: () => observableManifest.profileId
             });
             // $FlowFixMe
-            Object.defineProperty(wrapper, 'debug', { get: () => observableManifest.debug });
+            Object.defineProperty(wrapper, 'debug', {
+              // $FlowFixMe
+              get: () => observableManifest.debug
+            });
             wrapper.emitError = service.emitError.bind(service, profileId);
 
             if (typeof constructor === 'function') {
@@ -80,18 +83,20 @@ export default () =>
           }),
           index,
           samplingRate,
-          subscription: null,
+          subscription: null
         };
+
+        // $FlowFixMe
+        observableManifest._debouncedUpdate = _.debounce(
+          service.updateObservableManifest.bind(service, observableManifest),
+          DEBOUNCE_DELAY
+        );
+
         observableManifests.set(profileId, observableManifest);
       }
 
       // $FlowFixMe
       observableManifest.debug = debug;
-      // $FlowFixMe
-      observableManifest._debouncedUpdate = _.debounce(
-        service.updateObservableManifest.bind(service, observableManifest),
-        DEBOUNCE_DELAY,
-      );
 
       const ps = [];
 
@@ -99,22 +104,30 @@ export default () =>
         items,
         onMatchingItem: (item, wrapper) => {
           if (wrapper.rxObservable) {
-            debug && l.debug(`Item \`${item}\` is already being observed for profile ${profileId}`);
+            debug &&
+              l.debug(
+                `Item \`${item}\` is already being observed for profile ${profileId}`
+              );
           } else {
+            // mark it as being created
+            wrapper.rxObservable = true;
+
             l.debug(
               `Initialising observable ${
                 wrapper.displayName
-              } of profile ${profileId} for item \`${item}\`...`,
+              } of profile ${profileId} for item \`${item}\`...`
             );
 
-            const { connections } = context.app.service('mongo/connection/controller');
+            const { connections } = context.app.service(
+              'mongo/connection/controller'
+            );
 
             ps.push(wrapper.init({ mongoConnection: connections[profileId] }));
           }
         },
         onInvalidItem: item => {
           throw new Error(`No observable supports observing item \`${item}\``);
-        },
+        }
       });
 
       return Promise.all(ps).then(result => {
@@ -124,5 +137,5 @@ export default () =>
         }
       });
     },
-    { idAlias: 'profileId' },
+    { idAlias: 'profileId' }
   );
