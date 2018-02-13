@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-13T22:19:12+11:00
+ * @Last modified time: 2017-12-12T14:21:24+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -46,7 +46,6 @@ export default class MongoNativeDriver implements ObservableWrapper {
   historyData: Object[] = [];
 
   init(options: Object): Promise<*> {
-    // l.debug('driver item', this.items);
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
@@ -83,9 +82,8 @@ export default class MongoNativeDriver implements ObservableWrapper {
   }
 
   postProcess(data: Object): void {
-    // l.debug('get driver status:', data);
     const value = this.knowledgeBase.parse(this.previousData, data, data.version, this.samplingRate);
-    // l.debug('parsed value:', value);
+
     this.previousData = data;
     if (_.isEmpty(value)) {
       // the first time is not parsing
