@@ -68,7 +68,6 @@ export default class MongoNativeDriver implements ObservableWrapper {
       this.emitError('failed to find mongodb driver.');
       return;
     }
-    log.info('start getting stats.');
     db.command({serverStatus: 1}, {}, (err, data) => {
       if (!err) {
         this.knowledgeBase = getKnowledgeBaseRules({version: data.version, release: data.process});
