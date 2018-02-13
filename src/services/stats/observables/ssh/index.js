@@ -104,7 +104,10 @@ export default class SSHCounter implements ObservableWrapper {
 
   create(id: string) {
     if (!this.mongoConnection) {
-      throw new errors.BadRequest(`Connection not exist ${id}`);
+      return Promise.reject(new Error(`Connection not exist ${id}`));
+    }
+    if (this.mongoConnection.sshOpts && !this.mongoConnection.sshOpts.host) {
+      return Promise.reject(new Error('SSH is not enabled.'));
     }
     return this.createConnection(this.mongoConnection);
   }
@@ -175,7 +178,9 @@ export default class SSHCounter implements ObservableWrapper {
               return reject(new Error(`Unsupported Operation System ${this.osType.os}`));
             }
             resolve();
-          });
+          }).catch((err) => {
+            reject(err);
+        });
       })
       .on('error', err => {
         reject(new errors.BadRequest('Client Error: ' + err.message));
@@ -189,7 +194,8 @@ export default class SSHCounter implements ObservableWrapper {
       try {
         this.client.exec(cmd, (err, stream) => {
           if (err || !stream) {
-            return reject(err);
+            log.error(err);
+            return reject(new Error('Failed to run command through SSH.'));
           }
           stream
             .on('close', () => {
@@ -215,7 +221,10 @@ export default class SSHCounter implements ObservableWrapper {
         this.exeCmd(v)
           .then((output) => {
             this.postProcess(output, k);
-          });
+          }).catch((err) => {
+            l.error(err);
+            this.emitError(err);
+        });
       });
     };
     runCommand();
