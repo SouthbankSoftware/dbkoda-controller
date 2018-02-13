@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-05T16:55:11+11:00
+ * @Last modified time: 2018-02-13T22:13:40+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -149,7 +149,7 @@ export default class SSHCounter implements ObservableWrapper {
     this.client = new Client();
     this.client
       .on('ready', () => {
-        log.info('SSH Client :: ready');
+        // log.info('SSH Client :: ready');
         this.exeCmd('uname -s')
           .then(osType => {
             if (osType) {
@@ -160,7 +160,7 @@ export default class SSHCounter implements ObservableWrapper {
             }
           })
           .then(release => {
-            log.debug(release);
+            // log.debug(release);
             if (release) {
               const splitted = release.split(os.platform() === 'win32' ? '\n\r' : '\n');
               splitted.forEach(str => {
@@ -172,7 +172,7 @@ export default class SSHCounter implements ObservableWrapper {
                 }
               });
             }
-            log.info('get os type ', this.osType);
+            // log.info('get os type ', this.osType);
             this.knowledgeBase = getKnowledgeBaseRules(this.osType);
             if (!this.knowledgeBase) {
               return reject(new Error(`Unsupported Operation System ${this.osType.os}`));
@@ -239,7 +239,7 @@ export default class SSHCounter implements ObservableWrapper {
 
   postProcess(output: Object, k: string) {
     try {
-      log.debug('get command output ', output);
+      // log.debug('get command output ', output);
       const params = {output};
       const o = this.knowledgeBase.parse(k, params, this.samplingRate);
       if (o && o.value) {

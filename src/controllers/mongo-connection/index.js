@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T11:10:50+11:00
+ * @Last modified time: 2018-02-13T22:15:25+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -119,7 +119,7 @@ class MongoConnectionController {
             tunnel = resTunnel;
           }
           conn.sshOpts = sshOpts;
-          l.debug('ssh opts ', conn);
+          // l.debug('ssh opts ', conn);
           this.mongoClient.connect(conn.url, that.options, (err, db) => {
             if (err !== null) {
               l.error('failed to connect mongo instance ', err.message);
@@ -354,21 +354,21 @@ class MongoConnectionController {
    * create mongo shell connection
    */
   createMongoShell(db, conn, dbVersion) {
-    l.info(
-      'Connection Details: ',
-      _.omit(conn, [
-        'remoteHost',
-        'remotePort',
-        'sshHost',
-        'remoteUser',
-        'remotePass',
-        'username',
-        'password',
-        'authenticationdatabase',
-        'database',
-        'url'
-      ])
-    );
+    // l.info(
+    //   'Connection Details: ',
+    //   _.omit(conn, [
+    //     'remoteHost',
+    //     'remotePort',
+    //     'sshHost',
+    //     'remoteUser',
+    //     'remotePass',
+    //     'username',
+    //     'password',
+    //     'authenticationdatabase',
+    //     'database',
+    //     'url'
+    //   ])
+    // );
     const id = conn.id ? conn.id : uuid.v1();
     const shellId = conn.shellId ? conn.shellId : uuid.v1();
     const that = this;

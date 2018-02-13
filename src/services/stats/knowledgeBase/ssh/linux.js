@@ -1,4 +1,8 @@
-/*
+/**
+ * Created by joey on 18/12/17.
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-02-13T22:17:49+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,16 +21,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * Created by joey on 18/12/17.
- */
 
 import os from 'os';
 import _ from 'lodash';
 
 const commandParsers = {
   'cpuMemory': ({output, samplingRate}) => {
-    log.debug('cpu memory output:', output);
+    // log.debug('cpu memory output:', output);
     // parse the vmstat command output
     const splited = output.split(os.platform() === 'win32' ? '\n\r' : '\n');
     if (!splited || splited.length < 4) {
@@ -87,7 +88,7 @@ const commandParsers = {
     return o;
   },
   'network': ({output, samplingRate}) => {
-    log.debug('network output ', output);
+    // log.debug('network output ', output);
     const splited = output.split('\n');
     let download = 0;
     let upload = 0;
@@ -117,7 +118,7 @@ const commandParsers = {
         log.warn(e);
       }
     });
-    log.debug(`network ${download} ${upload}.`);
+    // log.debug(`network ${download} ${upload}.`);
     return {timestamp: (new Date()).getTime(), value: {network: {upload, download, samplingRate}}};
   }
 };
@@ -131,7 +132,7 @@ const common = {
     'network': 'ifconfig `route | grep \'^default\' | grep -o \'[^ ]*$\'`'
   },
   parse: (key, output, samplingRate) => { // define the parse command output logic, the key is defined in knowledge base
-    log.debug('post process ', key, output);
+    // log.debug('post process ', key, output);
     return commandParsers[key]({...output, samplingRate});
   }
 };
