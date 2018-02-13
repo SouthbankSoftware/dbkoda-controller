@@ -46,7 +46,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
   historyData: Object[] = [];
 
   init(options: Object): Promise<*> {
-    l.debug('driver item', this.items);
+    // l.debug('driver item', this.items);
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
@@ -84,7 +84,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
 
   postProcess(data: Object): void {
     const value = this.knowledgeBase.parse(this.previousData, data, data.version, this.samplingRate);
-    l.debug('parsed value:', value);
+
     this.previousData = data;
     if (_.isEmpty(value)) {
       // the first time is not parsing
