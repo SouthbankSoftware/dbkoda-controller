@@ -155,7 +155,7 @@ export default class SSHCounter implements ObservableWrapper {
             if (osType) {
               this.osType.osType = osType.toLowerCase().trim();
               if (this.osType.osType === 'linux') {
-                return this.exeCmd('cat /etc/os-release');
+                return this.exeCmd('cat /etc/os-release', true);
               }
             }
           })
@@ -197,7 +197,7 @@ export default class SSHCounter implements ObservableWrapper {
               log.error(err);
               return reject(new Error('Failed to run command through SSH.'));
             }
-            return resolve();
+            return resolve(null);
           }
           stream
             .on('close', () => {
@@ -207,7 +207,7 @@ export default class SSHCounter implements ObservableWrapper {
               output += data.toString('utf8');
             })
             .stderr.on('data', data => {
-            log.error(data.toString('utf8'));
+            !ignoreError && log.error(data.toString('utf8'));
             resolve(null);
           });
         });
