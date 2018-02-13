@@ -160,7 +160,6 @@ export default class SSHCounter implements ObservableWrapper {
             }
           })
           .then(release => {
-            // log.debug(release);
             if (release) {
               const splitted = release.split(os.platform() === 'win32' ? '\n\r' : '\n');
               splitted.forEach(str => {
@@ -172,7 +171,7 @@ export default class SSHCounter implements ObservableWrapper {
                 }
               });
             }
-            // log.info('get os type ', this.osType);
+            log.info('get os type ', this.osType);
             this.knowledgeBase = getKnowledgeBaseRules(this.osType);
             if (!this.knowledgeBase) {
               return reject(new Error(`Unsupported Operation System ${this.osType.os}`));
@@ -188,14 +187,17 @@ export default class SSHCounter implements ObservableWrapper {
       .connect(_.omit(sshOpts, 'cwd'));
   }
 
-  exeCmd(cmd: string): Promise<*> {
+  exeCmd(cmd: string, ignoreError: boolean = false): Promise<*> {
     let output = '';
     return new Promise((resolve, reject) => {
       try {
         this.client.exec(cmd, (err, stream) => {
           if (err || !stream) {
-            log.error(err);
-            return reject(new Error('Failed to run command through SSH.'));
+            if (!ignoreError) {
+              log.error(err);
+              return reject(new Error('Failed to run command through SSH.'));
+            }
+            return resolve();
           }
           stream
             .on('close', () => {

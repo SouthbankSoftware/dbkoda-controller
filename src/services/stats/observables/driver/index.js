@@ -46,7 +46,6 @@ export default class MongoNativeDriver implements ObservableWrapper {
   historyData: Object[] = [];
 
   init(options: Object): Promise<*> {
-    // l.debug('driver item', this.items);
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
