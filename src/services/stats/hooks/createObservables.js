@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:29:50+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-13T16:34:07+11:00
+ * @Last modified time: 2018-02-13T17:26:14+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -126,8 +126,6 @@ export default () =>
               wrapper
                 .init({ mongoConnection: connections[profileId] })
                 .catch(err => {
-                  wrapper.rxObservable = null;
-
                   l.error(
                     `Error happened during initialisation of observable ${
                       wrapper.displayName
@@ -135,6 +133,15 @@ export default () =>
                     err
                   );
                   service.emitError(profileId, err.message);
+
+                  // debounce similar requests
+                  return new Promise(resolve => {
+                    setTimeout(() => {
+                      wrapper.rxObservable = null;
+
+                      resolve();
+                    }, DEBOUNCE_DELAY);
+                  });
                 })
             );
           }
