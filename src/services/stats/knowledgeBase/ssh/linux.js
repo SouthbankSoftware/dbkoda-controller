@@ -70,10 +70,11 @@ const commandParsers = {
           }
         }
       };
-      data.cpu = data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st;
-      if (data.cpu > 100) {
-        data.cpu = 100;
+      let cpuUsage = data.details.cpu.us + data.details.cpu.sy + data.details.cpu.wa + data.details.cpu.st;
+      if (cpuUsage > 100) {
+        cpuUsage = 100;
       }
+      data.cpu = {usage: cpuUsage, runQueue: data.details.procs.r};
       const totalMemory = data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache + data.details.memory.free;
       let usedMemory = data.details.memory.swpd + data.details.memory.buff + data.details.memory.cache;
       if (usedMemory > totalMemory) {
@@ -85,24 +86,6 @@ const commandParsers = {
     }
     return o;
   },
-  // 'disk': ({output}) => {
-  //   // parse disk command output
-  //   log.debug('disk output:', output);
-  //   const lines = output.split('\n');
-  //   const o = {timestamp: (new Date()).getTime()};
-  //   try {
-  //     if (lines.length > 1) {
-  //       const items = lines[1].split(' ').filter(x => x.trim() !== '');
-  //       if (items.length > 4) {
-  //         o.value = {disk: parseInt(items[4].replace('%', ''), 10)};
-  //       }
-  //     }
-  //   } catch (err) {
-  //     log.error(err);
-  //   }
-  //   log.debug('disk output value:', o);
-  //   return o;
-  // },
   'network': ({output, samplingRate}) => {
     log.debug('network output ', output);
     const splited = output.split('\n');

@@ -369,7 +369,6 @@ class MongoConnectionController {
         'url'
       ])
     );
-    l.debug('Full Conn Object: ', conn);
     const id = conn.id ? conn.id : uuid.v1();
     const shellId = conn.shellId ? conn.shellId : uuid.v1();
     const that = this;

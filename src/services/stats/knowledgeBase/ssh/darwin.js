@@ -37,7 +37,7 @@ const commandParsers = {
     const output = {};
     split && split.forEach((str) => {
       if (!output.value) {
-        output.value = {};
+        output.value = {cpu: {}};
       }
       if (str.indexOf('CPU usage:') >= 0) {
         // parse cpu output
@@ -48,7 +48,7 @@ const commandParsers = {
           const user = parseFloat(left[0].substr(0, left[0].indexOf('%')).trim());
           const system = parseFloat(left[0].substr(0, left[1].indexOf('%')).trim());
           const idle = parseFloat(left[0].substr(0, left[2].indexOf('%')).trim());
-          output.value.cpu = user + system;
+          output.value.cpu.usage = user + system;
           output.value.cpuDetail = {user, system, idle};
         }
       } else if (str.indexOf('PhysMem:') >= 0) {
@@ -60,6 +60,13 @@ const commandParsers = {
         unUsed = getMegabyteValue(unUsed);
         output.value.memory = used / (used + unUsed) * 100;
         output.value.memoryDetail = {used, unUsed};
+      } else if (str.indexOf('Load Avg') >= 0) {
+        try {
+          const loadAvgs = str.split(' ');
+          output.value.cpu.runQueue = parseFloat(loadAvgs[loadAvgs.length - 2], 10);
+        } catch (err) {
+          l.error(err);
+        }
       }
     });
     return output;
@@ -104,15 +111,6 @@ const common = {
   parse: (k, d, samplingRate) => { // the key is defined in knowledge base per command
     return commandParsers[k]({...d, samplingRate});
   }
-  // parse: (d) => {
-  //   console.log('get data, ', d);
-  //   const output = {timestamp: (new Date()).getTime()};
-  //   if (d && d.indexOf(' ') > 0) {
-  //     const split = d.split(' ');
-  //     output.value = {cpu: split[0].replace(/\n/g, ''), memory: split[1].replace(/\n/g, '')};
-  //   }
-  //   return output;
-  // }
 };
 
 export default [common];

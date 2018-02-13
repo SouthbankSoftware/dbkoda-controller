@@ -128,6 +128,8 @@ export default class SSHCounter implements ObservableWrapper {
         })
         .catch(err => {
           log.error(err);
+          this.emitError(err, 'error');
+          reject(err);
         });
     });
   }
@@ -273,7 +275,7 @@ export default class SSHCounter implements ObservableWrapper {
         this.execute();
       });
     }
-    return Promise.reject();
+    return Promise.reject('The ssh stream doesnt exist, failed to resume.');
   }
 
   postProcess(output: Object, k: string) {
