@@ -127,8 +127,7 @@ const common = {
   version: 'all', // 15.0, 16.0, etc.
   cmds: {
     'cpuMemory': 'vmstat 1 2', // command need to query os stats
-    // 'disk': 'df /',
-    'network': 'ifconfig `route | grep \'^default\' | grep -o \'[^ ]*$\'`'
+    'network': 'ifconfig `route | grep \'^default\' | grep -o \'[^ ]*$\'`',
   },
   parse: (key, output, samplingRate) => { // define the parse command output logic, the key is defined in knowledge base
     log.debug('post process ', key, output);

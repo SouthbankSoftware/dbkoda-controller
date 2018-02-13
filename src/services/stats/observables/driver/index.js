@@ -76,14 +76,13 @@ export default class MongoNativeDriver implements ObservableWrapper {
         }
         this.postProcess(data);
       } else {
-        log.info('cant run serverStatus command through driver.', err);
+        log.error('cant run serverStatus command through driver.', err);
         this.emitError('cant run serverStatus command through driver.');
       }
     });
   }
 
   postProcess(data: Object): void {
-    l.debug('get driver status:', data);
     const value = this.knowledgeBase.parse(this.previousData, data, data.version, this.samplingRate);
     l.debug('parsed value:', value);
     this.previousData = data;
