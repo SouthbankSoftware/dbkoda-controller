@@ -51,6 +51,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
     this.db = this.mongoConnection.driver;
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
       this.observer = observer;
+      this.start(this.db);
       this.intervalId = setInterval(() => this.start(this.db), this.samplingRate);
       return () => {
         this.pause();
