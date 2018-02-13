@@ -69,6 +69,7 @@ export default class SSHCounter implements ObservableWrapper {
         this.statsCmds = buildCommands(this.knowledgeBase);
         if (!this.statsCmds || _.isEmpty(this.statsCmds)) {
           this.emitError('Cant find command from knowledge base on ' + this.osType);
+          l.error('Cant find command from knowledge base on ' + this.osType);
         }
         this.observer = observer;
         this.execute();
@@ -156,7 +157,7 @@ export default class SSHCounter implements ObservableWrapper {
             }
           })
           .then(release => {
-            log.info(release);
+            log.debug(release);
             if (release) {
               const splitted = release.split(os.platform() === 'win32' ? '\n\r' : '\n');
               splitted.forEach(str => {
@@ -171,7 +172,7 @@ export default class SSHCounter implements ObservableWrapper {
             log.info('get os type ', this.osType);
             this.knowledgeBase = getKnowledgeBaseRules(this.osType);
             if (!this.knowledgeBase) {
-              return reject(`Unsupported Operation System ${this.osType.os}`);
+              return reject(new Error(`Unsupported Operation System ${this.osType.os}`));
             }
             resolve();
           });
@@ -209,13 +210,17 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   execute() {
-    this.intervalId = setInterval(() => {
+    const runCommand = () => {
       _.forOwn(this.statsCmds, (v, k) => {
         this.exeCmd(v)
           .then((output) => {
             this.postProcess(output, k);
           });
       });
+    };
+    runCommand();
+    this.intervalId = setInterval(() => {
+      runCommand();
     }, this.samplingRate);
   }
 
@@ -257,7 +262,6 @@ export default class SSHCounter implements ObservableWrapper {
       this.rxObservable = null;
       return Promise.resolve();
     }
-    this.emitError('ssh connection doesnt exist', 'error');
-    return Promise.reject();
+    return Promise.reject(new Error('ssh connection doesnt exist', 'error'));
   }
 }
