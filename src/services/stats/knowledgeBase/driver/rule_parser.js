@@ -98,6 +98,27 @@ export const findAllVars = (expression) => {
   return vars;
 };
 
+export const findDividedBy0 = (ast, dividerNames = [], previousDivide = false) => {
+  let prevDivide = previousDivide;
+  if (ast) {
+    if (prevDivide) {
+      if (ast.children[0] && ast.children[0].node === 'name') {
+        dividerNames.push(ast.children[0].template);
+      }
+    }
+    if (ast.template === '#/#') {
+      if (ast.children[1].node === 'name') {
+        dividerNames.push(ast.children[1].template);
+      } else {
+        prevDivide = true;
+      }
+    }
+    ast.children.forEach((child) => {
+      findDividedBy0(child, dividerNames, prevDivide);
+    });
+  }
+};
+
 export const parseCalculations = (calculations, statsValues) => {
   if (!calculations) {
     return statsValues;

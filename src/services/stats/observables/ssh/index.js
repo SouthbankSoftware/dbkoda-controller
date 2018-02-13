@@ -45,7 +45,6 @@ export default class SSHCounter implements ObservableWrapper {
   profileId: string;
   mongoConnection: Object;
   client: Client;
-  stream: Object;
   sendOsTypeCmd: boolean;
   observer: Observer<ObservaleValue>;
   displayName = 'SSH Stats';
@@ -72,7 +71,7 @@ export default class SSHCounter implements ObservableWrapper {
           this.emitError('Cant find command from knowledge base on ' + this.osType);
         }
         this.observer = observer;
-        this.createShell();
+        this.execute();
         return () => {
           this.pause();
         };
@@ -128,6 +127,8 @@ export default class SSHCounter implements ObservableWrapper {
         })
         .catch(err => {
           log.error(err);
+          this.emitError(err, 'error');
+          reject(err);
         });
     });
   }
@@ -207,73 +208,19 @@ export default class SSHCounter implements ObservableWrapper {
     });
   }
 
-  createShell(): Promise<*> {
-    return new Promise((resolve, reject) => {
-      this.client.shell(
-        false,
-        {
-          pty: false,
-        },
-        (err, stream) => {
-          if (err) {
-            log.error(err);
-            return reject(err);
-          }
-          stream.setEncoding('utf8');
-          stream.on('data', data => {
-            this.postProcess(data);
-          });
-          stream.on('finish', () => {
-            log.info('Stream :: finish');
-          });
-          stream.stderr.on('data', err => {
-            log.error('Stream :: strerr :: Data :', err);
-            this.emitError(err, 'error');
-          });
-          this.stream = stream;
-          // if (this.knowledgeBase.cmd.indexOf('$samplingRate') >= 0) {
-          //   this.execute();
-          // } else {
-          //   this.intervalId = setInterval(() => this.execute(), this.samplingRate);
-          // }
-          this.intervalId = setInterval(() => {
-            _.forOwn(this.statsCmds, (v, k) => {
-              this.exeCmd(v)
-                .then((output) => {
-                  this.postProcess(output, k);
-                });
-            });
-          }, this.samplingRate);
-          return resolve();
-        },
-      );
-    });
-  }
-
   execute() {
-    if (!this.stream) {
-      throw new errors.BadRequest(`Connection not exist ${this.profileId}`);
-    }
-    log.info(`run command ${this.statsCmds}`);
-    this.stream.write(`${this.statsCmds}\n`);
+    this.intervalId = setInterval(() => {
+      _.forOwn(this.statsCmds, (v, k) => {
+        this.exeCmd(v)
+          .then((output) => {
+            this.postProcess(output, k);
+          });
+      });
+    }, this.samplingRate);
   }
 
   pause() {
-    if (this.stream) {
-      this.stream.close();
-    }
     clearInterval(this.intervalId);
-  }
-
-  resume(): Promise<*> {
-    if (this.stream) {
-      return new Promise((resolve, reject) => {
-        this.createShell(resolve, reject);
-      }).then(() => {
-        this.execute();
-      });
-    }
-    return Promise.reject();
   }
 
   postProcess(output: Object, k: string) {
