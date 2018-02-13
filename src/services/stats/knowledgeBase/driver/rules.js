@@ -1,7 +1,7 @@
 export default {
     statisticDefinitions: [
-      // Remove the next one when its "demo" function is over
-      {
+        // Remove the next one when its "demo" function is over
+        {
             name: 'activeReadSample',
             type: 'final',
             defaultSource: 'globalLock.activeClients.readers',
@@ -84,7 +84,7 @@ export default {
             defaultSource: 'globalLock.activeClients.writers'
         },
         {
-              name: 'queue_writersQueued',
+            name: 'queue_writersQueued',
             type: 'final',
             defaultSource: 'globalLock.currentQueue.writers'
         },
@@ -140,6 +140,22 @@ export default {
             name: 'wtCache_readIntoCachePs',
             type: 'rate',
             defaultSource: 'wiredTiger.cache.pages read into cache'
+        },
+        {
+            name: 'wtCache_maxBytes',
+            type: 'final',
+            defaultSource: 'wiredTiger.cache.maximum bytes configured'
+        },
+        {
+            name: 'wtCache_currentBytes',
+            type: 'final',
+            defaultSource: 'wiredTiger.cache.bytes currently in the cache'
+        },
+        {
+            name: 'wtCache_evictionsPs',
+            type: 'rate',
+            defaultSource: 'wiredTiger.cache.eviction worker thread evicting pages',
+            ifZeroDivide: 0
         },
         //
         // Wired Tiger transaction tickets
@@ -204,6 +220,29 @@ export default {
             name: 'wtIO_cacheToDiskUsPs',
             type: 'rate',
             defaultSource: 'wiredTiger.cache.application threads page write from cache to disk time (usecs)'
+        },
+        {
+            name: 'wtIO_logSyncTimeUsPs',
+            type: 'rate',
+            defaultSource: 'wiredTiger.log.log sync time duration (usecs)'
+        },
+        {
+            name: 'wtIO_logSyncPs',
+            type: 'rate',
+            defaultSource: 'wiredTiger.log.log sync operations'
+        },
+        //
+        // wiredTiger log
+        //
+        {
+            name: 'wtLog_maxLogSize',
+            type: 'final',
+            defaultSource: 'wiredTiger.log.maximum log file size'
+        },
+        {
+            name: 'wtLog_currentLogSize',
+            type: 'final',
+            defaultSource: 'wiredTiger.log.total log buffer size'
         }
     ],
     calculations: [{
@@ -212,9 +251,9 @@ export default {
             ifZeroDivide: 0
         },
         {
-                name: 'latency_readAvgLatencyMs',
-                expression: '(latency_readWaitUsPs/1000)/latency_readOpsPs',
-                ifZeroDivide: 0
+            name: 'latency_readAvgLatencyMs',
+            expression: '(latency_readWaitUsPs/1000)/latency_readOpsPs',
+            ifZeroDivide: 0
         },
 
         {
@@ -230,6 +269,16 @@ export default {
         {
             name: 'wtIO_writeLatencyMs',
             expression: '(wtIO_cacheToDiskUsPs/1000)/wtIO_cacheToDiskPs',
+            ifZeroDivide: 0
+        },
+        {
+            name: 'wtTransactions_readPct',
+            expression: 'wtTransactions_readOut*100/(wtTransactions_readOut+wtTransactions_readAvailable)',
+            ifZeroDivide: 0
+        },
+        {
+            name: 'wtTransactions_writePct',
+            expression: 'wtTransactions_writeOut*100/(wtTransactions_writeOut+wtTransactions_writeAvailable)',
             ifZeroDivide: 0
         }
     ]
