@@ -256,7 +256,7 @@ export default class SSHCounter implements ObservableWrapper {
       }
     } catch (err) {
       log.error(err);
-      this.emitError(err, 'error');
+      this.emitError(new Error('Run command failed.'));
     }
   }
 
