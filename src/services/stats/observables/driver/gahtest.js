@@ -44,14 +44,16 @@ const MongoClient = require('mongodb').MongoClient;
 for (let j = 0; j < process.argv.length; j++) {
     console.log(j + ' -> ' + (process.argv[j]));
 }
+let url='mongodb://localhost:27016';
+let refresh;
 
 if (process.argv.length===0) {
-  let url='mongodb://localhost:27016';
-  let refresh=5000;
+   url='mongodb://localhost:27016';
+   refresh=5000;
 } else {
-  let url=process.argv[0];
-  if (process.argv.length>1) {
-    let refresh=process.argv[1];
+   url=process.argv[2];
+   if (process.argv.length>3) {
+    let refresh=process.argv[3];
   }
 }
 
@@ -70,7 +72,7 @@ MongoClient.connect(url, function(err, db) {
   //   });
   // });
   const monitor = new MongoNativeDriver();
-  monitor.samplingRate = refresh;
+  monitor.samplingRate = 10000;
   monitor.init({mongoConnection: {driver: db, dbVersion: '3.6'}});
   monitor.rxObservable.subscribe(
     x => console.log('get sub ', JSON.stringify(x,null,4)),
