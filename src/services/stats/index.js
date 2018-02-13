@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:17:22+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-13T12:07:50+11:00
+ * @Last modified time: 2018-02-13T16:29:26+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -39,7 +39,7 @@ import type {
 } from './observables/ObservableWrapper';
 import hooks from './hooks';
 
-const SAMPLING_RATE_TOLERANCE = 0.2; // wait maximally 20% of sampling rate in each time window
+const SAMPLING_RATE_TOLERANCE = 0.5; // wait maximally 50% of sampling rate in each time window
 
 export class Stats {
   // key: profileId
