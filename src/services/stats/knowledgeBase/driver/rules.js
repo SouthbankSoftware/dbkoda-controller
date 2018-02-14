@@ -356,6 +356,13 @@ export default {
             ifZeroDivide: 0
         },
         {
+            name: 'wtIO_logSyncLatencyMs',
+            expression: '(wtIO_logSyncTimeUsPs/1000)/wtIO_logSyncPs',
+            description:'Average time for a wiredTiger log Sync',
+            unit: 'milliseconds',
+            ifZeroDivide: 0
+        },
+        {
             name: 'wtIO_writeLatencyMs',
             expression: '(wtIO_cacheToDiskUsPs/1000)/wtIO_cacheToDiskPs',
             description:'Average time for a wiredTiger disk write',
