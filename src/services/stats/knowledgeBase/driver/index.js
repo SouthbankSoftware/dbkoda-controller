@@ -27,7 +27,11 @@ export const driverItems = [...getAllItemKeys(), 'db_storage'];
 
 export const parsers = {
   'db_storage': (dbStats) => {
-    return {db_storage: dbStats};
+    return {
+      db_storage: dbStats.map(stat => {
+        return {[stat.db]: stat.storageSize};
+      })
+    };
   },
   'others': (previous, newData, dbVersion, samplingRate) => {
     return parseData(newData, previous, dbVersion, samplingRate);
