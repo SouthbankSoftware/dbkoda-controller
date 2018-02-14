@@ -1,7 +1,4 @@
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:21:24+11:00
- *
+/*
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -20,15 +17,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+ * Created by joey on 14/2/18.
+ */
+
 
 import {Observable, Observer} from 'rxjs';
 import _ from 'lodash';
 
 import type {ObservaleValue} from '../ObservableWrapper';
 import {ObservableWrapper} from '../ObservableWrapper';
-import {driverItems, getKnowledgeBaseRules} from '../../knowledgeBase/driver';
-
-const MAX_HISTORY_SIZE = 720;
 
 export default class MongoNativeDriver implements ObservableWrapper {
   rxObservable: ?Observable<ObservaleValue> = null;
@@ -38,12 +36,12 @@ export default class MongoNativeDriver implements ObservableWrapper {
   mongoConnection: Object;
   db: Object;
   samplingRate: number;
-  items: string[] = driverItems;
-  displayName: string = 'Server Status';
+  items: string[] = ['db_storage'];
+  displayName: string = 'Database Storages';
   knowledgeBase: Object;
-  previousData: Object = {};
+  previousData: Object;
   intervalId: number;
-  historyData: Object = {};
+  historyData: Object[] = [];
 
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
@@ -67,18 +65,13 @@ export default class MongoNativeDriver implements ObservableWrapper {
       this.emitError('failed to find mongodb driver.');
       return;
     }
-    this.startServerStatus(db);
-    this.startDBStorage(db);
-  }
-
-  startServerStatus(db) {
     db.command({serverStatus: 1}, {}, (err, data) => {
       if (!err) {
         this.knowledgeBase = getKnowledgeBaseRules({version: data.version, release: data.process});
         if (!this.knowledgeBase) {
           return Promise.reject('Cant find knowledge base');
         }
-        this.postProcess(data, 'others');
+        this.postProcess(data);
       } else {
         log.error('cant run serverStatus command through driver.', err);
         this.emitError('cant run serverStatus command through driver.');
@@ -86,37 +79,17 @@ export default class MongoNativeDriver implements ObservableWrapper {
     });
   }
 
-  startDBStorage(db) {
-    db.admin().listDatabases()
-      .then((dbList) => {
-        return Promise.all(dbList.databases.map((database) => {
-          return db.db(database.name).stats();
-        }));
-      })
-      .then((dbStats) => {
-        l.debug('db stats', dbStats);
-        this.postProcess(dbStats, 'db_storage');
-      })
-      .catch((err) => {
-        l.error(err);
-        this.emitError(err);
-      });
-  }
+  postProcess(data: Object): void {
+    const value = this.knowledgeBase.parse(this.previousData, data, data.version, this.samplingRate);
 
-  postProcess(data: Object, key: string): void {
-    const value = this.knowledgeBase.parse(this.previousData[key], data, data.version, this.samplingRate, key);
-
-    this.previousData[key] = data;
+    this.previousData = data;
     if (_.isEmpty(value)) {
       // the first time is not parsing
       return;
     }
-    if (!this.historyData[key]) {
-      this.historyData[key] = [];
-    }
-    this.historyData[key].push(value);
-    if (this.historyData[key].length > MAX_HISTORY_SIZE) {
-      this.historyData[key].splice(0, MAX_HISTORY_SIZE - this.historyData[key].length + 1);
+    this.historyData.push(value);
+    if (this.historyData.length > MAX_HISTORY_SIZE) {
+      this.historyData.splice(0, MAX_HISTORY_SIZE - this.historyData.length + 1);
     }
     this.observer.next({
       profileId: this.profileId,
@@ -132,8 +105,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
   destroy(): Promise<*> {
     this.pause();
     this.rxObservable = null;
-    this.previousData = {};
-    this.historyData = {};
+    this.historyData = [];
     return Promise.resolve();
   }
 }

@@ -191,6 +191,9 @@ export default class SSHCounter implements ObservableWrapper {
     let output = '';
     return new Promise((resolve, reject) => {
       try {
+        if (!this.client) {
+          return reject(new Error('Connection is not open.'));
+        }
         this.client.exec(cmd, (err, stream) => {
           if (err || !stream) {
             if (!ignoreError) {
@@ -270,6 +273,7 @@ export default class SSHCounter implements ObservableWrapper {
     clearInterval(this.intervalId);
     if (this.client) {
       this.client.end();
+      this.client = null;
       this.rxObservable = null;
       return Promise.resolve();
     }

@@ -23,7 +23,16 @@
 import {findRules} from '../utils';
 import {getAllItemKeys, parseData} from './rule_parser';
 
-export const driverItems = getAllItemKeys();
+export const driverItems = [...getAllItemKeys(), 'db_storage'];
+
+export const parsers = {
+  'db_storage': (dbStats) => {
+    return {db_storage: dbStats};
+  },
+  'others': (previous, newData, dbVersion, samplingRate) => {
+    return parseData(newData, previous, dbVersion, samplingRate);
+  }
+};
 
 /**
  * define the mongo stats knowledgebase rules.
@@ -35,9 +44,12 @@ export const rules = {
   'all': [{
     release: 'all', // mongod, mongos, etc.
     version: 'all', // 3.2, 3.0, etc.
-    parse: (previous, newData, dbVersion, samplingRate) => { // define the parse command output logic
-      // return parseStats(previous, newData);
-      return parseData(newData, previous, dbVersion, samplingRate);
+    parse: (previous, newData, dbVersion, samplingRate, key) => { // define the parse command output logic
+      let parseKey = key;
+      if (!parsers[parseKey]) {
+        parseKey = 'others';
+      }
+      return parsers[parseKey](newData, previous, dbVersion, samplingRate);
     }
   }]
 };
