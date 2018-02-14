@@ -121,8 +121,6 @@ export const loadConfigFromYamlFile = (p) => {
     showWelcomePageAtStart: true,
     telemetryEnabled: true,
     performancePanelSamplingRate: 5000,
-    sshCounterInterval: 2,
-    sshCounterCmd: 'vmstat'
   };
   if (!fs.existsSync(p)) {
     loadConfig(config);
