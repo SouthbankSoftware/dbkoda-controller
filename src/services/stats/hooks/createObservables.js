@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:29:50+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-13T17:26:14+11:00
+ * @Last modified time: 2018-02-14T14:29:33+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -151,7 +151,7 @@ export default () =>
         }
       });
 
-      return Promise.all(ps).then(result => {
+      Promise.all(ps).then(result => {
         if (result.length > 0) {
           // $FlowFixMe
           observableManifest._debouncedUpdate();
