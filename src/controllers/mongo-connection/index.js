@@ -62,6 +62,7 @@ class MongoConnectionController {
   setup(app) {
     this.app = app;
     this.mongoShell = app.service('/mongo-shells');
+    this.passwordService = app.service('/master-pass');
   }
 
   getTunnelParams(params) {
@@ -101,13 +102,26 @@ class MongoConnectionController {
   /**
    * create connections for mongodb instance
    */
-  create(params) {
+  async create(params) {
     let conn = Object.assign({}, params);
     const that = this;
     conn = this.parseMongoConnectionURI(conn);
     let db;
     let dbVersion;
     let tunnel;
+    let addNewPassword = false;
+
+    if (conn.usePasswordStore && conn.username) {
+      if (conn.password) {
+        if (!conn.id) {
+          addNewPassword = true;
+        } else {
+          await this.passwordService.patch(conn.id, { password: conn.password });
+        }
+      } else {
+        conn.password = await this.passwordService.get(conn.id);
+      }
+    }
 
     console.log('conn params', params);
     const sshOpts = this.getTunnelParams(params);
@@ -211,6 +225,10 @@ class MongoConnectionController {
         }
         return this.createMongoShell(db, conn, dbVersion)
           .then(v => {
+            if (v.id && addNewPassword) {
+              // If we didn't have a connection id earlier, push to the store now instead
+              this.passwordService.patch(v.id, { password: conn.password });
+            }
             if (v.id && tunnel) {
               this.tunnels[v.id] = tunnel;
             }

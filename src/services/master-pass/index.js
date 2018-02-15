@@ -101,7 +101,7 @@ export class MasterPass {
   }
 
   update(_id: string, _data: {}, _params: {}) {
-    throw new errors.NotImplemented('Request should have been processed by hooks');
+    throw new errors.NotImplemented('Update not implemented');
   }
 }
 

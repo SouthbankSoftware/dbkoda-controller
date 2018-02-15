@@ -42,6 +42,7 @@ class MongoConnection {
     this.connectionParameters = conn;
     this.requireSlaveOk = conn.requireSlaveOk;
     this.authenticationDatabase = conn.authenticationDatabase;
+    this.usePasswordStore = conn.usePasswordStore;
   }
 
   getShell(shellId) {
