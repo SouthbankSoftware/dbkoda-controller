@@ -19,7 +19,7 @@
  */
 
 /* List of indentifiers/keys for items to be observed */
-
+import _ from 'lodash';
 import {findRules} from '../utils';
 import {getAllItemKeys, parseData} from './rule_parser';
 
@@ -29,7 +29,7 @@ export const parsers = {
   'db_storage': (dbStats) => {
     return {
       db_storage: dbStats.map(stat => {
-        return {[stat.db]: stat.storageSize};
+        return {[stat.db]: _.pick(stat, ['dataSize'])};
       })
     };
   },
