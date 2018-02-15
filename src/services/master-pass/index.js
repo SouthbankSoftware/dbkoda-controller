@@ -33,12 +33,13 @@ import PassStore from './PassStore';
 import CryptoPassword from './CryptoPass';
 
 export class MasterPass {
+  MASTER_PASSWORD_REQUIRED = 'master-pass::password-required';
   events: Array<string>;
   store: PassStore;
   cryptoPass: CryptoPassword;
 
   constructor(_options: ?{}) {
-    this.events = ['data', 'error', 'warn'];
+    this.events = ['error', this.MASTER_PASSWORD_REQUIRED];
   }
 
   // $FlowFixMe
@@ -53,6 +54,11 @@ export class MasterPass {
   }
 
   get(_id: string, _params: {}) {
+    if (!this.cryptoPass || !this.cryptoPass.masterPassword) {
+      // $FlowFixMe
+      this.emit(this.MASTER_PASSWORD_REQUIRED, { 'method': 'get' });
+      throw new errors.NotAuthenticated('Password Store not authenticated');
+    }
     return this.store.getPassword(_id)
       .then((passwordEnc: string) => {
         if (!passwordEnc) {
@@ -89,6 +95,11 @@ export class MasterPass {
   }
 
   patch(_id: string, _data: { password: string }, _params: {}): Promise<boolean> {
+    if (!this.cryptoPass || !this.cryptoPass.masterPassword) {
+      // $FlowFixMe
+      this.emit(this.MASTER_PASSWORD_REQUIRED, { 'method': 'get' });
+      throw new errors.NotAuthenticated('Password Store not authenticated');
+    }
     const profileId = _id;
     const { password } = _data;
     const encryptedPwd: string = this.cryptoPass.encrypt(password);
