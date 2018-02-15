@@ -3,7 +3,7 @@
  * @Date:   2017-12-12T11:17:37+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-05T15:00:42+11:00
+ * @Last modified time: 2018-02-15T17:28:54+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -31,79 +31,82 @@ import { validateSchema } from 'feathers-hooks-common';
 const itemsSchema = {
   type: 'array',
   item: {
-    type: 'string',
-  },
+    type: 'string'
+  }
+};
+
+const samplingRateSchema = {
+  type: 'number',
+  minimum: 100
 };
 
 const activeSchema = {
-  type: 'boolean',
+  type: 'boolean'
 };
 
 const findSchema = {
   properties: {
     items: itemsSchema,
-    active: activeSchema,
+    active: activeSchema
   },
   required: [],
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const getSchema = {
   properties: {
     profileId: {
-      type: 'string',
+      type: 'string'
     },
     items: itemsSchema,
-    active: activeSchema,
+    active: activeSchema
   },
   required: ['profileId'],
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const createSchema = {
   properties: {
     profileId: {
-      type: 'string',
+      type: 'string'
     },
     items: itemsSchema,
+    samplingRate: samplingRateSchema,
     debug: {
       type: 'boolean',
-      default: false,
+      default: false
     },
     options: {
-      type: 'object',
-    },
+      type: 'object'
+    }
   },
   required: ['profileId', 'items'],
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const patchSchema = {
   properties: {
     profileId: {
-      type: 'string',
+      type: 'string'
     },
-    samplingRate: {
-      type: 'number',
-      minimum: 100,
-    },
+    samplingRate: samplingRateSchema,
     debug: {
-      type: 'boolean',
-    },
+      type: 'boolean'
+    }
   },
   required: ['profileId'],
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const removeSchema = {
   properties: {
     profileId: {
-      type: 'string',
+      type: 'string'
     },
-    items: itemsSchema,
+    items: itemsSchema
   },
   required: ['profileId'],
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const schema = {
@@ -112,7 +115,7 @@ const schema = {
   create: createSchema,
   update: {},
   patch: patchSchema,
-  remove: removeSchema,
+  remove: removeSchema
 };
 
 const validators = _.reduce(
@@ -121,7 +124,7 @@ const validators = _.reduce(
     acc[k] = validateSchema(v, ajv);
     return acc;
   },
-  {},
+  {}
 );
 
 export default _options => hook => validators[hook.method](hook);

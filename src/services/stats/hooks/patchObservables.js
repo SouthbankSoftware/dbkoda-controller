@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:30:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-13T17:58:02+11:00
+ * @Last modified time: 2018-02-15T17:57:24+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -29,6 +29,26 @@
 import processItems from '~/hooks/processItems';
 // $FlowFixMe
 import errors from 'feathers-errors';
+import type { ObservableManifest } from '../';
+
+/**
+ * @return whether observableManifest should be updated
+ */
+export const patchSamplingRate = (
+  observableManifest: ObservableManifest,
+  samplingRate: number
+): boolean => {
+  const { profileId, debug } = observableManifest;
+
+  if (samplingRate && samplingRate !== observableManifest.samplingRate) {
+    debug && l.debug(`Updating sampling rate for profile ${profileId}...`);
+    observableManifest.samplingRate = samplingRate;
+
+    return true;
+  }
+
+  return false;
+};
 
 export default () =>
   processItems(
@@ -37,20 +57,22 @@ export default () =>
       const { service } = context;
       const { observableManifests } = service;
 
-      const observableManifest = observableManifests.get(profileId);
+      const observableManifest: ObservableManifest = observableManifests.get(
+        profileId
+      );
 
       if (!observableManifest) {
-        throw new errors.NotFound(`Observable manifest for profile ${profileId} doesn't exist`);
+        throw new errors.NotFound(
+          `Observable manifest for profile ${profileId} doesn't exist`
+        );
       }
 
-      if (samplingRate !== undefined) {
-        observableManifest.samplingRate = samplingRate;
+      patchSamplingRate(observableManifest, samplingRate) &&
         observableManifest._debouncedUpdate();
-      }
 
       if (debug !== undefined) {
         observableManifest.debug = debug;
       }
     },
-    { idAlias: 'profileId' },
+    { idAlias: 'profileId' }
   );

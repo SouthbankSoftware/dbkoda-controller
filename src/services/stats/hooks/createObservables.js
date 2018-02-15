@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:29:50+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-14T14:29:33+11:00
+ * @Last modified time: 2018-02-15T18:06:12+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -30,24 +30,28 @@ import _ from 'lodash';
 import processItems from '~/hooks/processItems';
 import config from '~/config';
 import { constructors } from '../observableTypes';
+import { patchSamplingRate } from './patchObservables';
+import type { ObservableManifest } from '../';
 
 const DEBOUNCE_DELAY = 1000;
 
 export default () =>
   processItems(
     (context, item) => {
-      const { profileId, items, debug } = item;
+      const { profileId, items, debug, samplingRate } = item;
       const { service } = context;
       const { observableManifests } = service;
 
-      let observableManifest = observableManifests.get(profileId);
+      let observableManifest: ObservableManifest = observableManifests.get(
+        profileId
+      );
 
       if (!observableManifest) {
         l.debug(`Constructing observable manifest for profile ${profileId}...`);
 
         const index = new Map();
-        const samplingRate = config.performancePanelSamplingRate;
 
+        // $FlowFixMe
         observableManifest = {
           profileId,
           wrappers: _.map(constructors, ({ path, constructor }, k) => {
@@ -82,11 +86,12 @@ export default () =>
             return wrapper;
           }),
           index,
-          samplingRate,
-          subscription: null
+          samplingRate: samplingRate || config.performancePanelSamplingRate,
+          subscription: null,
+          debug: false,
+          _debouncedUpdate: null
         };
 
-        // $FlowFixMe
         observableManifest._debouncedUpdate = _.debounce(
           service.updateObservableManifest.bind(service, observableManifest),
           DEBOUNCE_DELAY
@@ -95,8 +100,12 @@ export default () =>
         observableManifests.set(profileId, observableManifest);
       }
 
-      // $FlowFixMe
       observableManifest.debug = debug;
+
+      const shouldUpdateSamplingRate = patchSamplingRate(
+        observableManifest,
+        samplingRate
+      );
 
       const ps = [];
 
@@ -152,8 +161,7 @@ export default () =>
       });
 
       Promise.all(ps).then(result => {
-        if (result.length > 0) {
-          // $FlowFixMe
+        if (shouldUpdateSamplingRate || result.length > 0) {
           observableManifest._debouncedUpdate();
         }
       });

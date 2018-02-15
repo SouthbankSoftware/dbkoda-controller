@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:17:22+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-13T22:01:54+11:00
+ * @Last modified time: 2018-02-15T17:56:11+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -39,23 +39,22 @@ import type {
 } from './observables/ObservableWrapper';
 import hooks from './hooks';
 
+export type ObservableManifest = {
+  profileId: UUID,
+  wrappers: ObservableWrapper[],
+  // key: item
+  index: Map<string, ObservableWrapper>,
+  samplingRate: number,
+  subscription: ?Subscription,
+  debug: boolean,
+  _debouncedUpdate: () => void
+};
+
 const SAMPLING_RATE_TOLERANCE = 0.5; // wait maximally 50% of sampling rate in each time window
 
 export class Stats {
   // key: profileId
-  observableManifests: Map<
-    UUID,
-    {
-      profileId: UUID,
-      wrappers: ObservableWrapper[],
-      // key: item
-      index: Map<string, ObservableWrapper>,
-      samplingRate: number,
-      subscription: ?Subscription,
-      debug: boolean,
-      _debouncedUpdate: () => void
-    }
-  >;
+  observableManifests: Map<UUID, ObservableManifest>;
   events: string[];
 
   constructor(_options: *) {
@@ -78,7 +77,9 @@ export class Stats {
     });
   }
 
-  countActiveObservableWrappers(observableManifest: *): number {
+  countActiveObservableWrappers(
+    observableManifest: ObservableManifest
+  ): number {
     const { wrappers } = observableManifest;
 
     let count = 0;
@@ -92,7 +93,9 @@ export class Stats {
     return count;
   }
 
-  areActiveObservableWrappersReady(observableManifest: *): boolean {
+  areActiveObservableWrappersReady(
+    observableManifest: ObservableManifest
+  ): boolean {
     const { wrappers } = observableManifest;
 
     for (const wrapper of wrappers) {
@@ -107,7 +110,7 @@ export class Stats {
   }
 
   findObservableWrappers(
-    observableManifest: *,
+    observableManifest: ObservableManifest,
     options?: {
       items?: *,
       onMatchingItem?: (item: *, wrapper: *) => void,
@@ -177,14 +180,14 @@ export class Stats {
       : Promise.resolve();
   }
 
-  stopObservableManifest(observableManifest: *) {
+  stopObservableManifest(observableManifest: ObservableManifest) {
     if (observableManifest.subscription) {
       observableManifest.subscription.unsubscribe();
       observableManifest.subscription = null;
     }
   }
 
-  updateObservableManifest(observableManifest: *) {
+  updateObservableManifest(observableManifest: ObservableManifest) {
     if (!this.areActiveObservableWrappersReady(observableManifest)) return;
 
     const { profileId, wrappers, samplingRate } = observableManifest;
