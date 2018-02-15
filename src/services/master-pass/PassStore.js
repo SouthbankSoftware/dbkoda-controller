@@ -30,6 +30,7 @@ import _ from 'lodash';
 import yaml from 'js-yaml';
 
 export default class PassStore {
+  VERIFY_KEY: string = 'verify';
   // $FlowFixMe
   file;
   storeFilePath: string;
@@ -39,7 +40,7 @@ export default class PassStore {
   constructor(fileService) {
     this.file = fileService;
     this.storeFilePath = (process.env.UAT == 'true')
-      ? path.resolve('tmp', 'store.yml')
+      ? path.resolve('/tmp', 'store.yml')
       : path.resolve(os.homedir(), '.dbKoda', 'store.yml');
     this.store = new Map();
   }
@@ -81,7 +82,7 @@ export default class PassStore {
 
   createStore(verifyHash: string) {
     // Init the store and an empty file
-    this.store.set('verify', verifyHash);
+    this.store.set(this.VERIFY_KEY, verifyHash);
     const storeDump = yaml.safeDump(PassStore._convertStoreToJson(this.store));
     this.file
       .create({ _id: this.storeFilePath, content: storeDump })
@@ -94,12 +95,13 @@ export default class PassStore {
     const storeIds: Array<string> = [...this.store.keys()];
     const missingIds: Array<string> = _.difference(profileIds, storeIds);
     const redundantIds: Array<string> = _.difference(storeIds, profileIds);
-    // Remove ids that no longer exist on the UI
-    _.reduce(this.store, (result, currentItem) => {
-      if (_.find(redundantIds, currentItem)) {
-        this.store.delete(currentItem);
+    // Remove ids that no longer exist in the UI
+    _.forEach(redundantIds, (currentId) => {
+      if (currentId != this.VERIFY_KEY) {
+        this.store.delete(currentId);
       }
     });
+    // Return missingIds for the UI to manage
     return Promise.resolve(missingIds);
   }
 
