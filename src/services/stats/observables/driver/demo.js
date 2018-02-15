@@ -42,7 +42,7 @@ global.l = global.log;
 const MongoClient = require('mongodb').MongoClient;
 
 let url = 'mongodb://10.0.0.24:27019,10.0.0.24:27020,10.0.0.24:27021/admin?replicaSet=replset';
-url = 'mongodb://localhost';
+url = 'mongodb://ec2-13-54-17-227.ap-southeast-2.compute.amazonaws.com:27036';
 // url = 'mongodb://10.0.0.25:40011';  // 3.4
 // url = 'mongodb://10.0.0.25:40012';  // 3.0
 // url = 'mongodb://10.0.0.25:40013';  // 3.2
