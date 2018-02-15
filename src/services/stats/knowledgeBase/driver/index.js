@@ -33,7 +33,7 @@ export const parsers = {
       })
     };
   },
-  'others': (previous, newData, dbVersion, samplingRate) => {
+  'others': (newData, previous, dbVersion, samplingRate) => {
     return parseData(newData, previous, dbVersion, samplingRate);
   }
 };
@@ -48,7 +48,7 @@ export const rules = {
   'all': [{
     release: 'all', // mongod, mongos, etc.
     version: 'all', // 3.2, 3.0, etc.
-    parse: (previous, newData, dbVersion, samplingRate, key) => { // define the parse command output logic
+    parse: (newData, previous, dbVersion, samplingRate, key) => { // define the parse command output logic
       let parseKey = key;
       if (!parsers[parseKey]) {
         parseKey = 'others';
