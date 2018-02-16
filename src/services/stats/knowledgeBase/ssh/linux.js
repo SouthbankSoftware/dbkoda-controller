@@ -22,14 +22,13 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import os from 'os';
 import _ from 'lodash';
 
 const commandParsers = {
   'cpuMemory': ({output, samplingRate}) => {
     // log.debug('cpu memory output:', output);
     // parse the vmstat command output
-    const splited = output.split(os.platform() === 'win32' ? '\n\r' : '\n');
+    const splited = output.split('\n');
     if (!splited || splited.length < 4) {
       return;
     }
