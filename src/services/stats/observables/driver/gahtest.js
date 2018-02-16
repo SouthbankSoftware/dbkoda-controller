@@ -24,16 +24,18 @@
 
 /* eslint-disable */
 
-import {getKnowledgeBaseRules} from '../../knowledgeBase/driver';
+import {
+    getKnowledgeBaseRules
+} from '../../knowledgeBase/driver';
 import flat from 'flat';
 import _ from 'lodash';
 
 const MongoNativeDriver = require('./index');
 
 global.log = {
-  info: msg => console.log(msg),
-  error: msg => console.error(msg),
-  debug: msg => console.debug(msg),
+    info: msg => console.log(msg),
+    error: msg => console.error(msg),
+    debug: msg => console.debug(msg),
 };
 global.l = global.log;
 
@@ -44,17 +46,17 @@ const MongoClient = require('mongodb').MongoClient;
 for (let j = 0; j < process.argv.length; j++) {
     console.log(j + ' -> ' + (process.argv[j]));
 }
-let url='mongodb://localhost:27016';
+let url = 'mongodb://localhost:27016';
 let refresh;
 
-if (process.argv.length===0) {
-   url='mongodb://localhost:27016';
-   refresh=5000;
+if (process.argv.length === 2) {
+    url = 'mongodb://localhost:27016';
+    refresh = 5000;
 } else {
-   url=process.argv[2];
-   if (process.argv.length>3) {
-    let refresh=process.argv[3];
-  }
+    url = process.argv[2];
+    if (process.argv.length > 3) {
+        let refresh = process.argv[3];
+    }
 }
 
 //let url = 'mongodb://10.0.0.24:27019,10.0.0.24:27020,10.0.0.24:27021/admin?replicaSet=replset';
@@ -65,17 +67,28 @@ if (process.argv.length===0) {
 // url = 'mongodb://10.0.0.25:40014';  // 3.6
 
 MongoClient.connect(url, function(err, db) {
-  if (err) throw err;
-  // db.admin().command({serverStatus: 1}, {}, (err, data) => {
-  //   _.forOwn(flat(data), (v, k) => {
-  //     console.log(k);
-  //   });
-  // });
-  const monitor = new MongoNativeDriver();
-  monitor.samplingRate = 10000;
-  monitor.init({mongoConnection: {driver: db, dbVersion: '3.6'}});
-  monitor.rxObservable.subscribe(
-    x => console.log('get sub ', JSON.stringify(x,null,4)),
-    (e) => console.log('error ',e)
-  );
+    if (err) throw err;
+    // db.admin().command({serverStatus: 1}, {}, (err, data) => {
+    //   _.forOwn(flat(data), (v, k) => {
+    //     console.log(k);
+    //   });
+    // });
+    const monitor = new MongoNativeDriver();
+    monitor.samplingRate = 10000;
+    monitor.init({
+        mongoConnection: {
+            driver: db,
+            dbVersion: '3.6'
+        }
+    });
+    monitor.rxObservable.subscribe(
+
+        x => {
+            //console.log(Object.keys(x.value));
+            if ('wtIO_writeIOps' in x.value) {
+                console.log(x);
+            }
+        },
+        (e) => console.log('error ', e)
+    );
 });
