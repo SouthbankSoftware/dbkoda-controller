@@ -72,14 +72,13 @@ const commandParsers = {
     return output;
   },
   'disk': (d) => {
-    log.debug('get disk output ', d);
     const o = {timestamp: (new Date()).getTime()};
     if (d && d.output) {
       const splited = d.output.split(/\s+/).filter(x => x);
       if (splited.length > 2) {
         try {
           const v = parseFloat(splited[2].trim(), 10);
-          o.value = {disk: v};
+          o.value = {disk: {download: v, samplingRate: d.samplingRate}};
         } catch (e) {
           log.warn(e);
         }
