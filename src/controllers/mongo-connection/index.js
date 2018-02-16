@@ -123,7 +123,6 @@ class MongoConnectionController {
       }
     }
 
-    console.log('conn params', params);
     const sshOpts = this.getTunnelParams(params);
     return new Promise((resolve, reject) => {
       this.createTunnel(sshOpts)
