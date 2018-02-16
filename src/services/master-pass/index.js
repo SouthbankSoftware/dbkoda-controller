@@ -81,6 +81,7 @@ export class MasterPass {
               return this.cryptoPass.compareVerifyHash(masterPassword, storeVerifyHash)
               .then((compareOk) => {
                 if (!compareOk) {
+                  this.cryptoPass.reset();
                   throw new errors.NotAuthenticated('Unable to init store with the specified master password.');
                 }
                 return Promise.resolve(this.store.syncStore(profileIds));

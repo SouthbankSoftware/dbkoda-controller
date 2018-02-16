@@ -72,7 +72,6 @@ export default class PassStore {
       })
       .catch((error) => {
         if (error && error.code === 404) {
-          console.log('File not found, creating new file');
           Promise.resolve(this.createStore(verifyHash));
         } else {
           Promise.reject(error);
