@@ -44,12 +44,15 @@ export default class MongoNativeDriver implements ObservableWrapper {
   previousData: Object = {};
   intervalId: number;
   historyData: Object = {};
+  commandStatus: Object = {'db_storage': true, 'others': true};
 
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
       this.observer = observer;
+      this.commandStatus.others = true;
+      this.commandStatus.db_storage = true;
       this.start(this.db);
       this.intervalId = setInterval(() => this.start(this.db), this.samplingRate);
       return () => {
@@ -72,35 +75,41 @@ export default class MongoNativeDriver implements ObservableWrapper {
   }
 
   startServerStatus(db) {
-    db.command({serverStatus: 1}, {}, (err, data) => {
-      if (!err) {
-        this.knowledgeBase = getKnowledgeBaseRules({version: data.version, release: data.process});
-        if (!this.knowledgeBase) {
-          return Promise.reject('Cant find knowledge base');
+    if (this.commandStatus.others) {
+      db.command({serverStatus: 1}, {}, (err, data) => {
+        if (!err) {
+          this.knowledgeBase = getKnowledgeBaseRules({version: data.version, release: data.process});
+          if (!this.knowledgeBase) {
+            return Promise.reject('Cant find knowledge base');
+          }
+          this.postProcess(data, 'others');
+        } else {
+          log.error('cant run serverStatus command through driver.', err);
+          this.emitError('cant run serverStatus command through driver.');
+          this.commandStatus.others = false;
         }
-        this.postProcess(data, 'others');
-      } else {
-        log.error('cant run serverStatus command through driver.', err);
-        this.emitError('cant run serverStatus command through driver.');
-      }
-    });
+      });
+    }
   }
 
   startDBStorage(db) {
-    db.admin().listDatabases()
-      .then((dbList) => {
-        return Promise.all(dbList.databases.map((database) => {
-          return db.db(database.name).stats();
-        }));
-      })
-      .then((dbStats) => {
-        l.debug('db stats', dbStats);
-        this.postProcess(dbStats, 'db_storage');
-      })
-      .catch((err) => {
-        l.error(err);
-        this.emitError(err);
-      });
+    if (this.commandStatus.db_storage) {
+      db.admin().listDatabases()
+        .then((dbList) => {
+          return Promise.all(dbList.databases.map((database) => {
+            return db.db(database.name).stats();
+          }));
+        })
+        .then((dbStats) => {
+          l.debug('db stats', dbStats);
+          this.postProcess(dbStats, 'db_storage');
+        })
+        .catch((err) => {
+          l.error(err);
+          this.emitError(err);
+          this.commandStatus.db_storage = false;
+        });
+    }
   }
 
   postProcess(data: Object, key: string): void {
