@@ -131,7 +131,6 @@ export default class SSHCounter implements ObservableWrapper {
         })
         .catch(err => {
           log.error(err);
-          this.emitError(err, 'error');
           reject(err);
         });
     });
@@ -225,10 +224,17 @@ export default class SSHCounter implements ObservableWrapper {
       _.forOwn(this.statsCmds, (v, k) => {
         this.exeCmd(v)
           .then((output) => {
-            this.postProcess(output, k);
+            try {
+              this.postProcess(output, k);
+            } catch (err) {
+              l.error(err);
+              this.emitError(new Error('Run command failed.'));
+              delete this.statsCmds[k];
+            }
           }).catch((err) => {
             l.error(err);
-            this.emitError(err);
+            this.emitError(new Error('Run command failed.'));
+            delete this.statsCmds[k];
         });
       });
     };
@@ -243,7 +249,7 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   postProcess(output: Object, k: string) {
-    try {
+    // try {
       // log.debug('get command output ', output);
       const params = {output};
       const o = this.knowledgeBase.parse(k, params, this.samplingRate);
@@ -259,10 +265,10 @@ export default class SSHCounter implements ObservableWrapper {
         });
         this.observer.next(nextObj);
       }
-    } catch (err) {
-      log.error(err);
-      this.emitError(new Error('Run command failed.'));
-    }
+    // } catch (err) {
+    //   log.error(err);
+    //   this.emitError(new Error('Run command failed.'));
+    // }
   }
 
   /**
