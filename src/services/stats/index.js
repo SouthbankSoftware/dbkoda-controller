@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:17:22+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-15T17:56:11+11:00
+ * @Last modified time: 2018-02-20T08:20:47+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -33,10 +33,8 @@ import errors from 'feathers-errors';
 import { Observable } from 'rxjs';
 import type { Subscription } from 'rxjs';
 import _ from 'lodash';
-import type {
-  ObservaleValue,
-  ObservableWrapper
-} from './observables/ObservableWrapper';
+import type { ObservaleValue, ObservableWrapper } from './observables/ObservableWrapper';
+import Transformer from './transformers/Transformer';
 import hooks from './hooks';
 
 export type ObservableManifest = {
@@ -46,6 +44,7 @@ export type ObservableManifest = {
   index: Map<string, ObservableWrapper>,
   samplingRate: number,
   subscription: ?Subscription,
+  transformers: Transformer[],
   debug: boolean,
   _debouncedUpdate: () => void
 };
@@ -65,11 +64,7 @@ export class Stats {
     this.observableManifests = new Map();
   }
 
-  emitError(
-    profileId: string,
-    error: Error | string,
-    level: 'warn' | 'error' = 'error'
-  ) {
+  emitError(profileId: string, error: Error | string, level: 'warn' | 'error' = 'error') {
     // $FlowFixMe
     this.emit('error', {
       profileId,
@@ -77,9 +72,7 @@ export class Stats {
     });
   }
 
-  countActiveObservableWrappers(
-    observableManifest: ObservableManifest
-  ): number {
+  countActiveObservableWrappers(observableManifest: ObservableManifest): number {
     const { wrappers } = observableManifest;
 
     let count = 0;
@@ -93,9 +86,7 @@ export class Stats {
     return count;
   }
 
-  areActiveObservableWrappersReady(
-    observableManifest: ObservableManifest
-  ): boolean {
+  areActiveObservableWrappersReady(observableManifest: ObservableManifest): boolean {
     const { wrappers } = observableManifest;
 
     for (const wrapper of wrappers) {
@@ -129,17 +120,13 @@ export class Stats {
 
         if (wrapper) {
           if (active !== undefined) {
-            if (
-              (active && !wrapper.rxObservable) ||
-              (!active && wrapper.rxObservable)
-            ) {
+            if ((active && !wrapper.rxObservable) || (!active && wrapper.rxObservable)) {
               continue;
             }
           }
 
           if (!resultWrappers.has(wrapper)) {
-            typeof onMatchingItem === 'function' &&
-              onMatchingItem(queryItem, wrapper);
+            typeof onMatchingItem === 'function' && onMatchingItem(queryItem, wrapper);
             resultWrappers.add(wrapper);
           }
         } else {
@@ -153,9 +140,7 @@ export class Stats {
     return active === undefined
       ? wrappers
       : wrappers.filter(
-          wrapper =>
-            (active && wrapper.rxObservable) ||
-            (!active && !wrapper.rxObservable)
+          wrapper => (active && wrapper.rxObservable) || (!active && !wrapper.rxObservable)
         );
   }
 
@@ -168,9 +153,9 @@ export class Stats {
           })
           .catch(err => {
             l.error(
-              `Error happened when trying to destroy observable ${
-                wrapper.displayName
-              } of profile ${wrapper.profileId}`,
+              `Error happened when trying to destroy observable ${wrapper.displayName} of profile ${
+                wrapper.profileId
+              }`,
               err
             );
             this.emitError(wrapper.profileId, err.message);
@@ -197,19 +182,16 @@ export class Stats {
     this.stopObservableManifest(observableManifest);
 
     // $FlowFixMe
-    const rxObservables: Observable<ObservaleValue>[] = wrappers.reduce(
-      (acc, v) => {
-        const { rxObservable } = v;
+    const rxObservables: Observable<ObservaleValue>[] = wrappers.reduce((acc, v) => {
+      const { rxObservable } = v;
 
-        if (rxObservable) {
-          // $FlowFixMe
-          acc.push(rxObservable);
-        }
+      if (rxObservable) {
+        // $FlowFixMe
+        acc.push(rxObservable);
+      }
 
-        return acc;
-      },
-      []
-    );
+      return acc;
+    }, []);
 
     const tolerance = samplingRate * SAMPLING_RATE_TOLERANCE;
 
@@ -227,6 +209,9 @@ export class Stats {
             value: {}
           }
         )
+      )
+      .map((value: ObservaleValue) =>
+        _.reduce(observableManifest.transformers, (acc, v) => v.transform(acc), value)
       )
       .subscribe({
         next: v => {
@@ -246,10 +231,7 @@ export class Stats {
 
           observableManifest.subscription = null;
 
-          l.error(
-            `Fatal error happened during observable execution of profile ${profileId}`,
-            err
-          );
+          l.error(`Fatal error happened during observable execution of profile ${profileId}`, err);
           this.emitError(profileId, err.message);
         },
         complete: () => {
@@ -267,39 +249,27 @@ export class Stats {
   }
 
   find(_params: *) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
   get(_id: *, _params: *) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
   create(_data: *, _params: *) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
   update(_id: *, _data: *, _params: *) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
   patch(_id: *, _data: *, _params: *) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
   remove(_id: *, _params: *) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 }
 

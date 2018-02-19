@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:29:50+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-15T18:06:12+11:00
+ * @Last modified time: 2018-02-20T08:34:46+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -32,6 +32,7 @@ import config from '~/config';
 import { constructors } from '../observableTypes';
 import { patchSamplingRate } from './patchObservables';
 import type { ObservableManifest } from '../';
+import MetricSmoother from '../transformers/MetricSmoother';
 
 const DEBOUNCE_DELAY = 1000;
 
@@ -42,9 +43,7 @@ export default () =>
       const { service } = context;
       const { observableManifests } = service;
 
-      let observableManifest: ObservableManifest = observableManifests.get(
-        profileId
-      );
+      let observableManifest: ObservableManifest = observableManifests.get(profileId);
 
       if (!observableManifest) {
         l.debug(`Constructing observable manifest for profile ${profileId}...`);
@@ -88,6 +87,7 @@ export default () =>
           index,
           samplingRate: samplingRate || config.performancePanelSamplingRate,
           subscription: null,
+          transformers: [new MetricSmoother(3)],
           debug: false,
           _debouncedUpdate: null
         };
@@ -102,10 +102,7 @@ export default () =>
 
       observableManifest.debug = debug;
 
-      const shouldUpdateSamplingRate = patchSamplingRate(
-        observableManifest,
-        samplingRate
-      );
+      const shouldUpdateSamplingRate = patchSamplingRate(observableManifest, samplingRate);
 
       const ps = [];
 
@@ -113,10 +110,7 @@ export default () =>
         items,
         onMatchingItem: (item, wrapper) => {
           if (wrapper.rxObservable) {
-            debug &&
-              l.debug(
-                `Item \`${item}\` is already being observed for profile ${profileId}`
-              );
+            debug && l.debug(`Item \`${item}\` is already being observed for profile ${profileId}`);
           } else {
             // mark it as being created
             wrapper.rxObservable = true;
@@ -127,31 +121,27 @@ export default () =>
               } of profile ${profileId} for item \`${item}\`...`
             );
 
-            const { connections } = context.app.service(
-              'mongo/connection/controller'
-            );
+            const { connections } = context.app.service('mongo/connection/controller');
 
             ps.push(
-              wrapper
-                .init({ mongoConnection: connections[profileId] })
-                .catch(err => {
-                  l.error(
-                    `Error happened during initialisation of observable ${
-                      wrapper.displayName
-                    } of profile ${profileId}`,
-                    err
-                  );
-                  service.emitError(profileId, err.message);
+              wrapper.init({ mongoConnection: connections[profileId] }).catch(err => {
+                l.error(
+                  `Error happened during initialisation of observable ${
+                    wrapper.displayName
+                  } of profile ${profileId}`,
+                  err
+                );
+                service.emitError(profileId, err.message);
 
-                  // debounce similar requests
-                  return new Promise(resolve => {
-                    setTimeout(() => {
-                      wrapper.rxObservable = null;
+                // debounce similar requests
+                return new Promise(resolve => {
+                  setTimeout(() => {
+                    wrapper.rxObservable = null;
 
-                      resolve();
-                    }, DEBOUNCE_DELAY);
-                  });
-                })
+                    resolve();
+                  }, DEBOUNCE_DELAY);
+                });
+              })
             );
           }
         },
