@@ -46,14 +46,33 @@ export const parsers = {
 export const rules = {
   // all match all os types
   'all': [{
+    release: 'mongos',
+    version: 'all',
+    parse: (newData, previous, dbVersion, samplingRate, key) => { // define the parse command output logic
+      if (key === 'db_storage') {
+        return {
+          db_storage: newData.map((dbStats) => {
+            if (!_.isEmpty(dbStats.raw)) {
+              const db = _.values(dbStats.raw)[0].db;
+              return {[db]: _.pick(dbStats, ['dataSize'])};
+            }
+          })
+        };
+      }
+      return parseData(newData, previous, dbVersion, samplingRate);
+    }
+  }, {
     release: 'all', // mongod, mongos, etc.
     version: 'all', // 3.2, 3.0, etc.
     parse: (newData, previous, dbVersion, samplingRate, key) => { // define the parse command output logic
-      let parseKey = key;
-      if (!parsers[parseKey]) {
-        parseKey = 'others';
+      if (key === 'db_storage') {
+        return {
+          db_storage: newData.map(stat => {
+            return {[stat.db]: _.pick(stat, ['dataSize'])};
+          })
+        };
       }
-      return parsers[parseKey](newData, previous, dbVersion, samplingRate);
+      return parseData(newData, previous, dbVersion, samplingRate);
     }
   }]
 };

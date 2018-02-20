@@ -158,10 +158,6 @@ export const parseDataByRules = (rules, stats, dbVersion, prevStats, samplingRat
   return parseCalculations(rules.calculations, statsValues);
 };
 
-export const parseData = (stats, prevStats, dbVersion, samplingRate) => {
-  return parseDataByRules(mongoRules, stats, dbVersion, prevStats, samplingRate);
-};
-
 export const parseAllKeys = (rules) => {
   const keys = [];
   rules.statisticDefinitions.forEach((statDef) => {
@@ -175,4 +171,14 @@ export const parseAllKeys = (rules) => {
 
 export const getAllItemKeys = () => {
   return parseAllKeys(mongoRules);
+};
+
+export const parseData = (stats, prevStats, dbVersion, samplingRate) => {
+  const data = parseDataByRules(mongoRules, stats, dbVersion, prevStats, samplingRate);
+  _.forOwn(data, (v, k) => {
+    if (!Number.isInteger(v)) {
+      data[k] = parseFloat(v).toFixed(6);
+    }
+  });
+  return data;
 };

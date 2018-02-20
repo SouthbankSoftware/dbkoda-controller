@@ -44,33 +44,35 @@ export const findRules = ({osType, release, version}, rules) => {
   }
   const matchedRelease = [];
   matchedOs.forEach((mos) => {
-    if (mos.release.toLowerCase().indexOf(release.toLowerCase()) >= 0) {
+    if (mos.release.toLowerCase().indexOf(release.toLowerCase()) >= 0 || mos.release === 'all') {
       matchedRelease.push(mos);
     }
-    if (mos.release === 'all') {
-      matchedRelease.unshift(mos);
-    }
+    // if (mos.release === 'all') {
+    //   const idx = _.findIndex(matchedRelease, o => o.version !== 'all');
+    //   matchedRelease.splice(idx, 0, mos);
+    // }
   });
   if (matchedRelease.length === 0) {
     return matchedOs[0];
   }
   if (!version) {
     // get the closest match
-    return matchedRelease[matchedRelease.length - 1];
+    return matchedRelease[0];
   }
   const matchedVersion = [];
   matchedRelease.forEach((rel) => {
-    if (rel.version && rel.version.indexOf(version) >= 0) {
+    if (rel.version && rel.version.indexOf(version) >= 0 || rel.version === 'all') {
       matchedVersion.push(rel);
     }
-    if (rel.version === 'all') {
-      matchedVersion.unshift(rel);
-    }
+    // if (rel.version === 'all') {
+    //   const idx = _.findIndex(matchedVersion, o => o.version !== 'all');
+    //   matchedVersion.splice(idx + 1, 0, rel);
+    // }
   });
   if (matchedVersion.length === 0) {
     return matchedRelease[matchedRelease.length - 1];
   }
-  return matchedVersion[matchedVersion.length - 1];
+  return matchedVersion[0];
 };
 
 /**

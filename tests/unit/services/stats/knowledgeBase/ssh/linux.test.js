@@ -67,14 +67,14 @@ describe('test knowledge base rules', () => {
   it('test loading linux rules', () => {
     const rules = {
       'linux': [{
-        release: 'all',
+        release: 'centos',
       }, {
         release: 'ubuntu',
         version: '14.0'
       }, {
-        release: 'centos',
-      }, {
         release: 'Red Hat Enterprise Linux Server',
+      }, {
+        release: 'all',
       }]
     };
     let matched = findRules({osType: 'linux', release: 'ubuntu', version: '14.0'}, rules);
@@ -88,11 +88,17 @@ describe('test knowledge base rules', () => {
     matched = findRules({osType: 'linux', release: 'Red Hat'}, rules);
     assert.equal(matched.release, 'Red Hat Enterprise Linux Server');
     assert.equal(matched.version, undefined);
+
+    matched = findRules({osType: 'linux', release: 'unknown'}, rules);
+    assert.equal(matched.release, 'all');
   });
 
   it('test find rules based on various versions', () => {
     const rules = {
       'linux': [{
+        release: 'ubuntu',
+        version: '16.0.1'
+      }, {
         release: 'all',
       }, {
         release: 'ubuntu',
@@ -100,9 +106,6 @@ describe('test knowledge base rules', () => {
       }, {
         release: 'ubuntu',
         version: 'all'
-      }, {
-        release: 'ubuntu',
-        version: '16.0.1'
       }]
     };
     let matched = findRules({osType: 'linux', release: 'ubuntu', version: '14.0'}, rules);

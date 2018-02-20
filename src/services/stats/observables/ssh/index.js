@@ -177,7 +177,7 @@ export default class SSHCounter implements ObservableWrapper {
             }
             resolve();
           }).catch((err) => {
-            reject(err);
+          reject(err);
         });
       })
       .on('error', err => {
@@ -232,9 +232,9 @@ export default class SSHCounter implements ObservableWrapper {
               delete this.statsCmds[k];
             }
           }).catch((err) => {
-            l.error(err);
-            this.emitError(new Error('Run command failed.'));
-            delete this.statsCmds[k];
+          l.error(err);
+          this.emitError(new Error('Run command failed.'));
+          delete this.statsCmds[k];
         });
       });
     };
@@ -249,26 +249,20 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   postProcess(output: Object, k: string) {
-    // try {
-      // log.debug('get command output ', output);
-      const params = {output};
-      const o = this.knowledgeBase.parse(k, params, this.samplingRate);
-      if (o && o.value) {
-        const nextObj = _.pick(o, ['value', 'timestamp']);
-        nextObj.profileId = this.profileId;
-        nextObj.value = _.pick(o.value, this.items);
-        _.keys(nextObj.value).forEach((key) => {
-          if (typeof nextObj.value[key] === 'number' && (!this.historyData[key].maximum || nextObj.value[key] > this.historyData[key].maximum)) {
-            this.historyData[key].maximum = nextObj.value[key];
-          }
-          this.historyData[key].previous = nextObj.value[key];
-        });
-        this.observer.next(nextObj);
-      }
-    // } catch (err) {
-    //   log.error(err);
-    //   this.emitError(new Error('Run command failed.'));
-    // }
+    const params = {output};
+    const o = this.knowledgeBase.parse(k, params, this.samplingRate);
+    if (o && o.value) {
+      const nextObj = _.pick(o, ['value', 'timestamp']);
+      nextObj.profileId = this.profileId;
+      nextObj.value = _.pick(o.value, this.items);
+      _.keys(nextObj.value).forEach((key) => {
+        if (typeof nextObj.value[key] === 'number' && (!this.historyData[key].maximum || nextObj.value[key] > this.historyData[key].maximum)) {
+          this.historyData[key].maximum = nextObj.value[key];
+        }
+        this.historyData[key].previous = nextObj.value[key];
+      });
+      this.observer.next(nextObj);
+    }
   }
 
   /**
