@@ -3,7 +3,7 @@
  * @Date:   2018-02-19T15:49:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T16:26:11+11:00
+ * @Last modified time: 2018-02-20T21:24:12+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,6 +28,8 @@ import _ from 'lodash';
 import MetricSmoother from '~/services/stats/transformers/MetricSmoother';
 import assert from 'assert';
 
+const EXHALE_VALUE_PRECISION = 6;
+
 describe('MetricSmoother', () => {
   let smoother;
   let values;
@@ -41,7 +43,7 @@ describe('MetricSmoother', () => {
         value: {
           activeReadSample: 34,
           network_bytesInPs: 81.4,
-          network_bytesOutPs: 4508.200000000001,
+          network_bytesOutPs: 4508.2,
           wtIO_logSyncLatencyMs: 67,
           wtIO_writeLatencyMs: 89,
           wtTransactions_readPct: 0.78125,
@@ -158,7 +160,11 @@ describe('MetricSmoother', () => {
 
     const _get = value => _.get(value, 'value.db_storage[0].SampleCollections.dataSize');
 
-    assert.equal(_get(smoothedValue), (_get(values[0]) + _get(values[1])) / 2);
+    assert.equal(
+      _get(smoothedValue),
+      _.round((_get(values[0]) + _get(values[1])) / 2),
+      EXHALE_VALUE_PRECISION
+    );
   });
 
   it('should be able to process third value', () => {
@@ -167,7 +173,10 @@ describe('MetricSmoother', () => {
 
     const _get = value => _.get(value, 'value.db_storage[0].SampleCollections.dataSize');
 
-    assert.equal(_get(smoothedValue), (_get(values[0]) + _get(values[1]) + _get(values[2])) / 3);
+    assert.equal(
+      _get(smoothedValue),
+      _.round((_get(values[0]) + _get(values[1]) + _get(values[2])) / 3, EXHALE_VALUE_PRECISION)
+    );
   });
 
   it('should be able to process fourth value and drop the first value', () => {
@@ -176,7 +185,10 @@ describe('MetricSmoother', () => {
 
     const _get = value => _.get(value, 'value.db_storage[0].SampleCollections.dataSize');
 
-    assert.equal(_get(smoothedValue), (_get(values[1]) + _get(values[2]) + _get(values[3])) / 3);
+    assert.equal(
+      _get(smoothedValue),
+      _.round((_get(values[1]) + _get(values[2]) + _get(values[3])) / 3, EXHALE_VALUE_PRECISION)
+    );
   });
 
   it('can handle missing and NaN values by ignoring them from calculation but keeping their quorum in time window', () => {

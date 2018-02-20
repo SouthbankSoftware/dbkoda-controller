@@ -5,7 +5,7 @@
  * @Date:   2018-02-19T13:42:03+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T17:37:26+11:00
+ * @Last modified time: 2018-02-20T21:15:15+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -29,6 +29,8 @@
 import _ from 'lodash';
 import type { ObservaleValue } from '../observables/ObservableWrapper';
 import Transformer from './Transformer';
+
+const EXHALE_VALUE_PRECISION = 6;
 
 type ValueWrapper = { avg: number, htWindow: (?number)[], inhaledNextValue: boolean, nullCount: 0 };
 
@@ -136,7 +138,7 @@ export default class MetricSmoother extends Transformer {
         }
 
         isEmpty = false;
-        result[k] = v.avg;
+        result[k] = _.round(v.avg, EXHALE_VALUE_PRECISION);
       } else {
         const childResult = _.isArray(v) ? [] : {};
         if (this._exhaleSmaValue(v, childResult)) {
