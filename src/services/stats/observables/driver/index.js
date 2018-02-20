@@ -113,6 +113,9 @@ export default class MongoNativeDriver implements ObservableWrapper {
   }
 
   postProcess(data: Object, key: string): void {
+    if (!this.knowledgeBase) {
+      return;
+    }
     const value = this.knowledgeBase.parse(data, this.previousData[key], data.version, this.samplingRate, key);
 
     this.previousData[key] = data;

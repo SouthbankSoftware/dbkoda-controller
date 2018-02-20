@@ -20,8 +20,7 @@
 /**
  * Created by joey on 6/2/18.
  */
-const parse = require('expression-parser/parse');
-const {checkVersion, getDataFromSourcePath, parseCalculations, parseSingleStatDefValue, parseDataByRules, findAllVars, findDividedBy0} = require('../../../../../../src/services/stats/knowledgeBase/driver/rule_parser');
+const {checkVersion, getDataFromSourcePath, parseCalculations, parseSingleStatDefValue, parseDataByRules, findAllVars} = require('../../../../../../src/services/stats/knowledgeBase/driver/rule_parser');
 
 
 const assert = require('assert');
@@ -190,6 +189,15 @@ describe('test driver rules parser', () => {
         {
           'name': 'networkLoad',
           'expression': 'writeOpsRate'
+        },
+        {
+          'name': 'test0',
+          'expression': '1+2/(3-3)'
+        },
+        {
+          'name': 'test1',
+          'expression': '1+2/(3-3)',
+          'ifZeroDivide': 10
         }
       ]
     };
@@ -225,6 +233,9 @@ describe('test driver rules parser', () => {
     assert.equal(values.networkLoad, 33);
     assert.equal(parseFloat(values.writeLatency, 10).toFixed(2), 1.33);
 
+    assert.equal(values.test0, 0);
+    assert.equal(values.test1, 10);
+
     values = parseDataByRules(rules, stats,
       '3.4',
       {}
@@ -244,36 +255,6 @@ describe('test driver rules parser', () => {
     assert.equal(values.writeOpsRate, 0);
     assert.equal(values.networkLoad, 0);
     assert.equal(parseFloat(values.writeLatency, 10).toFixed(2), 0);
-  });
-
-  it('test divided by 0', () => {
-    let names = [];
-    findDividedBy0(parse('a*b/c'), names);
-    assert.equal(names.length, 1);
-    assert.equal(names[0], 'c');
-
-    names = [];
-    findDividedBy0(parse('a/b*100'), names);
-    assert.equal(names.length, 1);
-    assert.equal(names[0], 'b');
-
-    names = [];
-    findDividedBy0(parse('100*a/b'), names);
-    assert.equal(names.length, 1);
-    assert.equal(names[0], 'b');
-
-    names = [];
-    findDividedBy0(parse('a/b/c'), names);
-    assert.equal(names.length, 2);
-    assert.equal(names[0], 'b');
-    assert.equal(names[1], 'c');
-
-    names = [];
-    findDividedBy0(parse('a/(b/c)/(c+d)'), names);
-    assert.equal(names.length, 3);
-    assert.equal(names[0], 'b');
-    assert.equal(names[1], 'c');
-    assert.equal(names[2], 'c');
   });
 });
 

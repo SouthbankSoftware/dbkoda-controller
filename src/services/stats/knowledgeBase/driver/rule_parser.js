@@ -98,27 +98,6 @@ export const findAllVars = (expression) => {
   return vars;
 };
 
-export const findDividedBy0 = (ast, dividerNames = [], previousDivide = false) => {
-  let prevDivide = previousDivide;
-  if (ast) {
-    if (prevDivide) {
-      if (ast.children[0] && ast.children[0].node === 'name') {
-        dividerNames.push(ast.children[0].template);
-      }
-    }
-    if (ast.template === '#/#') {
-      if (ast.children[1].node === 'name') {
-        dividerNames.push(ast.children[1].template);
-      } else {
-        prevDivide = true;
-      }
-    }
-    ast.children.forEach((child) => {
-      findDividedBy0(child, dividerNames, prevDivide);
-    });
-  }
-};
-
 export const parseCalculations = (calculations, statsValues) => {
   if (!calculations) {
     return statsValues;
@@ -133,17 +112,17 @@ export const parseCalculations = (calculations, statsValues) => {
         params[variable] = statsValues[variable];
       }
     });
-    if (calculation.ifZeroDivide !== undefined) {
-      const ast = parse(calculation.expression);
-      if (ast.children[0].template === '#/#') {
-        const divideName = ast.children[0].children[1].template;
-        if (params[divideName] === 0) {
-          retValue[calculation.name] = calculation.ifZeroDivide;
-        }
-      }
-    }
     if (retValue[calculation.name] === undefined) {
       retValue[calculation.name] = expressionFunc(params);
+      if (_.isNaN(retValue[calculation.name])
+        || retValue[calculation.name] === 'NaN'
+        || retValue[calculation.name] === Infinity) {
+        if (calculation.ifZeroDivide !== undefined) {
+          retValue[calculation.name] = calculation.ifZeroDivide;
+        } else {
+          retValue[calculation.name] = 0;
+        }
+      }
     }
   });
   return retValue;
@@ -180,5 +159,6 @@ export const parseData = (stats, prevStats, dbVersion, samplingRate) => {
       data[k] = parseFloat(v).toFixed(6);
     }
   });
+  l.info('mongo stats:', data);
   return data;
 };
