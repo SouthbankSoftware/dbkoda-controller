@@ -421,24 +421,24 @@ export default {
             ifZeroDivide: 0
         },
         {
-            name: 'wtIO_readLatencyMs',
-            expression: '(wtIO_diskToCacheUsPs/1000)/wtIO_diskToCachePs',
+            name: 'wtIO_readLatencyUs',
+            expression: '(wtIO_diskToCacheUsPs)/wtIO_diskToCachePs',
             description:'Average time for a wiredTiger disk read',
-            unit: 'milliseconds',
+            unit: 'microseconds',
             ifZeroDivide: 0
         },
         {
-            name: 'wtIO_logSyncLatencyMs',
-            expression: '(wtIO_logSyncTimeUsPs/1000)/wtIO_logSyncPs',
+            name: 'wtIO_logSyncLatencyUs',
+            expression: '(wtIO_logSyncTimeUsPs)/wtIO_logSyncPs',
             description:'Average time for a wiredTiger log Sync',
-            unit: 'milliseconds',
+            unit: 'microseconds',
             ifZeroDivide: 0
         },
         {
-            name: 'wtIO_writeLatencyMs',
-            expression: '(wtIO_cacheToDiskUsPs/1000)/wtIO_cacheToDiskPs',
+            name: 'wtIO_writeLatencyUs',
+            expression: '(wtIO_cacheToDiskUsPs)/wtIO_cacheToDiskPs',
             description:'Average time for a wiredTiger disk write',
-            unit: 'milliseconds',
+            unit: 'microseconds',
             ifZeroDivide: 0
         },
         {
