@@ -3,7 +3,7 @@
  * @Date:   2018-02-19T15:49:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T08:09:23+11:00
+ * @Last modified time: 2018-02-20T16:26:11+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -121,7 +121,7 @@ describe('MetricSmoother', () => {
           wtTransactions_writePct: 7.33,
           db_storage: [
             { SampleCollections: { dataSize: 103050600 } },
-            { admin: { dataSize: 934 } },
+            { admin: { dataSize: Number.NaN } },
             { test: { new: 125, dataSize: null } }
           ]
         }
@@ -179,13 +179,14 @@ describe('MetricSmoother', () => {
     assert.equal(_get(smoothedValue), (_get(values[1]) + _get(values[2]) + _get(values[3])) / 3);
   });
 
-  it('can handle missing values by ignoring them from calculation but keeping their quorum in time window', () => {
+  it('can handle missing and NaN values by ignoring them from calculation but keeping their quorum in time window', () => {
     const [, , , , nextValue] = values;
     const smoothedValue = smoother.transform(_.cloneDeep(nextValue));
 
     assert.equal(smoothedValue.value.db_storage.length, 3);
     assert.equal(smoothedValue.value.db_storage[2].test.dataSize, null);
     assert.equal(smoothedValue.value.db_storage[2].test.new, 124);
+    assert.equal(smoothedValue.value.db_storage[1].admin.dataSize, 934);
   });
 
   it('can dynamically resize smoothing window', () => {
