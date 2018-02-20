@@ -5,7 +5,7 @@
  * @Date:   2018-02-19T13:42:03+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T16:18:14+11:00
+ * @Last modified time: 2018-02-20T17:37:26+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -61,7 +61,9 @@ export default class MetricSmoother extends Transformer {
     _.forEach(nextValue, (v, k) => {
       if (v == null) return;
 
-      if (typeof v === 'number') {
+      const vType = typeof v;
+
+      if (vType === 'number') {
         if (_.isNaN(v)) return;
 
         let valueWrapper: ValueWrapper = valueManifest[k];
@@ -81,7 +83,7 @@ export default class MetricSmoother extends Transformer {
         htWindow.push(v);
         valueWrapper.inhaledNextValue = true;
         valueWrapper.avg += (v - avg) / (htWindow.length - nullCount);
-      } else {
+      } else if (vType === 'object') {
         let childValueManifest: ValueManifest = valueManifest[k];
 
         if (!childValueManifest) {
