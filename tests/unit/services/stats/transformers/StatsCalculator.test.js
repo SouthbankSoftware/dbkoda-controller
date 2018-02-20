@@ -3,7 +3,7 @@
  * @Date:   2018-02-20T11:50:41+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T13:32:05+11:00
+ * @Last modified time: 2018-02-20T20:58:50+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -33,7 +33,7 @@ describe('StatsCalculator', () => {
   const alpha = 0.2;
 
   before(() => {
-    caculator = new StatsCalculator(alpha);
+    caculator = new StatsCalculator(true, alpha);
     values = [
       {
         profileId: '8f65a890-1519-11e8-885b-d14c14dda128',
@@ -137,6 +137,9 @@ describe('StatsCalculator', () => {
           ema: 12,
           emv: 0,
           emsd: 0,
+          mean: 12,
+          s: 0,
+          sd: 0,
           count: 1
         },
         dummy2: [
@@ -146,6 +149,9 @@ describe('StatsCalculator', () => {
                 ema: 103080500,
                 emv: 0,
                 emsd: 0,
+                mean: 103080500,
+                s: 0,
+                sd: 0,
                 count: 1
               }
             }
@@ -156,6 +162,9 @@ describe('StatsCalculator', () => {
                 ema: 834,
                 emv: 0,
                 emsd: 0,
+                mean: 834,
+                s: 0,
+                sd: 0,
                 count: 1
               }
             }
@@ -166,6 +175,9 @@ describe('StatsCalculator', () => {
                 ema: 64384,
                 emv: 0,
                 emsd: 0,
+                mean: 64384,
+                s: 0,
+                sd: 0,
                 count: 1
               }
             }
@@ -176,6 +188,9 @@ describe('StatsCalculator', () => {
                 ema: 0,
                 emv: 0,
                 emsd: 0,
+                mean: 0,
+                s: 0,
+                sd: 0,
                 count: 1
               }
             }
@@ -222,6 +237,9 @@ describe('StatsCalculator', () => {
           ema: 12.6,
           emv: 1.4400000000000004,
           emsd: 1.2000000000000002,
+          mean: 13.5,
+          s: 4.5,
+          sd: 2.1213203435596424,
           count: 2
         },
         dummy2: [
@@ -231,6 +249,9 @@ describe('StatsCalculator', () => {
                 ema: 103078500,
                 emv: 16000000,
                 emsd: 4000,
+                mean: 103075500,
+                s: 50000000,
+                sd: 7071.067811865475,
                 count: 2
               }
             }
@@ -241,6 +262,9 @@ describe('StatsCalculator', () => {
                 ema: 691.8,
                 emv: 80883.36000000002,
                 emsd: 284.40000000000003,
+                mean: 478.5,
+                s: 252760.5,
+                sd: 502.7529214236353,
                 count: 2
               }
             }
@@ -251,6 +275,9 @@ describe('StatsCalculator', () => {
                 ema: 62384,
                 emv: 16000000,
                 emsd: 4000,
+                mean: 59384,
+                s: 50000000,
+                sd: 7071.067811865475,
                 count: 2
               }
             }
@@ -261,6 +288,9 @@ describe('StatsCalculator', () => {
                 ema: 0,
                 emv: 0,
                 emsd: 0,
+                mean: 0,
+                s: 0,
+                sd: 0,
                 count: 2
               }
             }
@@ -304,6 +334,9 @@ describe('StatsCalculator', () => {
           ema: 13.7712,
           emv: 2.17645056,
           emsd: 1.4752798243045284,
+          mean: 14.4,
+          s: 7.199999999999999,
+          sd: 1.3416407864998738,
           count: 5
         },
         dummy2: [
@@ -313,6 +346,9 @@ describe('StatsCalculator', () => {
                 ema: 90281796,
                 emv: 1116449234960384,
                 emsd: 33413309.248866446,
+                mean: 83080500,
+                s: 8002000400000000,
+                sd: 44726950.48849183,
                 count: 5
               }
             }
@@ -323,6 +359,9 @@ describe('StatsCalculator', () => {
                 ema: 191.8015999999999,
                 emv: 488781.09343744017,
                 emsd: 699.12881033286,
+                mean: 51.400000000000006,
+                s: 2167475.2,
+                sd: 736.1173819439397,
                 count: 5
               }
             }
@@ -333,6 +372,9 @@ describe('StatsCalculator', () => {
                 ema: 62384,
                 emv: 16000000,
                 emsd: 4000,
+                mean: 59384,
+                s: 50000000,
+                sd: 7071.067811865475,
                 count: 2
               }
             },
@@ -341,6 +383,9 @@ describe('StatsCalculator', () => {
                 ema: 0,
                 emv: 0,
                 emsd: 0,
+                mean: 0,
+                s: 0,
+                sd: 0,
                 count: 3
               }
             }
@@ -351,6 +396,9 @@ describe('StatsCalculator', () => {
                 ema: 0,
                 emv: 0,
                 emsd: 0,
+                mean: 0,
+                s: 0,
+                sd: 0,
                 count: 2
               }
             }

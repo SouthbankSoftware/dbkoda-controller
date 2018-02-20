@@ -3,7 +3,7 @@
  * @Date:   2018-02-20T15:13:41+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T16:00:40+11:00
+ * @Last modified time: 2018-02-20T21:05:26+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -36,7 +36,7 @@ describe('Alarm', () => {
   let values;
 
   before(() => {
-    calculator = new StatsCalculator(0.0999);
+    calculator = new StatsCalculator();
     alarm = new Alarm();
     transformPipeline = nextValue => alarm.transform(calculator.transform(nextValue));
     values = [
@@ -93,6 +93,34 @@ describe('Alarm', () => {
         profileId: '8f65a890-1519-11e8-885b-d14c14dda128',
         timestamp: 8,
         value: {
+          network_bytesOutPs: 101
+        }
+      },
+      {
+        profileId: '8f65a890-1519-11e8-885b-d14c14dda128',
+        timestamp: 9,
+        value: {
+          network_bytesOutPs: 102
+        }
+      },
+      {
+        profileId: '8f65a890-1519-11e8-885b-d14c14dda128',
+        timestamp: 10,
+        value: {
+          network_bytesOutPs: 101
+        }
+      },
+      {
+        profileId: '8f65a890-1519-11e8-885b-d14c14dda128',
+        timestamp: 11,
+        value: {
+          network_bytesOutPs: 102
+        }
+      },
+      {
+        profileId: '8f65a890-1519-11e8-885b-d14c14dda128',
+        timestamp: 12,
+        value: {
           network_bytesOutPs: 5000
         }
       }
@@ -106,6 +134,7 @@ describe('Alarm', () => {
       transformedValue = transformPipeline(value);
     }
 
+    // TODO: remove log after dev
     console.log(JSON.stringify(transformedValue, null, 2));
     assert.notEqual(_.get(transformedValue, 'value.alarm.networkUplinkAnomaly'), null);
   });

@@ -5,7 +5,7 @@
  * @Date:   2018-02-20T10:47:17+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T11:48:40+11:00
+ * @Last modified time: 2018-02-20T20:59:06+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -32,11 +32,17 @@ import Transformer from './Transformer';
 
 type Stats = {
   /* Exponential moving average */
-  ema: number,
+  ema?: number,
   /* Exponential moving variance */
-  emv: number,
+  emv?: number,
   /* Exponential moving standard deviation */
-  emsd: number,
+  emsd?: number,
+  /* Mean */
+  mean: number,
+  /* Sum of squares of differences from mean. This is necessary for Knuth's algorithm */
+  s: number,
+  /* Standard deviation */
+  sd: number,
   /* Number of samples this stats represent */
   count: number
 };
@@ -55,18 +61,24 @@ export default class StatsCalculator extends Transformer {
   /* _statsManifest has the same shape as ObservaleValue.value, and will be attached to
    ObservaleValue.stats after each transform */
   _statsManifest: StatsManifest;
+  _enabledEmStats: boolean;
 
-  constructor(alpha: number) {
+  constructor(enabledEmStats: boolean = false, alpha: number = 0.2) {
     super();
 
     this.alpha = alpha;
     this._statsManifest = {};
+    this._enabledEmStats = enabledEmStats;
   }
 
-  _calculateNextDelta = (prevEma: number, nextSample: number): number => {
-    return nextSample - prevEma;
+  _calculateNextDelta = (prevMean: number, nextSample: number): number => {
+    return nextSample - prevMean;
   };
 
+  /**
+   * Exponential moving algorithms
+   * https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+   */
   _calculateNextEma = (prevEma: number, nextDelta: number): number => {
     return prevEma + this.alpha * nextDelta;
   };
@@ -79,31 +91,68 @@ export default class StatsCalculator extends Transformer {
     return Math.sqrt(nextEmv);
   };
 
+  /**
+   * Algorithms presented in Donald Knuth’s Art of Computer Programming, Vol 2, page 232, 3rd
+   * edition
+   * https://www.johndcook.com/blog/standard_deviation/
+   */
+  _calculateNextMean = (prevMean: number, nextDelta: number, count: number) => {
+    return prevMean + nextDelta / count;
+  };
+
+  _calculateNextS = (prevS: number, nextDelta: number, nextSample: number, nextMean: number) => {
+    return prevS + nextDelta * (nextSample - nextMean);
+  };
+
+  _calculateNextSd = (nextS: number, count: number) => {
+    return Math.sqrt(nextS / (count - 1));
+  };
+
   _calculateNextStats = (statsManifest: StatsManifest, nextValue: { [string]: any }) => {
     _.forEach(nextValue, (v, k) => {
       if (v == null) return;
 
-      if (typeof v === 'number') {
+      const vType = typeof v;
+
+      if (vType === 'number') {
         let stats: Stats = statsManifest[k];
 
         if (!stats) {
           stats = {
-            ema: v,
-            emv: 0,
-            emsd: 0,
+            ...(this._enabledEmStats
+              ? {
+                  ema: v,
+                  emv: 0,
+                  emsd: 0
+                }
+              : undefined),
+            mean: v,
+            s: 0,
+            sd: 0,
             count: 1
           };
           statsManifest[k] = stats;
         } else {
-          const { ema: prevEma, emv: prevEmv } = stats;
-
-          const nextDelta = this._calculateNextDelta(prevEma, v);
-          stats.ema = this._calculateNextEma(prevEma, nextDelta);
-          stats.emv = this._calculateNextEmv(prevEmv, nextDelta);
-          stats.emsd = this._calculateNextEmsd(stats.emv);
           stats.count += 1;
+
+          if (this._enabledEmStats) {
+            const { ema: prevEma, emv: prevEmv } = stats;
+            // $FlowFixMe
+            const nextDelta = this._calculateNextDelta(prevEma, v);
+            // $FlowFixMe
+            stats.ema = this._calculateNextEma(prevEma, nextDelta);
+            // $FlowFixMe
+            stats.emv = this._calculateNextEmv(prevEmv, nextDelta);
+            stats.emsd = this._calculateNextEmsd(stats.emv);
+          }
+
+          const { mean: prevMean, s: prevS, count } = stats;
+          const nextDelta = this._calculateNextDelta(prevMean, v);
+          stats.mean = this._calculateNextMean(prevMean, nextDelta, count);
+          stats.s = this._calculateNextS(prevS, nextDelta, v, stats.mean);
+          stats.sd = this._calculateNextSd(stats.s, count);
         }
-      } else {
+      } else if (vType === 'object') {
         let childStatsManifest: StatsManifest = statsManifest[k];
 
         if (!childStatsManifest) {

@@ -5,7 +5,7 @@
  * @Date:   2018-02-20T14:01:28+11:00
  * @Email:  guy@southbanksoftware.com
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T16:04:36+11:00
+ * @Last modified time: 2018-02-20T21:05:42+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -50,10 +50,10 @@ export default class Alarm extends Transformer {
 
     if (!valueStats) return;
 
-    const { ema, emsd, count } = _.get(stats, path);
+    const { mean, sd, count } = _.get(stats, path);
     const currentValue = _.get(value, path);
 
-    if (count > 3 && (currentValue < ema - 3 * emsd || currentValue > ema + 3 * emsd)) {
+    if (count > 3 && (currentValue < mean - 3 * sd || currentValue > mean + 3 * sd)) {
       _.set(value, 'alarm.networkUplinkAnomaly', 'unusual high uplink bandwidth usage is detected');
     }
   };
