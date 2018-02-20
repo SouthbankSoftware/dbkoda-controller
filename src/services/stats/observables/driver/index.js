@@ -117,7 +117,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
       return;
     }
     const value = this.knowledgeBase.parse(data, this.previousData[key], data.version, this.samplingRate, key);
-
+    l.debug('get driver stats from knowledge:', value);
     this.previousData[key] = data;
     if (_.isEmpty(value)) {
       // the first time is not parsing
