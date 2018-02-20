@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:29:50+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T13:33:42+11:00
+ * @Last modified time: 2018-02-20T14:40:28+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -34,6 +34,7 @@ import { patchSamplingRate } from './patchObservables';
 import type { ObservableManifest } from '../';
 import MetricSmoother from '../transformers/MetricSmoother';
 import StatsCalculator from '../transformers/StatsCalculator';
+import Alarm from '../transformers/Alarm';
 
 const DEBOUNCE_DELAY = 1000;
 
@@ -88,7 +89,7 @@ export default () =>
           index,
           samplingRate: samplingRate || config.performancePanelSamplingRate,
           subscription: null,
-          transformers: [new MetricSmoother(3), new StatsCalculator(0.2)],
+          transformers: [new MetricSmoother(3), new StatsCalculator(0.2), new Alarm()],
           debug: false,
           _debouncedUpdate: null
         };
