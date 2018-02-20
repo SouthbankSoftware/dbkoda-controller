@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:50:05+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-28T18:19:45+11:00
+ * @Last modified time: 2018-02-20T11:49:44+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -32,7 +32,8 @@ import MongoConnection from '~/controllers/mongo-connection/connection';
 export type ObservaleValue = {
   profileId: UUID,
   timestamp: number,
-  value: { [string]: any },
+  stats?: { [string]: any },
+  value: { [string]: any }
 };
 
 export interface ObservableWrapper {
@@ -85,7 +86,7 @@ export interface ObservableWrapper {
    * after this
    */
   init(options: {
-    mongoConnection: MongoConnection,
+    mongoConnection: MongoConnection
   }): Promise<*>;
   /**
    * Destroy rxObservable for current observable wrapper instance. Any created resources should be
