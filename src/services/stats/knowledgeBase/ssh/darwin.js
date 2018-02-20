@@ -88,6 +88,7 @@ const commandParsers = {
     return o;
   },
   'network': ({output, samplingRate}) => {
+    l.debug('get network output', output);
     const splited = output.split(/\s+/);
     if (splited.length >= 7) {
       const income = splited[4];

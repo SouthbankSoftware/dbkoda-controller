@@ -159,7 +159,6 @@ export default class MetricSmoother extends Transformer {
     const result = {};
     this._exhaleSmaValue(this._valueManifest, result);
     value.value = result;
-
     return value;
   };
 }
