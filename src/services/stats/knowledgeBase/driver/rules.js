@@ -67,6 +67,61 @@ export default {
             defaultSource: 'opcounters.delete'
         },
         //
+        // Document counters
+        //
+        {
+            name: 'document_returned',
+            type: 'rate',
+            description:'Documents returned per second',
+            unit: 'OpPerSecond',
+            defaultSource: 'metrics.document.returned'
+        },
+        {
+            name: 'document_updated',
+            type: 'rate',
+            description:'Documents updated per second',
+            unit: 'OpPerSecond',
+            defaultSource: 'metrics.document.updated'
+        },
+        {
+            name: 'document_deleted',
+            type: 'rate',
+            description:'Documents deleted per second',
+            unit: 'OpPerSecond',
+            defaultSource: 'metrics.document.deleted'
+        },
+        {
+            name: 'document_inserted',
+            type: 'rate',
+            description:'Documents inserted per second',
+            unit: 'OpPerSecond',
+            defaultSource: 'metrics.document.inserted'
+        },
+        //
+        // Scans, scans and sorts
+        //
+        {
+            name: 'query_ixscanDocs',
+            type: 'rate',
+            description:'Number of scan operations per seecond',
+            unit: 'OpPerSecond',
+            defaultSource: 'metrics.queryExecutor.scanned'
+        },
+        {
+            name: 'query_collscanDocs',
+            type: 'rate',
+            description:'Number of objects scanned per seecond',
+            unit: 'OpPerSecond',
+            defaultSource: 'metrics.queryExecutor.scannedObjects'
+        },
+        {
+            name: 'query_scanAndOrder',
+            type: 'rate',
+            description:'Number of collscans including a sort per second',
+            unit: 'OpPerSecond',
+            defaultSource: 'metrics.operation.scanAndOrder'
+        },
+        //
         // Connections
         //
         {
@@ -169,6 +224,23 @@ export default {
             description:'Time spent per second for command operations',
             unit: 'microseconds',
             defaultSource: 'opLatencies.commands.latency'
+        },
+        //
+        // MOngoDB memory utilization
+        //
+        {
+            name: 'mem_resident',
+            type: 'final',
+            description:'Resident memory size',
+            unit: 'MB',
+            defaultSource: 'mem.resident'
+        },
+        {
+            name: 'mem_virtual',
+            type: 'final',
+            description:'Virtual memory size',
+            unit: 'MB',
+            defaultSource: 'mem.virtual'
         },
         //
         // Blocks in/out wiredTiger cache
@@ -380,6 +452,20 @@ export default {
             name: 'wtTransactions_writePct',
             expression: 'wtTransactions_writeOut*100/(wtTransactions_writeOut+wtTransactions_writeAvailable)',
             description:'Percentage of wiredTiger write transactions in use',
+            unit: 'Percentage',
+            ifZeroDivide: 0
+        },
+        {
+            name: 'query_scanToDocRatio',
+            expression: '(query_collscanDocs+query_ixscanDocs)/document_returned',
+            description:'Ratio of documents examined to documents returned',
+            unit: 'Float',
+            ifZeroDivide: 0
+        },
+        {
+            name: 'query_pctIxDocs',
+            expression: 'query_ixscanDocs*100/(query_collscanDocs+query_ixscanDocs)',
+            description:'Percentage of documents examined by index',
             unit: 'Percentage',
             ifZeroDivide: 0
         }
