@@ -39,7 +39,7 @@ describe('test driver knowledgebase', () => {
     let values = parseDataByRules(rules1, replica34Stats, '3.4');
     assert.equal(values.activeRead, 30);
     assert.equal(values.bytesIn, undefined);
-    assert.equal(values.networkLoad, 0);
+    assert.equal(values.networkLoad, undefined);
     assert.equal(values.writeOpsRate, undefined);
 
     values = parseDataByRules(rules1, replica34Stats, '3.4', replica34Stats, 5000);
