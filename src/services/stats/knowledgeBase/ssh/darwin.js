@@ -91,9 +91,13 @@ const commandParsers = {
     l.debug('get network output', output);
     const splited = output.split(/\s+/);
     if (splited.length >= 7) {
-      const income = splited[4];
-      const outcome = splited[6];
-      return {timestamp: (new Date()).getTime(), value: {network: {upload: outcome, download: income, samplingRate}}};
+      try {
+        const income = parseInt(splited[4], 10);
+        const outcome = parseInt(splited[6], 10);
+        return {timestamp: (new Date()).getTime(), value: {network: {upload: outcome, download: income, samplingRate}}};
+      } catch (err) {
+        // failed to parse integer value
+      }
     }
   }
 };
