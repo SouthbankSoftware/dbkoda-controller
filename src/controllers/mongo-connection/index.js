@@ -65,7 +65,7 @@ class MongoConnectionController {
     this.passwordService = app.service('/master-pass');
   }
 
-  async getTunnelParams(params) {
+  getTunnelParams(params) {
     const sshOpts = {
       // enabled tunnel
       host: params.sshHost, // ip address of the ssh server
@@ -84,23 +84,10 @@ class MongoConnectionController {
     if (params.sshKeyFile) {
       sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
       sshOpts.passphrase = params.passPhrase;
-    } else if (!params.usePasswordStore) {
-      // Password store not in use
-      sshOpts.password = params.remotePass;
     } else {
-      sshOpts.password = await this.getStorePassword(params.id, params.remoteUser, params.remotePass, '-s');
+      sshOpts.password = params.remotePass;
     }
     return sshOpts;
-  }
-
-  async getStorePassword(id, username, password, postfix = '') {
-    console.log(`${id}, ${username}, ${password}, ${postfix}`);
-    if (username && !password) {
-      // Password store in use, no password sent
-      return this.passwordService.get(`${id}${postfix}`);
-    }
-    await this.passwordService.patch(`${id}${postfix}`, { password });
-    return password;
   }
 
   createTunnel(sshOpts) {
