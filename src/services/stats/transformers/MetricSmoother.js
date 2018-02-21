@@ -5,7 +5,7 @@
  * @Date:   2018-02-19T13:42:03+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T21:15:15+11:00
+ * @Last modified time: 2018-02-21T12:02:48+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -61,6 +61,7 @@ export default class MetricSmoother extends Transformer {
 
   _inhaleNextValue = (valueManifest: ValueManifest, nextValue: { [string]: any }) => {
     _.forEach(nextValue, (v, k) => {
+      // skip all null/undefined values
       if (v == null) return;
 
       const vType = typeof v;
@@ -94,6 +95,9 @@ export default class MetricSmoother extends Transformer {
         }
 
         this._inhaleNextValue(childValueManifest, v);
+      } else {
+        // retain value in other types
+        valueManifest[k] = v;
       }
     });
   };
@@ -103,51 +107,57 @@ export default class MetricSmoother extends Transformer {
 
     // $FlowFixMe
     _.forEach(valueManifest, (v, k, col) => {
-      if (this._isValueWrapper(v)) {
-        const { htWindow, avg, inhaledNextValue } = v;
+      const vType = typeof v;
 
-        if (!inhaledNextValue) {
-          htWindow.push(null);
-          v.nullCount += 1;
-        }
+      if (vType === 'object') {
+        if (this._isValueWrapper(v)) {
+          const { htWindow, avg, inhaledNextValue } = v;
 
-        v.inhaledNextValue = false;
+          if (!inhaledNextValue) {
+            htWindow.push(null);
+            v.nullCount += 1;
+          }
 
-        if (htWindow.length > this.windowSize) {
-          const numToDrop = htWindow.length - this.windowSize;
-          const droppingEls = htWindow.splice(0, numToDrop);
-          let droppingSum = 0;
-          let droppingCount = 0;
+          v.inhaledNextValue = false;
 
-          for (const el of droppingEls) {
-            if (el == null) {
-              v.nullCount -= 1;
-            } else {
-              droppingSum += el;
-              droppingCount += 1;
+          if (htWindow.length > this.windowSize) {
+            const numToDrop = htWindow.length - this.windowSize;
+            const droppingEls = htWindow.splice(0, numToDrop);
+            let droppingSum = 0;
+            let droppingCount = 0;
+
+            for (const el of droppingEls) {
+              if (el == null) {
+                v.nullCount -= 1;
+              } else {
+                droppingSum += el;
+                droppingCount += 1;
+              }
             }
+
+            if (v.nullCount === htWindow.length) {
+              // now the value is all missing in its time window
+              delete col[k];
+              return;
+            }
+
+            v.avg -= (droppingSum - avg * droppingCount) / (htWindow.length - v.nullCount);
           }
 
-          if (v.nullCount === htWindow.length) {
-            // now the value is all missing in its time window
-            delete col[k];
-            return;
-          }
-
-          v.avg -= (droppingSum - avg * droppingCount) / (htWindow.length - v.nullCount);
-        }
-
-        isEmpty = false;
-        result[k] = _.round(v.avg, EXHALE_VALUE_PRECISION);
-      } else {
-        const childResult = _.isArray(v) ? [] : {};
-        if (this._exhaleSmaValue(v, childResult)) {
-          // empty childResult
-          delete col[k];
-        } else {
           isEmpty = false;
-          result[k] = childResult;
+          result[k] = _.round(v.avg, EXHALE_VALUE_PRECISION);
+        } else {
+          const childResult = _.isArray(v) ? [] : {};
+          if (this._exhaleSmaValue(v, childResult)) {
+            // empty childResult
+            delete col[k];
+          } else {
+            isEmpty = false;
+            result[k] = childResult;
+          }
         }
+      } else {
+        result[k] = v;
       }
     });
 
