@@ -98,12 +98,10 @@ MongoClient.connect(url, function(err, db) {
       const transformedValue = transform(x);
 
         console.log("============================================");
-        x.value.db_storage='';
-        console.log(x.value.document_returned);
-        console.log('-------------------------------------------');
         transformedValue.value.db_storage='';
-        console.log(transformedValue);
-        console.log(JSON.stringify(transformedValue.value.alarm,2));
+        console.log(transformedValue.value);
+        //console.log(JSON.stringify(transformedValue.value.alarm,2));
+        console.log( transformedValue.value.alarm);
 
     },
     e => console.log('error ', e)

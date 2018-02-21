@@ -48,7 +48,11 @@ const sprintf = require('sprintf-js').sprintf; //eslint-disable-line
 
  const simpleThresholds = [
    {metric:'query_scanToDocRatio', l1:0, l2:20, 'alarmPath':'alarm.mongo.scanToDocRatio',
-    warningMessage:'%d documents scanned for every document returned: review Indexes and slow queries'}
+    warningMessage:'%d documents scanned for every document returned: review Indexes and slow queries'},
+  {metric:'connections_inusePct', l1:0, l2:90, 'alarmPath':'alarm.mongo.connectionsInUse',
+     warningMessage:'%d%% of connections are in use'},
+  {metric:'queue_queuedPct', l1:0, l2:90, 'alarmPath':'alarm.mongo.queue_queuedPct',
+     warningMessage:'%d%% of read write operations are queued. Possible lock contention'}
  ];
 
 export default class Alarm extends Transformer {
@@ -76,9 +80,28 @@ export default class Alarm extends Transformer {
         }
       });
   };
-
+  _queueLens = (nextValue: ObservaleValue) => {
+    const { stats, value } = nextValue;
+    simpleThresholds.forEach((st) => {
+      const path = [st.metric];
+      const valueStats = _.get(stats, path);
+      // const { mean, sd, count } = _.get(stats, path);
+      const currentValue = _.get(value, path);
+      const debugData = {
+        path, valueStats, currentValue
+      };
+      if (currentValue > st.l1) {
+        let level = 1;
+        if (currentValue > st.l2) { level = 2; }
+        const message = sprintf(st.warningMessage, currentValue);
+        _.set(value, st.alarmPath, {
+          level, message, debugData});
+        }
+      });
+  };
   transform = (nextValue: ObservaleValue): ObservaleValue => {
     this._simpleThresholds(nextValue);
+    this._queueLens(nextValue);
 
     this._detachStats(nextValue);
     // nextValue.value.alarm = ({ok:1});
