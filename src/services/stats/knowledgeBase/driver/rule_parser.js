@@ -115,7 +115,7 @@ export const parseCalculations = (calculations, statsValues) => {
     if (retValue[calculation.name] === undefined) {
       retValue[calculation.name] = expressionFunc(params);
       if (_.isNaN(retValue[calculation.name])
-        // || retValue[calculation.name] === 'NaN'
+        || retValue[calculation.name] === 'NaN'
         || retValue[calculation.name] === Infinity) {
         if (calculation.ifZeroDivide !== undefined) {
           retValue[calculation.name] = calculation.ifZeroDivide;
@@ -156,7 +156,7 @@ export const parseData = (stats, prevStats, dbVersion, samplingRate) => {
   const data = parseDataByRules(mongoRules, stats, dbVersion, prevStats, samplingRate);
   _.forOwn(data, (v, k) => {
     if (v && !Number.isInteger(v)) {
-      data[k] = parseFloat(v).toFixed(6);
+      data[k] = _.round(v, 6);
     }
   });
   return data;

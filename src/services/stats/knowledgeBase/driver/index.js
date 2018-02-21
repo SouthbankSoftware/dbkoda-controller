@@ -25,19 +25,6 @@ import {getAllItemKeys, parseData} from './rule_parser';
 
 export const driverItems = [...getAllItemKeys(), 'db_storage'];
 
-export const parsers = {
-  'db_storage': (dbStats) => {
-    return {
-      db_storage: dbStats.map(stat => {
-        return {[stat.db]: _.pick(stat, ['dataSize'])};
-      })
-    };
-  },
-  'others': (newData, previous, dbVersion, samplingRate) => {
-    return parseData(newData, previous, dbVersion, samplingRate);
-  }
-};
-
 /**
  * define the mongo stats knowledgebase rules.
  *
