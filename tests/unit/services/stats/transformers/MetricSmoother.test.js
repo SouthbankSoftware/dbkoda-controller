@@ -3,7 +3,7 @@
  * @Date:   2018-02-19T15:49:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T21:24:12+11:00
+ * @Last modified time: 2018-02-21T12:53:37+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -144,6 +144,24 @@ describe('MetricSmoother', () => {
             { test: { new: 125, dataSize: null } }
           ]
         }
+      },
+      {
+        profileId: '8f65a890-1519-11e8-885b-d14c14dda128',
+        timestamp: 1519015098892,
+        value: {
+          test: 'test',
+          activeReadSample: 48,
+          network_bytesInPs: 54,
+          network_bytesOutPs: 4000.6,
+          wtIO_logSyncLatencyMs: 91,
+          wtTransactions_readPct: null,
+          wtTransactions_writePct: 7.33,
+          db_storage: [
+            { SampleCollections: { dataSize: 103050600 } },
+            { admin: { dataSize: 934 } },
+            { test: { new: 125, dataSize: null } }
+          ]
+        }
       }
     ];
   });
@@ -209,5 +227,12 @@ describe('MetricSmoother', () => {
 
     assert.equal(smoothedValue.value.wtIO_logSyncLatencyMs, 90.5);
     assert.equal(smoothedValue.value.wtIO_writeLatencyMs, null);
+  });
+
+  it('can retain values in type other than object, array and number', () => {
+    const [, , , , , , nextValue] = values;
+    const smoothedValue = smoother.transform(_.cloneDeep(nextValue));
+
+    assert.equal(smoothedValue.value.test, 'test');
   });
 });

@@ -41,7 +41,7 @@ export const rules = {
           db_storage: newData.map((dbStats) => {
             if (!_.isEmpty(dbStats.raw)) {
               const db = _.values(dbStats.raw)[0].db;
-              return {[db]: _.pick(dbStats, ['dataSize'])};
+              return {dbName: db, dataSize: dbStats.dataSize};
             }
           })
         };
@@ -55,7 +55,7 @@ export const rules = {
       if (key === 'db_storage') {
         return {
           db_storage: newData.map(stat => {
-            return {[stat.db]: _.pick(stat, ['dataSize'])};
+            return {dbName: stat.db, dataSize: stat.dataSize};
           })
         };
       }
