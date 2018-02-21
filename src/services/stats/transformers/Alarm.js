@@ -5,7 +5,7 @@
  * @Date:   2018-02-20T14:01:28+11:00
  * @Email:  guy@southbanksoftware.com
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T21:05:42+11:00
+ * @Last modified time: 2018-02-21T11:43:06+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -39,7 +39,7 @@ import Transformer from './Transformer';
  */
 export default class Alarm extends Transformer {
   /* we don't want to send stats back to ui yet */
-  _detach = (nextValue: ObservaleValue) => {
+  _detachStats = (nextValue: ObservaleValue) => {
     delete nextValue.stats;
   };
 
@@ -54,14 +54,17 @@ export default class Alarm extends Transformer {
     const currentValue = _.get(value, path);
 
     if (count > 3 && (currentValue < mean - 3 * sd || currentValue > mean + 3 * sd)) {
-      _.set(value, 'alarm.networkUplinkAnomaly', 'unusual high uplink bandwidth usage is detected');
+      _.set(value, 'alarm.mongo.networkUplinkAnomaly', {
+        level: 1, // 0 for green, 1 for yellow, 2 for reduce
+        message: 'unusual high uplink bandwidth usage is detected'
+      });
     }
   };
 
   transform = (nextValue: ObservaleValue): ObservaleValue => {
     this._detectNetworkUplinkAnomaly(nextValue);
 
-    this._detach(nextValue);
+    this._detachStats(nextValue);
 
     nextValue.value.alarm && l.debug(`Alarm: ${JSON.stringify(nextValue.value.alarm, null, 2)}`);
 

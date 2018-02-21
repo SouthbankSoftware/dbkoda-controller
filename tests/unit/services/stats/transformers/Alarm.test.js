@@ -3,7 +3,7 @@
  * @Date:   2018-02-20T15:13:41+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T21:05:26+11:00
+ * @Last modified time: 2018-02-21T11:44:57+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -136,6 +136,6 @@ describe('Alarm', () => {
 
     // TODO: remove log after dev
     console.log(JSON.stringify(transformedValue, null, 2));
-    assert.notEqual(_.get(transformedValue, 'value.alarm.networkUplinkAnomaly'), null);
+    assert.notEqual(_.get(transformedValue, 'value.alarm.mongo.networkUplinkAnomaly'), null);
   });
 });
