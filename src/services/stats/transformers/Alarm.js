@@ -27,8 +27,14 @@
  */
 
 import _ from 'lodash';
+
 import type { ObservaleValue } from '../observables/ObservableWrapper';
+
 import Transformer from './Transformer';
+
+const sprintf = require('sprintf-js').sprintf; //eslint-disable-line
+
+
 
 /**
  * Detect anomalies and raise alarms
@@ -37,34 +43,45 @@ import Transformer from './Transformer';
  *
  *    yarn test:unit --grep Alarm --watch
  */
+
+// TODO: THis goes in config one day
+
+ const simpleThresholds = [
+   {metric:'query_scanToDocRatio', l1:0, l2:20, 'alarmPath':'alarm.mongo.scanToDocRatio',
+    warningMessage:'%d documents scanned for every document returned: review Indexes and slow queries'}
+ ];
+
 export default class Alarm extends Transformer {
   /* we don't want to send stats back to ui yet */
   _detachStats = (nextValue: ObservaleValue) => {
     delete nextValue.stats;
   };
 
-  _detectNetworkUplinkAnomaly = (nextValue: ObservaleValue) => {
+  _simpleThresholds = (nextValue: ObservaleValue) => {
     const { stats, value } = nextValue;
-    const path = ['network_bytesOutPs'];
-    const valueStats = _.get(stats, path);
-
-    if (!valueStats) return;
-
-    const { mean, sd, count } = _.get(stats, path);
-    const currentValue = _.get(value, path);
-
-    if (count > 3 && (currentValue < mean - 3 * sd || currentValue > mean + 3 * sd)) {
-      _.set(value, 'alarm.mongo.networkUplinkAnomaly', {
-        level: 1, // 0 for green, 1 for yellow, 2 for reduce
-        message: 'unusual high uplink bandwidth usage is detected'
+    simpleThresholds.forEach((st) => {
+      const path = [st.metric];
+      const valueStats = _.get(stats, path);
+      // const { mean, sd, count } = _.get(stats, path);
+      const currentValue = _.get(value, path);
+      const debugData = {
+        path, valueStats, currentValue
+      };
+      if (currentValue > st.l1) {
+        let level = 1;
+        if (currentValue > st.l2) { level = 2; }
+        const message = sprintf(st.warningMessage, currentValue);
+        _.set(value, st.alarmPath, {
+          level, message, debugData});
+        }
       });
-    }
   };
 
   transform = (nextValue: ObservaleValue): ObservaleValue => {
-    this._detectNetworkUplinkAnomaly(nextValue);
+    this._simpleThresholds(nextValue);
 
     this._detachStats(nextValue);
+    // nextValue.value.alarm = ({ok:1});
 
     nextValue.value.alarm && l.debug(`Alarm: ${JSON.stringify(nextValue.value.alarm, null, 2)}`);
 

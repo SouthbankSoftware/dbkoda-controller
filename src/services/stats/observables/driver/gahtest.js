@@ -97,10 +97,14 @@ MongoClient.connect(url, function(err, db) {
     x => {
       const transformedValue = transform(x);
 
-      //console.log(Object.keys(x.value));
-      if ('wtIO_writeIOps' in transformedValue.value) {
+        console.log("============================================");
+        x.value.db_storage='';
+        console.log(x.value.document_returned);
+        console.log('-------------------------------------------');
+        transformedValue.value.db_storage='';
         console.log(transformedValue);
-      }
+        console.log(JSON.stringify(transformedValue.value.alarm,2));
+
     },
     e => console.log('error ', e)
   );
