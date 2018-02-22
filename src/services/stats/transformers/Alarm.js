@@ -76,7 +76,7 @@ const simpleThresholds = [{
     metric: 'wtTransactions_readPct',
     l1: 0,
     l2: 90,
-    'alarmPath': 'alarm.wiredTiger.wtTransactions_readPct',
+    'alarmPath': 'alarm.wiredtiger.wtTransactions_readPct',
     warningMessage: '%d%% of wiredTiger read transaction tickets are in use. ',
     notes: 'inccounter.sh with 500+ connections may cause this alarm.  Also you can reduce the number of tickets with wiredTigerConcurrentReadTransactions'
   },
@@ -84,7 +84,7 @@ const simpleThresholds = [{
     metric: 'wtTransactions_writePct',
     l1: 0,
     l2: 90,
-    'alarmPath': 'alarm.wiredTiger.wtTransactions_writePct',
+    'alarmPath': 'alarm.wiredtiger.wtTransactions_writePct',
     warningMessage: '%d%% of wiredTiger write transaction tickets are in use. ',
     notes: 'inccounter.sh with 500+ connections may cause this alarm.  Also you can reduce the number of tickets with wiredTigerConcurrentWriteTransactions'
   },
@@ -92,7 +92,7 @@ const simpleThresholds = [{
     metric: 'wtIO_logSyncLatencyUs',
     l1: 1000,
     l2: 10000,
-    'alarmPath': 'alarm.wiredTiger.wtIO_logSyncLatencyUs',
+    'alarmPath': 'alarm.disk.wtIO_logSyncLatencyUs',
     warningMessage: 'wiredTiger log (sync) writes are taking %d microseconds on average. Consider tuning disk layout/type',
     notes: 'This alarm should fire under moderate load on our underpowered system'
   },
@@ -100,7 +100,7 @@ const simpleThresholds = [{
     metric: 'wtIO_writeLatencyUs',
     l1: 1000,
     l2: 10000,
-    'alarmPath': 'alarm.wiredTiger.wtIO_writeLatencyUs',
+    'alarmPath': 'alarm.disk.wtIO_writeLatencyUs',
     warningMessage: 'wiredTiger disk writes are taking %d microseconds on average. Consider tuning disk layout/type',
     notes: 'This alarm should fire under moderate load on our underpowered system'
   },
@@ -108,7 +108,7 @@ const simpleThresholds = [{
     metric: 'wtIO_readLatencyUs',
     l1: 1000,
     l2: 10000,
-    'alarmPath': 'alarm.wiredTiger.wtIO_readLatencyUs',
+    'alarmPath': 'alarm.disk.wtIO_readLatencyUs',
     warningMessage: 'wiredTiger disk reads are taking %d microseconds on average. Consider tuning disk layout/type',
     notes: 'This alarm should fire under moderate load on our underpowered system'
   },
@@ -116,7 +116,7 @@ const simpleThresholds = [{
     metric: 'wtCache_MissPct',
     l1: 5,
     l2: 80,
-    'alarmPath': 'alarm.wiredTiger.wtCache_MissPct',
+    'alarmPath': 'alarm.wiredtiger.wtCache_MissPct',
     warningMessage: 'Required data is not found in wiredTiger cache in %d%% of requests. Consider increasing cache size',
     notes: 'This alarm should fire under moderate load providing you reduce the wiredTiger cache size'
   },
