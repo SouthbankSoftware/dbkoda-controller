@@ -28,7 +28,9 @@
 
 import _ from 'lodash';
 
-import type { ObservaleValue } from '../observables/ObservableWrapper';
+import type {
+  ObservaleValue
+} from '../observables/ObservableWrapper';
 
 import Transformer from './Transformer';
 
@@ -46,14 +48,79 @@ const sprintf = require('sprintf-js').sprintf; //eslint-disable-line
 
 // TODO: THis goes in config one day
 
- const simpleThresholds = [
-   {metric:'query_scanToDocRatio', l1:0, l2:20, 'alarmPath':'alarm.mongo.scanToDocRatio',
-    warningMessage:'%d documents scanned for every document returned: review Indexes and slow queries'},
-  {metric:'connections_inusePct', l1:0, l2:90, 'alarmPath':'alarm.mongo.connectionsInUse',
-     warningMessage:'%d%% of connections are in use'},
-  {metric:'queue_queuedPct', l1:0, l2:90, 'alarmPath':'alarm.mongo.queue_queuedPct',
-     warningMessage:'%d%% of read write operations are queued. Possible lock contention'}
- ];
+const simpleThresholds = [{
+    metric: 'query_scanToDocRatio',
+    l1: 0,
+    l2: 20,
+    'alarmPath': 'alarm.mongo.scanToDocRatio',
+    warningMessage: '%d documents scanned for every document returned: review Indexes and slow queries',
+    notes: 'large scans - enronloop.js for instance will cause this alarm'
+  },
+  {
+    metric: 'connections_inusePct',
+    l1: 0,
+    l2: 90,
+    'alarmPath': 'alarm.mongo.connectionsInUse',
+    warningMessage: '%d%% of connections are in use',
+    notes: 'use makeconnections to cause this alarm'
+  },
+  {
+    metric: 'queue_queuedPct',
+    l1: 0,
+    l2: 90,
+    'alarmPath': 'alarm.mongo.queue_queuedPct',
+    warningMessage: '%d%% of read write operations are queued. Possible lock contention',
+    notes: 'inccounter.sh with 500+ connections may cause this alarm'
+  },
+  {
+    metric: 'wtTransactions_readPct',
+    l1: 0,
+    l2: 90,
+    'alarmPath': 'alarm.wiredTiger.wtTransactions_readPct',
+    warningMessage: '%d%% of wiredTiger read transaction tickets are in use. ',
+    notes: 'inccounter.sh with 500+ connections may cause this alarm.  Also you can reduce the number of tickets with wiredTigerConcurrentReadTransactions'
+  },
+  {
+    metric: 'wtTransactions_writePct',
+    l1: 0,
+    l2: 90,
+    'alarmPath': 'alarm.wiredTiger.wtTransactions_writePct',
+    warningMessage: '%d%% of wiredTiger write transaction tickets are in use. ',
+    notes: 'inccounter.sh with 500+ connections may cause this alarm.  Also you can reduce the number of tickets with wiredTigerConcurrentWriteTransactions'
+  },
+  {
+    metric: 'wtIO_logSyncLatencyUs',
+    l1: 1000,
+    l2: 10000,
+    'alarmPath': 'alarm.wiredTiger.wtIO_logSyncLatencyUs',
+    warningMessage: 'wiredTiger log (sync) writes are taking %d microseconds on average. Consider tuning disk layout/type',
+    notes: 'This alarm should fire under moderate load on our underpowered system'
+  },
+  {
+    metric: 'wtIO_writeLatencyUs',
+    l1: 1000,
+    l2: 10000,
+    'alarmPath': 'alarm.wiredTiger.wtIO_writeLatencyUs',
+    warningMessage: 'wiredTiger disk writes are taking %d microseconds on average. Consider tuning disk layout/type',
+    notes: 'This alarm should fire under moderate load on our underpowered system'
+  },
+  {
+    metric: 'wtIO_readLatencyUs',
+    l1: 1000,
+    l2: 10000,
+    'alarmPath': 'alarm.wiredTiger.wtIO_readLatencyUs',
+    warningMessage: 'wiredTiger disk reads are taking %d microseconds on average. Consider tuning disk layout/type',
+    notes: 'This alarm should fire under moderate load on our underpowered system'
+  },
+  {
+    metric: 'wtCache_MissPct',
+    l1: 5,
+    l2: 80,
+    'alarmPath': 'alarm.wiredTiger.wtCache_MissPct',
+    warningMessage: 'Required data is not found in wiredTiger cache in %d%% of requests. Consider increasing cache size',
+    notes: 'This alarm should fire under moderate load providing you reduce the wiredTiger cache size'
+  },
+];
 
 export default class Alarm extends Transformer {
   /* we don't want to send stats back to ui yet */
@@ -62,42 +129,62 @@ export default class Alarm extends Transformer {
   };
 
   _simpleThresholds = (nextValue: ObservaleValue) => {
-    const { stats, value } = nextValue;
+    const {
+      stats,
+      value
+    } = nextValue;
     simpleThresholds.forEach((st) => {
       const path = [st.metric];
       const valueStats = _.get(stats, path);
       // const { mean, sd, count } = _.get(stats, path);
       const currentValue = _.get(value, path);
       const debugData = {
-        path, valueStats, currentValue
+        path,
+        valueStats,
+        currentValue
       };
       if (currentValue > st.l1) {
         let level = 1;
-        if (currentValue > st.l2) { level = 2; }
+        if (currentValue > st.l2) {
+          level = 2;
+        }
         const message = sprintf(st.warningMessage, currentValue);
         _.set(value, st.alarmPath, {
-          level, message, debugData});
-        }
-      });
+          level,
+          message,
+          debugData
+        });
+      }
+    });
   };
   _queueLens = (nextValue: ObservaleValue) => {
-    const { stats, value } = nextValue;
+    const {
+      stats,
+      value
+    } = nextValue;
     simpleThresholds.forEach((st) => {
       const path = [st.metric];
       const valueStats = _.get(stats, path);
       // const { mean, sd, count } = _.get(stats, path);
       const currentValue = _.get(value, path);
       const debugData = {
-        path, valueStats, currentValue
+        path,
+        valueStats,
+        currentValue
       };
       if (currentValue > st.l1) {
         let level = 1;
-        if (currentValue > st.l2) { level = 2; }
+        if (currentValue > st.l2) {
+          level = 2;
+        }
         const message = sprintf(st.warningMessage, currentValue);
         _.set(value, st.alarmPath, {
-          level, message, debugData});
-        }
-      });
+          level,
+          message,
+          debugData
+        });
+      }
+    });
   };
   transform = (nextValue: ObservaleValue): ObservaleValue => {
     this._simpleThresholds(nextValue);
