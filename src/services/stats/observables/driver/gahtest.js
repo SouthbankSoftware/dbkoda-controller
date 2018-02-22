@@ -24,6 +24,8 @@
 
 /* eslint-disable */
 
+// Arguments:  url refreshrate regex
+
 /**
  * install babel-node: yarn global add babel-cli
  * then you can run this file:
@@ -34,6 +36,7 @@
  * configs
  */
 
+const sprintf = require('sprintf-js').sprintf; //eslint-disable-line
 import flat from 'flat';
 import _ from 'lodash';
 import { getKnowledgeBaseRules } from '../../knowledgeBase/driver';
@@ -57,6 +60,7 @@ for (let j = 0; j < process.argv.length; j++) {
 }
 let url = 'mongodb://localhost:27016';
 let refresh;
+let matchText='*';
 
 if (process.argv.length === 2) {
   url = 'mongodb://localhost:27016';
@@ -65,6 +69,9 @@ if (process.argv.length === 2) {
   url = process.argv[2];
   if (process.argv.length > 3) {
     let refresh = process.argv[3];
+  }
+  if (process.argv.length>4) {
+     matchText=process.argv[4];
   }
 }
 
@@ -87,6 +94,7 @@ MongoClient.connect(url, function(err, db) {
   // });
   const monitor = new MongoNativeDriver();
   monitor.samplingRate = 10000;
+
   monitor.init({
     mongoConnection: {
       driver: db,
@@ -98,12 +106,24 @@ MongoClient.connect(url, function(err, db) {
       const transformedValue = transform(x);
 
         console.log("============================================");
-        x.value.db_storage='';
-        console.log(x.value.document_returned);
-        console.log('-------------------------------------------');
         transformedValue.value.db_storage='';
-        console.log(transformedValue);
-        console.log(JSON.stringify(transformedValue.value.alarm,2));
+          Object.keys(transformedValue.value).forEach((kk)=>{
+            if ((matchText==='*'||kk.indexOf(matchText)>-1) &&
+              kk!=='alarm')
+            console.log( kk,'\t',transformedValue.value[kk]);
+        });
+      //  console.log(transformedValue.value);
+        //console.log(JSON.stringify(transformedValue.value.alarm,2));
+        console.log('--------------------------------------------');
+        if(transformedValue.value.alarm) {
+          Object.keys( transformedValue.value.alarm).forEach((key1)=>{
+            Object.keys(transformedValue.value.alarm[key1]).forEach((key2)=>{
+              var data=transformedValue.value.alarm[key1][key2];
+              console.log(key1,key2,data.level,data.message);
+            });
+          });
+        }
+        //console.log( transformedValue.value.alarm);
 
     },
     e => console.log('error ', e)

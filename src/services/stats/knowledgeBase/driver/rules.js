@@ -468,6 +468,20 @@ export default {
             description:'Percentage of documents examined by index',
             unit: 'Percentage',
             ifZeroDivide: 0
+        },
+        {
+            name: 'connections_inusePct',
+            expression: 'connections_current*100/(connections_current+connections_available)',
+            description:'Percentage connections in use',
+            unit: 'Percentage',
+            ifZeroDivide: 0
+        },
+        {
+            name: 'queue_queuedPct',
+            expression: '(queue_readersQueued+queue_writersQueued)*100/(queue_readersActive+queue_readersQueued+queue_writersActive+ queue_writersQueued)',
+            description:'Percentage of read/writes which are queued',
+            unit: 'Percentage',
+            ifZeroDivide: 0
         }
     ]
 };
