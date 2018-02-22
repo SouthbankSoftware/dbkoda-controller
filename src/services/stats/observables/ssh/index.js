@@ -183,7 +183,7 @@ export default class SSHCounter implements ObservableWrapper {
       .on('error', err => {
         reject(new errors.BadRequest('Client Error: ' + err.message));
       })
-      .connect(_.omit(sshOpts, 'cwd'));
+      .connect(_.omit({...sshOpts, readyTimeout: 30000}, 'cwd'));
   }
 
   exeCmd(cmd: string, ignoreError: boolean = false): Promise<*> {
