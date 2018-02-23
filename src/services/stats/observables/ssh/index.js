@@ -228,12 +228,10 @@ export default class SSHCounter implements ObservableWrapper {
               this.postProcess(output, k);
             } catch (err) {
               l.error(err);
-              this.emitError(new Error('Run command failed.'));
               delete this.statsCmds[k];
             }
           }).catch((err) => {
           l.error(err);
-          this.emitError(new Error('Run command failed.'));
           delete this.statsCmds[k];
         });
       });

@@ -67,6 +67,16 @@ const commandParsers = {
         } catch (err) {
           l.error(err);
         }
+      } else if (str.indexOf('Disks:') >= 0) {
+        try {
+          const tmp = str.replace('Disks:', '');
+          const disk = tmp.split(',');
+          const read = parseInt(disk[0].split('/')[0].trim(), 10);
+          const write = parseInt(disk[1].split('/')[0].trim(), 10);
+          output.value.disk = {download: write, upload: read, samplingRate: d.samplingRate};
+        } catch (err) {
+          l.error(err);
+        }
       }
     });
     return output;
@@ -109,7 +119,7 @@ const common = {
   // cmd: 'ps -A -o %cpu,%mem | awk \'{ cpu += $1; mem += $2} END {print cpu , mem}\'',
   cmds: {
     cpuMemory: 'top -l 1 -n 0', // command need to query os stats
-    disk: 'iostat -c 2|tail -n 1',
+    // disk: 'iostat -c 2|tail -n 1',
     network: 'netstat -I `route -n get default |grep interface|awk \'{print $2}\'` |tail -n 1'
   },
   parse: (k, d, samplingRate) => { // the key is defined in knowledge base per command
