@@ -42,7 +42,8 @@ export default class MongoNativeDriver implements ObservableWrapper {
   displayName: string = 'Server Status';
   knowledgeBase: Object;
   previousData: Object = {};
-  intervalId: number;
+  statsIntervalId: number;
+  storageIntervalId: number;
   historyData: Object = {};
   commandStatus: Object = {'db_storage': true, 'others': true};
 
@@ -54,7 +55,6 @@ export default class MongoNativeDriver implements ObservableWrapper {
       this.commandStatus.others = true;
       this.commandStatus.db_storage = true;
       this.start(this.db);
-      this.intervalId = setInterval(() => this.start(this.db), this.samplingRate);
       return () => {
         this.pause();
       };
@@ -72,6 +72,8 @@ export default class MongoNativeDriver implements ObservableWrapper {
     }
     this.startServerStatus(db);
     this.startDBStorage(db);
+    this.statsIntervalId = setInterval(() => this.startServerStatus(db), this.samplingRate);
+    this.storageIntervalId = setInterval(() => this.startDBStorage(db), this.samplingRate * 3);
   }
 
   startServerStatus(db) {
@@ -138,7 +140,8 @@ export default class MongoNativeDriver implements ObservableWrapper {
   }
 
   pause() {
-    clearInterval(this.intervalId);
+    clearInterval(this.storageIntervalId);
+    clearInterval(this.statsIntervalId);
   }
 
   destroy(): Promise<*> {
