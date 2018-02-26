@@ -232,7 +232,7 @@ export default class Alarm extends Transformer {
         this._simpleThresholds(nextValue);
         this._standardDeviations(nextValue);
 
-        this._detachStats(nextValue);
+        // this._detachStats(nextValue);
         // nextValue.value.alarm = ({ok:1});
 
         nextValue.value.alarm && l.debug(`Alarm: ${JSON.stringify(nextValue.value.alarm, null, 2)}`);
