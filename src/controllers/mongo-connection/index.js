@@ -69,7 +69,7 @@ class MongoConnectionController {
     const sshOpts = {
       // enabled tunnel
       host: params.sshHost, // ip address of the ssh server
-      port: 22, // Number(params.sshPort), // port of the ssh server
+      port: Number(params.sshPort), // port of the ssh server
       username: params.remoteUser,
       srcAddr: params.localHost,
       srcPort: Number(params.localPort),
@@ -81,6 +81,9 @@ class MongoConnectionController {
       forwardTimeout: 5000,
       sshTunnel: params.sshTunnel
     };
+    if (!sshOpts.sshPort) {
+      sshOpts.sshPort = 22;
+    }
     if (params.usePasswordStore) {
       // Do password store stuff
       if (params.sshKeyFile) {
