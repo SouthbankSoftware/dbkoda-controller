@@ -44,7 +44,9 @@ type Stats = {
   /* Standard deviation */
   sd: number,
   /* Number of samples this stats represent */
-  count: number
+  count: number,
+  /* high water mark */
+  hwm: number,
 };
 
 type StatsManifest =
@@ -92,6 +94,13 @@ export default class StatsCalculator extends Transformer {
   };
 
   /**
+   * calculate high water mark
+   */
+  _calculateHWM = (sd: number, mean: number) => {
+    return 3 * sd + mean;
+  };
+
+  /**
    * Algorithms presented in Donald Knuth’s Art of Computer Programming, Vol 2, page 232, 3rd
    * edition
    * https://www.johndcook.com/blog/standard_deviation/
@@ -129,7 +138,8 @@ export default class StatsCalculator extends Transformer {
             mean: v,
             s: 0,
             sd: 0,
-            count: 1
+            count: 1,
+            hwm: 0,
           };
           statsManifest[k] = stats;
         } else {
@@ -151,6 +161,7 @@ export default class StatsCalculator extends Transformer {
           stats.mean = this._calculateNextMean(prevMean, nextDelta, count);
           stats.s = this._calculateNextS(prevS, nextDelta, v, stats.mean);
           stats.sd = this._calculateNextSd(stats.s, count);
+          stats.hwm = this._calculateHWM(stats.sd, stats.mean);
         }
       } else if (vType === 'object') {
         let childStatsManifest: StatsManifest = statsManifest[k];
