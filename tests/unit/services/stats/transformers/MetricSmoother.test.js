@@ -3,7 +3,7 @@
  * @Date:   2018-02-19T15:49:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-21T12:53:37+11:00
+ * @Last modified time: 2018-02-27T10:35:58+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -234,5 +234,18 @@ describe('MetricSmoother', () => {
     const smoothedValue = smoother.transform(_.cloneDeep(nextValue));
 
     assert.equal(smoothedValue.value.test, 'test');
+  });
+
+  it('can optionally ignore paths', () => {
+    const smoother = new MetricSmoother(3, ['db_storage', 'network_bytesInPs']);
+    const _values = _.cloneDeep(values.slice(0, 3));
+    let smoothedValue;
+
+    for (const value of _values) {
+      smoothedValue = smoother.transform(value);
+    }
+
+    assert.equal(smoothedValue.value.network_bytesInPs, values[2].value.network_bytesInPs);
+    assert.deepEqual(smoothedValue.value.db_storage, values[2].value.db_storage);
   });
 });

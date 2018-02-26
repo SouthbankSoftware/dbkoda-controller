@@ -5,7 +5,7 @@
  * @Date:   2018-02-19T13:42:03+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-21T12:02:48+11:00
+ * @Last modified time: 2018-02-27T10:23:23+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -47,12 +47,14 @@ export default class MetricSmoother extends Transformer {
   windowSize: number;
   /* _valueManifest has the same shape as ObservaleValue.value */
   _valueManifest: ValueManifest;
+  _ignoredPaths: ?(string[]);
 
-  constructor(windowSize: number) {
+  constructor(windowSize: number, ignoredPaths: ?(string[])) {
     super();
 
     this.windowSize = windowSize;
     this._valueManifest = {};
+    this._ignoredPaths = ignoredPaths;
   }
 
   _isValueWrapper = (valueManifest: ValueManifest): boolean => {
@@ -165,10 +167,28 @@ export default class MetricSmoother extends Transformer {
   };
 
   transform = (value: ObservaleValue): ObservaleValue => {
+    let ignoredValues;
+    if (this._ignoredPaths) {
+      ignoredValues = [];
+
+      for (const p of this._ignoredPaths) {
+        ignoredValues.push(_.get(value.value, p));
+        _.set(value.value, p, undefined);
+      }
+    }
+
     this._inhaleNextValue(this._valueManifest, value.value);
     const result = {};
     this._exhaleSmaValue(this._valueManifest, result);
     value.value = result;
+
+    if (this._ignoredPaths) {
+      // $FlowFixMe
+      _.forEach(this._ignoredPaths, (p, i) => {
+        _.set(value.value, p, ignoredValues[i]);
+      });
+    }
+
     return value;
   };
 }
