@@ -147,6 +147,14 @@ const standardDeviationThresholds = {
         'alarmPath': 'alarm.mongo.connections_current',
         warningMessage: 'Connections are spending an unusually large amount of time waiting for writes (mean=%.2f,sd=%.2f, current=%d)',
         notes: 'randCrud.js, randQry.js enronloop2.js'
+    },
+    {
+        metric: 'wtCache_evictionsPs',
+        l1: 1,
+        l2: 3,
+        'alarmPath': 'alarm.wiredtiger.wtCache_evictionsPs',
+        warningMessage: 'Rate of evictions from wiredTiger cache is unusually high (mean=%.2f,sd=%.2f, current=%d)',
+        notes: 'randCrud.js, randQry.js enronloop2.js'
     }]
 };
 
