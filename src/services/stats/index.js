@@ -221,7 +221,7 @@ export class Stats {
           // $FlowFixMe
           this.emit('data', {
             profileId,
-            payload: _.pick(v, ['timestamp', 'value'])
+            payload: _.pick(v, ['timestamp', 'value', 'stats'])
           });
         },
         error: err => {
