@@ -5,7 +5,7 @@
  * @Date:   2018-02-20T10:47:17+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T20:59:06+11:00
+ * @Last modified time: 2018-02-26T16:41:35+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -73,6 +73,10 @@ export default class StatsCalculator extends Transformer {
     this._enabledEmStats = enabledEmStats;
   }
 
+  reset = () => {
+    this._statsManifest = {};
+  };
+
   _calculateNextDelta = (prevMean: number, nextSample: number): number => {
     return nextSample - prevMean;
   };
@@ -96,7 +100,7 @@ export default class StatsCalculator extends Transformer {
   /**
    * calculate high water mark
    */
-  _calculateHWM = (sd: number, mean: number) => {
+  _calculateHwm = (sd: number, mean: number) => {
     return 3 * sd + mean;
   };
 
@@ -161,7 +165,7 @@ export default class StatsCalculator extends Transformer {
           stats.mean = this._calculateNextMean(prevMean, nextDelta, count);
           stats.s = this._calculateNextS(prevS, nextDelta, v, stats.mean);
           stats.sd = this._calculateNextSd(stats.s, count);
-          stats.hwm = this._calculateHWM(stats.sd, stats.mean);
+          stats.hwm = this._calculateHwm(stats.sd, stats.mean);
         }
       } else if (vType === 'object') {
         let childStatsManifest: StatsManifest = statsManifest[k];

@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:30:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-16T09:42:31+11:00
+ * @Last modified time: 2018-02-26T16:43:37+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,6 +26,7 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import _ from 'lodash';
 import processItems from '~/hooks/processItems';
 // $FlowFixMe
 import errors from 'feathers-errors';
@@ -54,7 +55,7 @@ export const patchSamplingRate = (
 export default () =>
   processItems(
     (context, item) => {
-      const { profileId, samplingRate, debug } = item;
+      const { profileId, samplingRate, debug, resetStats } = item;
       const { service } = context;
       const { observableManifests } = service;
 
@@ -65,6 +66,8 @@ export default () =>
       }
 
       patchSamplingRate(observableManifest, samplingRate) && observableManifest._debouncedUpdate();
+
+      resetStats && _.invoke(observableManifest, 'transformers[1].reset');
 
       if (debug !== undefined) {
         observableManifest.debug = debug;
