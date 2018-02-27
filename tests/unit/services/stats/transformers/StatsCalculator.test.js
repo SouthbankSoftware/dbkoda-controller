@@ -3,7 +3,7 @@
  * @Date:   2018-02-20T11:50:41+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T20:58:50+11:00
+ * @Last modified time: 2018-02-27T11:24:23+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -140,7 +140,8 @@ describe('StatsCalculator', () => {
           mean: 12,
           s: 0,
           sd: 0,
-          count: 1
+          count: 1,
+          hwm: 0
         },
         dummy2: [
           {
@@ -152,7 +153,8 @@ describe('StatsCalculator', () => {
                 mean: 103080500,
                 s: 0,
                 sd: 0,
-                count: 1
+                count: 1,
+                hwm: 0
               }
             }
           },
@@ -165,7 +167,8 @@ describe('StatsCalculator', () => {
                 mean: 834,
                 s: 0,
                 sd: 0,
-                count: 1
+                count: 1,
+                hwm: 0
               }
             }
           },
@@ -178,7 +181,8 @@ describe('StatsCalculator', () => {
                 mean: 64384,
                 s: 0,
                 sd: 0,
-                count: 1
+                count: 1,
+                hwm: 0
               }
             }
           },
@@ -191,7 +195,8 @@ describe('StatsCalculator', () => {
                 mean: 0,
                 s: 0,
                 sd: 0,
-                count: 1
+                count: 1,
+                hwm: 0
               }
             }
           }
@@ -240,7 +245,8 @@ describe('StatsCalculator', () => {
           mean: 13.5,
           s: 4.5,
           sd: 2.1213203435596424,
-          count: 2
+          count: 2,
+          hwm: 19.86396103067893
         },
         dummy2: [
           {
@@ -252,7 +258,8 @@ describe('StatsCalculator', () => {
                 mean: 103075500,
                 s: 50000000,
                 sd: 7071.067811865475,
-                count: 2
+                count: 2,
+                hwm: 103096713.2034356
               }
             }
           },
@@ -265,7 +272,8 @@ describe('StatsCalculator', () => {
                 mean: 478.5,
                 s: 252760.5,
                 sd: 502.7529214236353,
-                count: 2
+                count: 2,
+                hwm: 1986.7587642709059
               }
             }
           },
@@ -278,7 +286,8 @@ describe('StatsCalculator', () => {
                 mean: 59384,
                 s: 50000000,
                 sd: 7071.067811865475,
-                count: 2
+                count: 2,
+                hwm: 80597.20343559643
               }
             }
           },
@@ -291,7 +300,8 @@ describe('StatsCalculator', () => {
                 mean: 0,
                 s: 0,
                 sd: 0,
-                count: 2
+                count: 2,
+                hwm: 0
               }
             }
           }
@@ -337,7 +347,8 @@ describe('StatsCalculator', () => {
           mean: 14.4,
           s: 7.199999999999999,
           sd: 1.3416407864998738,
-          count: 5
+          count: 5,
+          hwm: 18.42492235949962
         },
         dummy2: [
           {
@@ -349,7 +360,8 @@ describe('StatsCalculator', () => {
                 mean: 83080500,
                 s: 8002000400000000,
                 sd: 44726950.48849183,
-                count: 5
+                count: 5,
+                hwm: 217261351.4654755
               }
             }
           },
@@ -362,7 +374,8 @@ describe('StatsCalculator', () => {
                 mean: 51.400000000000006,
                 s: 2167475.2,
                 sd: 736.1173819439397,
-                count: 5
+                count: 5,
+                hwm: 2259.7521458318192
               }
             }
           },
@@ -375,7 +388,8 @@ describe('StatsCalculator', () => {
                 mean: 59384,
                 s: 50000000,
                 sd: 7071.067811865475,
-                count: 2
+                count: 2,
+                hwm: 80597.20343559643
               }
             },
             test: {
@@ -386,7 +400,8 @@ describe('StatsCalculator', () => {
                 mean: 0,
                 s: 0,
                 sd: 0,
-                count: 3
+                count: 3,
+                hwm: 0
               }
             }
           },
@@ -399,7 +414,8 @@ describe('StatsCalculator', () => {
                 mean: 0,
                 s: 0,
                 sd: 0,
-                count: 2
+                count: 2,
+                hwm: 0
               }
             }
           }
