@@ -143,7 +143,7 @@ export default class StatsCalculator extends Transformer {
             s: 0,
             sd: 0,
             count: 1,
-            hwm: 0,
+            hwm: v,
           };
           statsManifest[k] = stats;
         } else {
