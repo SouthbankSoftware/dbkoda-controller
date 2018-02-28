@@ -141,7 +141,7 @@ describe('StatsCalculator', () => {
           s: 0,
           sd: 0,
           count: 1,
-          hwm: 0
+          hwm: 12
         },
         dummy2: [
           {
@@ -154,7 +154,7 @@ describe('StatsCalculator', () => {
                 s: 0,
                 sd: 0,
                 count: 1,
-                hwm: 0
+                hwm: 103080500
               }
             }
           },
@@ -168,7 +168,7 @@ describe('StatsCalculator', () => {
                 s: 0,
                 sd: 0,
                 count: 1,
-                hwm: 0
+                hwm: 834
               }
             }
           },
@@ -182,7 +182,7 @@ describe('StatsCalculator', () => {
                 s: 0,
                 sd: 0,
                 count: 1,
-                hwm: 0
+                hwm: 64384
               }
             }
           },
