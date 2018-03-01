@@ -259,7 +259,7 @@ export default class SSHCounter implements ObservableWrapper {
         }
         this.historyData[key].previous = nextObj.value[key];
       });
-      l.debug('emit value from ssh observable ', nextObj);
+      // l.debug('emit value from ssh observable ', nextObj);
       this.observer.next(nextObj);
     }
   }
