@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:29:50+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-27T10:36:37+11:00
+ * @Last modified time: 2018-03-02T01:51:10+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,7 +28,6 @@
 
 import _ from 'lodash';
 import processItems from '~/hooks/processItems';
-import config from '~/config';
 import { constructors } from '../observableTypes';
 import { patchSamplingRate } from './patchObservables';
 import type { ObservableManifest } from '../';
@@ -41,7 +40,7 @@ const DEBOUNCE_DELAY = 1000;
 export default () =>
   processItems(
     (context, item) => {
-      const { profileId, items, debug, samplingRate } = item;
+      const { profileId, items, debug, samplingRate, stats } = item;
       const { service } = context;
       const { observableManifests } = service;
 
@@ -87,9 +86,13 @@ export default () =>
             return wrapper;
           }),
           index,
-          samplingRate: samplingRate || config.performancePanelSamplingRate,
+          samplingRate,
           subscription: null,
-          transformers: [new MetricSmoother(3, ['db_storage']), new StatsCalculator(), new Alarm()],
+          transformers: [
+            new MetricSmoother(3, ['db_storage']),
+            new StatsCalculator(stats),
+            new Alarm()
+          ],
           debug: false,
           _debouncedUpdate: null
         };

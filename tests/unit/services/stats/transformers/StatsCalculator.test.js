@@ -3,7 +3,7 @@
  * @Date:   2018-02-20T11:50:41+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-27T11:24:23+11:00
+ * @Last modified time: 2018-03-02T01:46:39+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -33,7 +33,7 @@ describe('StatsCalculator', () => {
   const alpha = 0.2;
 
   before(() => {
-    caculator = new StatsCalculator(true, alpha);
+    caculator = new StatsCalculator(null, { enabledEmStats: true, alpha });
     values = [
       {
         profileId: '8f65a890-1519-11e8-885b-d14c14dda128',

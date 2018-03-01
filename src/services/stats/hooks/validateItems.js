@@ -3,7 +3,7 @@
  * @Date:   2017-12-12T11:17:37+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-26T16:35:32+11:00
+ * @Last modified time: 2018-03-02T01:38:30+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -72,6 +72,9 @@ const createSchema = {
     },
     items: itemsSchema,
     samplingRate: samplingRateSchema,
+    stats: {
+      type: 'object'
+    },
     debug: {
       type: 'boolean',
       default: false
@@ -80,7 +83,7 @@ const createSchema = {
       type: 'object'
     }
   },
-  required: ['profileId', 'items'],
+  required: ['profileId', 'items', 'samplingRate'],
   additionalProperties: false
 };
 

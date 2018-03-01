@@ -5,7 +5,7 @@
  * @Date:   2018-02-20T14:01:28+11:00
  * @Email:  guy@southbanksoftware.com
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-27T11:07:37+11:00
+ * @Last modified time: 2018-03-02T01:54:21+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -204,12 +204,9 @@ export default class Alarm extends Transformer {
   _standardDeviations = (nextValue: ObservaleValue) => {
     const { stats, value } = nextValue;
     standardDeviationThresholds.thresholds.forEach(st => {
-      console.log(st.metric);
       const path = [st.metric];
-      console.log(path);
       const valueStats = _.get(stats, path);
       if (valueStats) {
-        console.log(valueStats);
         const { mean, sd, count } = _.get(stats, path);
         const currentValue = _.get(value, path);
         const debugData = {

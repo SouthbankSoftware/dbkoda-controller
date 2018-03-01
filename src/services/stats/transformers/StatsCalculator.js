@@ -5,7 +5,7 @@
  * @Date:   2018-02-20T10:47:17+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-26T16:41:35+11:00
+ * @Last modified time: 2018-03-02T01:45:55+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -46,7 +46,7 @@ type Stats = {
   /* Number of samples this stats represent */
   count: number,
   /* high water mark */
-  hwm: number,
+  hwm: number
 };
 
 type StatsManifest =
@@ -65,11 +65,13 @@ export default class StatsCalculator extends Transformer {
   _statsManifest: StatsManifest;
   _enabledEmStats: boolean;
 
-  constructor(enabledEmStats: boolean = false, alpha: number = 0.2) {
+  constructor(stats: ?StatsManifest, options?: *) {
     super();
 
+    const { enabledEmStats = false, alpha = 0.2 } = options || {};
+
     this.alpha = alpha;
-    this._statsManifest = {};
+    this._statsManifest = stats || {};
     this._enabledEmStats = enabledEmStats;
   }
 
@@ -143,7 +145,7 @@ export default class StatsCalculator extends Transformer {
             s: 0,
             sd: 0,
             count: 1,
-            hwm: v,
+            hwm: v
           };
           statsManifest[k] = stats;
         } else {
