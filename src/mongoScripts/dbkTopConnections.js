@@ -150,3 +150,22 @@ dbkTopConnections.top5 = function(sampleTime, sleepTime) {
           print (connection.client,connection.lastOp,connection.planSummary,connection.lastns,JSON.stringify(connection.lastCommand).substring(0,30),connection.us); // eslint-disable-line
      });
 };
+
+dbkTopConnections.toCollection = function( ) {
+ 
+  db.topConnections.drop();
+  var connections=[];
+  Object.keys(dbkTopConnections.dbkCurrentSample.connections).forEach(function(c){
+    var data=dbkTopConnections.dbkCurrentSample.connections[c];
+    //if ('$db' in data.lastCommand) delete data.lastCommand['$db'];
+    Object.keys(data.ops).forEach(function(op) {
+      //printjson(data.ops[op].command); 
+      //if ('$db' in data.ops[op].command) delete data.ops[op].command['$db'];
+      data.ops[op].command='find';
+    });
+    data.lastCommand='find';
+    //printjson(data);
+    db.topConnections.insert(data);
+  });
+}
+ 
