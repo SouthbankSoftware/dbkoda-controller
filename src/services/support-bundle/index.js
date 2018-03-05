@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-03-05T14:43:58+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,6 +20,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 /* eslint class-methods-use-this: 0 */
 import path from 'path';
 import os from 'os';
@@ -257,7 +261,7 @@ class SupportBundleService {
       l.info('The following paths will be added to a support bundle: ');
       let logPath;
       if (global.IS_PROD) {
-        logPath = path.resolve(path.dirname(process.env.LOG_PATH));
+        logPath = process.env.LOG_PATH;
         configPath = process.env.CONFIG_PATH;
       } else if (os.release().match(/Win/gi)) {
         logPath = path.resolve(

@@ -20,7 +20,7 @@
 
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-11T21:33:40+11:00
+ * @Last modified time: 2018-03-05T14:42:38+11:00
  */
 
 import moment from 'moment';
@@ -54,7 +54,7 @@ global.UAT = process.env.UAT === 'true';
     colorize: 'all',
     timestamp() {
       return moment().format();
-    },
+    }
   };
 
   const transports = [new winston.transports.Console(commonOptions)];
@@ -64,21 +64,22 @@ global.UAT = process.env.UAT === 'true';
     transports.push(
       new winston.transports.DailyRotateFile(
         _.assign({}, commonOptions, {
-          filename: process.env.LOG_PATH,
+          filename: path.resolve(process.env.LOG_PATH, 'controller.log'),
           datePattern: 'yyyy-MM-dd.',
           localTime: true,
           prepend: true,
-          json: false,
-        }),
-      ),
+          maxDays: 30,
+          json: false
+        })
+      )
     );
   } else {
     transports.push(
       new winston.transports.File({
         name: 'info-file',
         filename: 'controller-dev.log',
-        level: 'debug',
-      }),
+        level: 'debug'
+      })
     );
   }
 
@@ -90,16 +91,16 @@ global.UAT = process.env.UAT === 'true';
       warn: 1,
       notice: 2,
       info: 3,
-      debug: 4,
+      debug: 4
     },
     colors: {
       error: 'red',
       warn: 'yellow',
       notice: 'green',
       info: 'gray',
-      debug: 'blue',
+      debug: 'blue'
     },
-    transports,
+    transports
   });
   global.log = global.l;
 })();
@@ -167,22 +168,22 @@ app
       uiIndex: path.join(__dirname, '../public/docs.html'),
       info: {
         title: process.env.npm_package_fullName,
-        description: process.env.npm_package_description,
-      },
-    }),
+        description: process.env.npm_package_description
+      }
+    })
   )
   .configure(
     primus(
       {
-        transformer: 'websockets',
+        transformer: 'websockets'
       },
-      (primus) => {
+      primus => {
         primus.library();
         const libPath = path.join(__dirname, '../public/dist/primus.js');
         sh.mkdir('-p', path.dirname(libPath));
         primus.save(libPath);
-      },
-    ),
+      }
+    )
   )
   .configure(services)
   .configure(middleware);
@@ -193,7 +194,7 @@ app
  * @param {Error} err - error object
  * @return {Promise} resolve
  */
-app.stop = (err) => {
+app.stop = err => {
   process.stdout.write('\r');
   l.notice('Stopping dbkoda Controller...');
 
