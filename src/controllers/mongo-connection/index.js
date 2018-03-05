@@ -29,17 +29,15 @@ const errors = require('feathers-errors');
 const _ = require('lodash');
 const fs = require('fs');
 const sshTunnel = require('open-ssh-tunnel');
-const MongoShell = require('../mongo-shell').MongoShell;
+const {MongoShell} = require('../mongo-shell');
 const mongoUri = require('mongodb-uri');
 const MongoConnection = require('./connection');
 const Status = require('./status');
 const ConnectionListener = require('./connection-listener');
 const uuid = require('node-uuid');
-const Errors = require('../../errors/Errors').Errors;
+const {Errors} = require('../../errors/Errors');
 
-const Mongos = mongodb.Mongos;
-const Server = mongodb.Server;
-const ReplSet = mongodb.ReplSet;
+const {Mongos, ReplSet, Server} = mongodb;
 
 /**
  * Mongo instance connection controller
@@ -81,14 +79,20 @@ class MongoConnectionController {
       forwardTimeout: 5000,
       sshTunnel: params.sshTunnel
     };
-    if (!sshOpts.sshPort) {
-      sshOpts.sshPort = 22;
+    if (!sshOpts.port) {
+      sshOpts.port = 22;
     }
+    console.log(`Connect SSH Port: ${sshOpts.port}`);
     if (params.usePasswordStore) {
       // Do password store stuff
       if (params.sshKeyFile) {
         sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
-        sshOpts.passPhrase = await this.getStorePassword(params.id, params.remoteUser, params.passPhrase, '-s');
+        try {
+          const passPhrase = await this.getStorePassword(params.id, params.remoteUser, params.passPhrase, '-s');
+          sshOpts.passPhrase = passPhrase;
+        } catch (err) {
+          console.log(err);
+        }
       } else {
         sshOpts.password = await this.getStorePassword(params.id, params.remoteUser, params.remotePass, '-s');
       }
