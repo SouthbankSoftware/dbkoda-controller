@@ -45,7 +45,6 @@ export default class SSHCounter implements ObservableWrapper {
   profileId: string;
   mongoConnection: Object;
   client: Client;
-  sendOsTypeCmd: boolean;
   observer: Observer<ObservaleValue>;
   displayName = 'SSH Stats';
   samplingRate: number;
@@ -247,7 +246,10 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   postProcess(output: Object, k: string) {
-    const params = {output};
+    const params = {output, previous: {}};
+    if (this.historyData[k] && this.historyData[k].previous !== undefined) {
+      params.previous = this.historyData[k].previous;
+    }
     const o = this.knowledgeBase.parse(k, params, this.samplingRate);
     if (o && o.value) {
       const nextObj = _.pick(o, ['value', 'timestamp']);
@@ -257,9 +259,16 @@ export default class SSHCounter implements ObservableWrapper {
         if (typeof nextObj.value[key] === 'number' && (!this.historyData[key].maximum || nextObj.value[key] > this.historyData[key].maximum)) {
           this.historyData[key].maximum = nextObj.value[key];
         }
+        if (this.historyData[key].previous) {
+          _.forOwn(nextObj.value[key], (v, subKey) => {
+            if (this.historyData[key].previous[subKey] !== undefined
+              && typeof v === 'number' && typeof this.historyData[key].previous[subKey] === 'number') {
+              nextObj.value[key][`${subKey}Delta`] = Math.abs(v - this.historyData[key].previous[subKey]);
+            }
+          });
+        }
         this.historyData[key].previous = nextObj.value[key];
       });
-      // l.debug('emit value from ssh observable ', nextObj);
       this.observer.next(nextObj);
     }
   }

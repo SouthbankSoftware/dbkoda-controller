@@ -117,7 +117,6 @@ const commandParsers = {
         log.warn(e);
       }
     });
-    // log.debug(`network ${download} ${upload}.`);
     return {timestamp: (new Date()).getTime(), value: {network: {upload, download, samplingRate}}};
   }
 };
