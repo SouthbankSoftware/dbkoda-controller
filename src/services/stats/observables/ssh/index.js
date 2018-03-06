@@ -267,7 +267,7 @@ export default class SSHCounter implements ObservableWrapper {
               if (nextObj.timestamp && this.historyData[key].previousTimestamp) {
                 const sr = nextObj.timestamp - this.historyData[key].previousTimestamp;
                 if (sr > 0) {
-                  nextObj.value[key][`${subKey}PerSec`] = nextObj.value[key][`${subKey}Delta`] / sr / 1000;
+                  nextObj.value[key][`${subKey}PerSec`] = nextObj.value[key][`${subKey}Delta`] / (sr / 1000);
                 }
               }
             }
