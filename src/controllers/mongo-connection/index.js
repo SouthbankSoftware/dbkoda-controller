@@ -72,9 +72,7 @@ class MongoConnectionController {
       mongoScriptsPath = this.app.get('mongoScripts');
     }
     return mongoScriptsPath;
-  };
-
-
+  }
 
   async getTunnelParams(params) {
     const sshOpts = {

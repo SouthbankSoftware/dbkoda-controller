@@ -264,10 +264,17 @@ export default class SSHCounter implements ObservableWrapper {
             if (this.historyData[key].previous[subKey] !== undefined
               && typeof v === 'number' && typeof this.historyData[key].previous[subKey] === 'number') {
               nextObj.value[key][`${subKey}Delta`] = Math.abs(v - this.historyData[key].previous[subKey]);
+              if (nextObj.timestamp && this.historyData[key].previousTimestamp) {
+                const sr = nextObj.timestamp - this.historyData[key].previousTimestamp;
+                if (sr > 0) {
+                  nextObj.value[key][`${subKey}PerSec`] = nextObj.value[key][`${subKey}Delta`] / sr / 1000;
+                }
+              }
             }
           });
         }
         this.historyData[key].previous = nextObj.value[key];
+        this.historyData[key].previousTimestamp = nextObj.timestamp;
       });
       this.observer.next(nextObj);
     }
