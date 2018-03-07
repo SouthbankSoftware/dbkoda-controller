@@ -29,15 +29,15 @@ const errors = require('feathers-errors');
 const _ = require('lodash');
 const fs = require('fs');
 const sshTunnel = require('open-ssh-tunnel');
-const {MongoShell} = require('../mongo-shell');
+const { MongoShell } = require('../mongo-shell');
 const mongoUri = require('mongodb-uri');
 const MongoConnection = require('./connection');
 const Status = require('./status');
 const ConnectionListener = require('./connection-listener');
 const uuid = require('node-uuid');
-const {Errors} = require('../../errors/Errors');
+const { Errors } = require('../../errors/Errors');
 
-const {Mongos, ReplSet, Server} = mongodb;
+const { Mongos, ReplSet, Server } = mongodb;
 
 /**
  * Mongo instance connection controller
@@ -88,13 +88,23 @@ class MongoConnectionController {
       if (params.sshKeyFile) {
         sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
         try {
-          const passPhrase = await this.getStorePassword(params.id, params.remoteUser, params.passPhrase, '-s');
+          const passPhrase = await this.getStorePassword(
+            params.id,
+            params.remoteUser,
+            params.passPhrase,
+            '-s'
+          );
           sshOpts.passPhrase = passPhrase;
         } catch (err) {
           console.log(err);
         }
       } else {
-        sshOpts.password = await this.getStorePassword(params.id, params.remoteUser, params.remotePass, '-s');
+        sshOpts.password = await this.getStorePassword(
+          params.id,
+          params.remoteUser,
+          params.remotePass,
+          '-s'
+        );
       }
     } else if (params.sshKeyFile) {
       sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
@@ -144,7 +154,9 @@ class MongoConnectionController {
         if (!conn.id) {
           addNewPassword = true;
         } else {
-          await this.passwordService.patch(conn.id, { password: conn.password });
+          await this.passwordService.patch(conn.id, {
+            password: conn.password
+          });
         }
       } else {
         conn.password = await this.passwordService.get(conn.id);
@@ -213,28 +225,25 @@ class MongoConnectionController {
         return db;
       })
       .then(() => {
-        if (conn.authorization) {
-          return this.checkAuthorization(db)
-            .then(v => {
-              log.debug('check authorization success ', v);
-              return db;
-            })
-            .catch(e => {
-              log.error('cant list collections :', e);
-              if (e.code !== undefined && e.code === 13435) {
-                // slave is not ok
-                // conn.requireSlaveOk = true;
-                throw Errors.ConnectSlaveOk(e);
-              } else {
-                const error = new errors.NotAuthenticated(
-                  'Authorization Failed: ' + e.message
-                );
-                error.responseCode = 'NOT_AUTHORIZATION_LIST_COLLECTION';
-                throw error;
-              }
-            });
-        }
-        return db;
+        return this.checkAuthorization(db)
+          .then(v => {
+            log.debug('check authorization success ', v);
+            return db;
+          })
+          .catch(e => {
+            log.error('cant list collections :', e);
+            if (e.code !== undefined && e.code === 13435) {
+              // slave is not ok
+              // conn.requireSlaveOk = true;
+              throw Errors.ConnectSlaveOk(e);
+            } else {
+              const error = new errors.NotAuthenticated(
+                'Authorization Failed: ' + e.message
+              );
+              error.responseCode = 'NOT_AUTHORIZATION_LIST_COLLECTION';
+              throw error;
+            }
+          });
       })
       .then(() => {
         if (conn.test) {
