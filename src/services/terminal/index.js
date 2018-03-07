@@ -36,6 +36,7 @@ export class Terminal {
 
   setup(_app, _path) {
     this.terminals = new Map();
+    this.passwordService = _app.service('/master-pass');
   }
 
   destroy(_app, _path) {
