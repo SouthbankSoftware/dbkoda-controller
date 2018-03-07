@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-03-07T03:22:40+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,14 +21,9 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2018-03-05T14:42:38+11:00
- */
-
-import moment from 'moment';
 import _ from 'lodash';
-import winston from 'winston';
+import { createLogger, format, transports, addColors } from 'winston';
+import 'winston-daily-rotate-file';
 import path from 'path';
 import compress from 'compression';
 import cors from 'cors';
@@ -36,6 +34,7 @@ import bodyParser from 'body-parser';
 import primus from 'feathers-primus';
 import swagger from 'feathers-swagger';
 import sh from 'shelljs';
+import { levelConfig, commonFormatter, printfFormatter } from '~/helpers/winston';
 
 require('babel-polyfill');
 
@@ -45,63 +44,34 @@ const app = feathers();
 process.env.NODE_CONFIG_DIR = path.resolve(__dirname, '../config/');
 app.configure(require('feathers-configuration')());
 
-global.IS_PROD = process.env.NODE_ENV === 'production';
+global.IS_PRODUCTION = process.env.NODE_ENV === 'production';
+process.env.LOG_PATH = process.env.LOG_PATH || path.resolve(__dirname, '../logs');
 global.UAT = process.env.UAT === 'true';
 
 // config winston. The logger should be configured first
 (() => {
-  const commonOptions = {
-    colorize: 'all',
-    timestamp() {
-      return moment().format();
-    }
-  };
-
-  const transports = [new winston.transports.Console(commonOptions)];
-
-  if (global.IS_PROD) {
-    require('winston-daily-rotate-file');
-    transports.push(
-      new winston.transports.DailyRotateFile(
-        _.assign({}, commonOptions, {
-          filename: path.resolve(process.env.LOG_PATH, 'controller.log'),
-          datePattern: 'yyyy-MM-dd.',
-          localTime: true,
-          prepend: true,
-          maxDays: 30,
-          json: false
-        })
-      )
-    );
-  } else {
-    transports.push(
-      new winston.transports.File({
-        name: 'info-file',
-        filename: 'controller-dev.log',
-        level: 'debug'
+  global.l = createLogger({
+    format: format.combine(
+      format.splat(),
+      commonFormatter,
+      format.colorize({ all: true }),
+      printfFormatter
+    ),
+    level: global.IS_PRODUCTION ? 'info' : 'debug',
+    levels: levelConfig.levels,
+    transports: [
+      new transports.Console(),
+      new transports.DailyRotateFile({
+        filename: path.resolve(process.env.LOG_PATH, 'controller_%DATE%.log'),
+        datePattern: 'YYYY-MM-DD',
+        maxSize: '1m',
+        maxFiles: global.IS_PRODUCTION ? '30d' : '3d'
       })
-    );
-  }
-
-  global.l = new winston.Logger({
-    level: global.IS_PROD ? 'info' : 'debug',
-    padLevels: true,
-    levels: {
-      error: 0,
-      warn: 1,
-      notice: 2,
-      info: 3,
-      debug: 4
-    },
-    colors: {
-      error: 'red',
-      warn: 'yellow',
-      notice: 'green',
-      info: 'gray',
-      debug: 'blue'
-    },
-    transports
+    ]
   });
+
+  addColors(levelConfig);
+
   global.log = global.l;
 })();
 
@@ -111,7 +81,7 @@ function checkJavaVersion(callback) {
     return callback(spawn.error, null);
   }
   if (spawn.stderr) {
-    const data = spawn.stderr.toString().split('\n')[0];
+    const [data] = spawn.stderr.toString().split('\n');
     const javaVersion = new RegExp(/(java version)|(openjdk version)/).test(data)
       ? data.split(' ')[2].replace(/"/g, '')
       : false;

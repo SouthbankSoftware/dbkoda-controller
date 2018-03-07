@@ -71,6 +71,9 @@ const createSchema = {
     passphrase: {
       type: 'string',
     },
+    profileId: {
+      type: 'string',
+    },
     size: sizeSchema,
   },
   required: ['_id', 'type'],

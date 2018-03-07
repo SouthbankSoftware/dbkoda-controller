@@ -18,7 +18,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"profileId\": \"test\",\n\t\"items\": []\n}"
+					"raw": "{\n  \"profileId\": \"test\",\n  \"items\": []\n}"
 				},
 				"url": {
 					"raw": "http://localhost:3030/stats?active=true",
@@ -37,7 +37,8 @@
 							"equals": true
 						}
 					]
-				}
+				},
+				"description": null
 			},
 			"response": []
 		},
@@ -53,7 +54,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"profileId\": \"test\",\n\t\"items\": []\n}"
+					"raw": "{\n  \"profileId\": \"test\",\n  \"items\": []\n}"
 				},
 				"url": {
 					"raw": "http://localhost:3030/stats/test?items[]=item-5&items[]=item-1",
@@ -78,7 +79,8 @@
 							"equals": true
 						}
 					]
-				}
+				},
+				"description": null
 			},
 			"response": []
 		},
@@ -94,7 +96,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"profileId\": \"test\",\n  \"items\": [\"item-1\"],\n  \"samplingRate\": 5000,\n  \"debug\": true,\n  \"stats\": {\n    \"item-1\": {\n      \"mean\": 41.313935416666666,\n      \"s\": 3749.6678683574805,\n      \"sd\": 18.462905977212994,\n      \"count\": 12,\n      \"hwm\": 96.70265334830565\n    },\n    \"item-2\": {\n      \"mean\": 59.21105341666668,\n      \"s\": 2388.7276744779106,\n      \"sd\": 14.736249906817328,\n      \"count\": 12,\n      \"hwm\": 103.41980313711866\n    },\n    \"item-3\": {\n      \"mean\": 44.68312633333334,\n      \"s\": 3986.9854495344703,\n      \"sd\": 19.03820429255217,\n      \"count\": 12,\n      \"hwm\": 101.79773921098985\n    }\n  }\n}\n"
+					"raw": "{\n  \"profileId\": \"test\",\n  \"profileAlias\": \"ec2-new\",\n  \"items\": [\"item-1\"],\n  \"samplingRate\": 5000,\n  \"debug\": true,\n  \"stats\": {\n    \"item-1\": {\n      \"mean\": 41.313935416666666,\n      \"s\": 3749.6678683574805,\n      \"sd\": 18.462905977212994,\n      \"count\": 12,\n      \"hwm\": 96.70265334830565\n    },\n    \"item-2\": {\n      \"mean\": 59.21105341666668,\n      \"s\": 2388.7276744779106,\n      \"sd\": 14.736249906817328,\n      \"count\": 12,\n      \"hwm\": 103.41980313711866\n    },\n    \"item-3\": {\n      \"mean\": 44.68312633333334,\n      \"s\": 3986.9854495344703,\n      \"sd\": 19.03820429255217,\n      \"count\": 12,\n      \"hwm\": 101.79773921098985\n    }\n  }\n}\n"
 				},
 				"url": {
 					"raw": "http://localhost:3030/stats",
@@ -106,7 +108,8 @@
 					"path": [
 						"stats"
 					]
-				}
+				},
+				"description": null
 			},
 			"response": []
 		},
@@ -122,7 +125,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"samplingRate\": 1000, \n\t\"debug\": true,\n\t\"resetStats\": false\n}"
+					"raw": "{\n  \"samplingRate\": 1000, \n  \"debug\": true,\n  \"resetStats\": false\n}"
 				},
 				"url": {
 					"raw": "http://localhost:3030/stats/test",
@@ -135,7 +138,8 @@
 						"stats",
 						"test"
 					]
-				}
+				},
+				"description": null
 			},
 			"response": []
 		},
@@ -164,7 +168,8 @@
 						"stats",
 						"test"
 					]
-				}
+				},
+				"description": null
 			},
 			"response": []
 		}

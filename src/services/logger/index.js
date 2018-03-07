@@ -1,8 +1,11 @@
 /**
- * @Author: guiguan
- * @Date:   2017-09-22T09:43:34+10:00
+ * @flow
+ *
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2018-03-05T14:09:35+11:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-02T16:24:08+11:00
+ * @Last modified time: 2018-03-07T00:27:52+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -25,64 +28,40 @@
 
 /* eslint-disable class-methods-use-this */
 
+// $FlowFixMe
 import errors from 'feathers-errors';
-import _ from 'lodash';
 import hooks from './hooks';
 
-export class Terminal {
-  constructor(_options) {
-    this.events = ['data', 'error'];
-  }
+class Logger {
+  loggers: Map<string, *>;
 
-  setup(_app, _path) {
-    this.terminals = new Map();
-    this.passwordService = _app.service('/master-pass');
+  setup(_app: *, _path: *) {
+    this.loggers = new Map();
   }
 
   destroy(_app, _path) {
-    const ps = [];
-
-    for (const terminalId of this.terminals.keys()) {
-      ps.push(this.remove(terminalId));
+    for (const logger of this.loggers.values()) {
+      logger.close();
     }
-
-    return Promise.all(ps);
   }
 
-  emitError(id: string, error: string, level: 'warn' | 'error' = 'error') {
-    this.emit('error', { _id: id, payload: { error, level } });
+  find(_params: *) {
+    return Promise.resolve([...this.loggers.keys()]);
   }
 
-  find(_params) {
-    const filter = ['_id', 'type', 'debug'];
-
-    return Promise.resolve([...this.terminals.values()].map(v => _.pick(v, filter)));
-  }
-
-  get(id, _params) {
-    const filter = ['_id', 'type', 'debug'];
-    const terminal = this.terminals.get(id);
-
-    if (!terminal) {
-      throw new errors.NotFound(`Terminal ${id} doesn't exist`);
-    }
-
-    return Promise.resolve(_.pick(terminal, filter));
-  }
-
-  create(_data, _params) {
+  create() {
     throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
-  update(_id, _data, _params) {
+  update() {
     throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
-  patch(_id, _data, _params) {
+  patch() {
     throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
-  remove(_id, _params) {
+  remove() {
     throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 }
@@ -92,10 +71,10 @@ export default function() {
   const app = this;
 
   // Initialize our service with any options it requires
-  app.use('/terminals', new Terminal());
+  app.use('/loggers', new Logger());
 
   // Get our initialize service to that we can bind hooks
-  const service = app.service('/terminals');
+  const service = app.service('/loggers');
 
   // Set up our before hooks
   service.before(hooks.before);

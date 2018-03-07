@@ -3,7 +3,7 @@
  * @Date:   2017-12-12T11:17:37+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-07T10:31:38+11:00
+ * @Last modified time: 2018-03-07T03:02:35+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,99 +28,68 @@ import _ from 'lodash';
 import ajv from '~/helpers/ajv';
 import { validateSchema } from 'feathers-hooks-common';
 
-const itemsSchema = {
-  type: 'array',
-  item: {
-    type: 'string'
-  }
-};
-
-const samplingRateSchema = {
-  type: 'number',
-  minimum: 100
-};
-
-const activeSchema = {
-  type: 'boolean'
-};
-
 const findSchema = {
-  properties: {
-    items: itemsSchema,
-    active: activeSchema
-  },
+  properties: {},
   required: [],
-  additionalProperties: false
-};
-
-const getSchema = {
-  properties: {
-    profileId: {
-      type: 'string'
-    },
-    items: itemsSchema,
-    active: activeSchema
-  },
-  required: ['profileId'],
   additionalProperties: false
 };
 
 const createSchema = {
   properties: {
-    profileId: {
+    path: {
       type: 'string'
-    },
-    profileAlias: {
-      type: 'string'
-    },
-    items: itemsSchema,
-    samplingRate: samplingRateSchema,
-    stats: {
-      type: 'object'
     },
     debug: {
       type: 'boolean',
       default: false
-    },
-    options: {
-      type: 'object'
     }
   },
-  required: ['profileId', 'items', 'samplingRate'],
+  required: ['path'],
   additionalProperties: false
 };
 
 const patchSchema = {
   properties: {
-    profileId: {
+    path: {
       type: 'string'
     },
-    samplingRate: samplingRateSchema,
-    debug: {
-      type: 'boolean'
+    content: {
+      type: 'object',
+      properties: {
+        level: {
+          tyep: 'string',
+          default: 'info'
+        },
+        message: {},
+        meta: {},
+        timestamp: {
+          tyep: 'number'
+        }
+      },
+      required: ['level', 'message'],
+      additionalProperties: false
     },
-    resetStats: {
+    debug: {
       type: 'boolean'
     }
   },
-  required: ['profileId'],
+  required: ['path'],
   additionalProperties: false
 };
 
 const removeSchema = {
   properties: {
-    profileId: {
+    path: {
       type: 'string'
-    },
-    items: itemsSchema
+    }
   },
-  required: ['profileId'],
+  required: ['path'],
   additionalProperties: false
 };
 
 const schema = {
   find: findSchema,
-  get: getSchema,
+  get: {},
   create: createSchema,
   update: {},
   patch: patchSchema,

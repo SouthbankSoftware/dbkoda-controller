@@ -27,10 +27,9 @@ import os from 'os';
 import archiver from 'archiver';
 import fs from 'fs';
 import _ from 'lodash';
+import { execSync } from 'child_process';
 import { loadCommands } from '../../config';
-
-const execSync = require('child_process').execSync;
-const hooks = require('./hooks');
+import hooks from './hooks';
 
 class SupportBundleService {
   constructor(options) {
@@ -102,9 +101,7 @@ class SupportBundleService {
         // listen for all archive data to be written.
         output.on('close', () => {
           l.info(archive.pointer() + ' total byes');
-          l.info(
-            'archiver has been finalized and the output file descriptor has closed.'
-          );
+          l.info('archiver has been finalized and the output file descriptor has closed.');
           resolve(bundlePath);
         });
 
@@ -178,14 +175,10 @@ class SupportBundleService {
               const mongoVStr = output.split('\n');
               if (mongoVStr && mongoVStr.length > 0) {
                 if (mongoVStr[0].indexOf('MongoDB shell version v') >= 0) {
-                  mongoVersion = mongoVStr[0]
-                    .replace('MongoDB shell version v', '')
-                    .trim();
+                  mongoVersion = mongoVStr[0].replace('MongoDB shell version v', '').trim();
                 }
                 if (mongoVStr[0].indexOf('MongoDB shell version:') >= 0) {
-                  mongoVersion = mongoVStr[0]
-                    .replace('MongoDB shell version:', '')
-                    .trim();
+                  mongoVersion = mongoVStr[0].replace('MongoDB shell version:', '').trim();
                 }
                 mongoVersion = mongoVStr[0];
               }
@@ -228,20 +221,11 @@ class SupportBundleService {
   _createBundle() {
     return new Promise((resolve, reject) => {
       // Do all the logic to create a bundle.
-      let controllerLogPath = path.resolve('controller-dev.log');
       let configPath = path.resolve(os.homedir(), '.dbKoda', 'config.yml');
-      const statePath = path.resolve(
-        os.homedir(),
-        '.dbKoda',
-        'stateStore.json'
-      );
+      const statePath = path.resolve(os.homedir(), '.dbKoda', 'stateStore.json');
       let isBundlePathValid = false;
       let bundleNumber = 1;
-      let bundlePath = path.resolve(
-        os.homedir(),
-        '.dbKoda',
-        'supportBundle.zip'
-      );
+      let bundlePath = path.resolve(os.homedir(), '.dbKoda', 'supportBundle.zip');
 
       while (!isBundlePathValid) {
         if (fs.existsSync(bundlePath)) {
@@ -260,25 +244,13 @@ class SupportBundleService {
       l.info('Creating new support bundle (dev mode).');
       l.info('The following paths will be added to a support bundle: ');
       let logPath;
-      if (global.IS_PROD) {
+      if (global.IS_PRODUCTION) {
         logPath = process.env.LOG_PATH;
         configPath = process.env.CONFIG_PATH;
       } else if (os.release().match(/Win/gi)) {
-        logPath = path.resolve(
-          os.homedir(),
-          'AppData',
-          'Roaming',
-          'dbKoda',
-          'logs'
-        );
+        logPath = path.resolve(os.homedir(), 'AppData', 'Roaming', 'dbKoda', 'logs');
       } else {
-        logPath = path.resolve(
-          os.homedir(),
-          'Library',
-          'Application Support',
-          'dbKoda',
-          'logs'
-        );
+        logPath = path.resolve(os.homedir(), 'Library', 'Application Support', 'dbKoda', 'logs');
       }
 
       const files = fs.readdirSync(logPath);
@@ -295,7 +267,7 @@ class SupportBundleService {
         }
       });
 
-      controllerLogPath = path.join(
+      const controllerLogPath = path.join(
         logPath,
         _.max(controllerLogList, f => {
           const fullPath = path.join(logPath, f);

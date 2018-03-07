@@ -27,7 +27,7 @@
 import { Client } from 'ssh2';
 import fs from 'fs';
 
-export default (context, item) => {
+export default async (context, item) => {
   const {
     _id,
     username,
@@ -36,15 +36,31 @@ export default (context, item) => {
     port,
     privateKey: privateKeyPath,
     passphrase,
+    profileId,
     size,
   } = item;
   const { service } = context;
+  const { passwordService } = service;
 
   const client = new Client();
   let privateKey;
 
   if (privateKeyPath) {
     privateKey = fs.readFileSync(privateKeyPath);
+  }
+
+  let storePassword;
+  if (!password && !privateKey && username) {
+    console.log(`creds get ${profileId}-s`);
+    storePassword = await passwordService.get(`${profileId}-s`);
+  } else if (!password && privateKey) {
+    try {
+      console.log(`key get ${profileId}-s`);
+      storePassword = await passwordService.get(`${profileId}-s`);
+    } catch (err) {
+      // Try without a password if there is a keyfile but no password stored
+      storePassword = '';
+    }
   }
 
   client
@@ -103,7 +119,7 @@ export default (context, item) => {
     })
     .connect({
       username,
-      password,
+      password: password || storePassword,
       host,
       port,
       privateKey,

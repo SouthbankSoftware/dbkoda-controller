@@ -1,8 +1,9 @@
 /**
- * @Author: guiguan
- * @Date:   2017-10-02T13:50:52+11:00
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2017-12-12T11:17:37+11:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-05T16:03:58+11:00
+ * @Last modified time: 2018-03-06T23:39:24+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -23,10 +24,33 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* eslint-disable */
+import normaliseItems from '~/hooks/normaliseItems';
+import validateItems from './validateItems';
+import createLogger from './createLogger';
+import patchLogger from './patchLogger';
+import removeLogger from './removeLogger';
 
-declare var l: any;
-declare var IS_PRODUCTION: boolean;
+const before = {
+  all: [normaliseItems({ idAlias: 'path' }), validateItems()],
+  find: [],
+  get: [],
+  create: [createLogger()],
+  update: [],
+  patch: [patchLogger()],
+  remove: [removeLogger()]
+};
 
-declare type UUID = string;
-declare var log: Function;
+const after = {
+  all: [],
+  find: [],
+  get: [],
+  create: [],
+  update: [],
+  patch: [],
+  remove: []
+};
+
+export default {
+  before,
+  after
+};

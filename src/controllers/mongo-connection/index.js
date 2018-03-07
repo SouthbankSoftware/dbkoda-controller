@@ -63,6 +63,17 @@ class MongoConnectionController {
     this.passwordService = app.service('/master-pass');
   }
 
+
+  getMongoScriptsPath() {
+    let mongoScriptsPath;
+    if (global.IS_PROD) {
+      mongoScriptsPath = process.env.MONGO_SCRIPTS_PATH;
+    } else {
+      mongoScriptsPath = this.app.get('mongoScripts');
+    }
+    return mongoScriptsPath;
+  }
+
   async getTunnelParams(params) {
     const sshOpts = {
       // enabled tunnel
@@ -248,6 +259,12 @@ class MongoConnectionController {
       .then(() => {
         if (conn.test) {
           l.debug('this is test connection.');
+          const shell = new MongoShell(conn, this.getMongoScriptsPath());
+          if (!shell.shellVersion || shell.shellVersion === 'UNKNOWN') {
+            throw new errors.GeneralError(
+              'Creation of shell connection failed. Unable to detect  your mongo binary.<br/><br/>Please make sure the Mongo shell is in your path, or define path to mongo shell in the Preferences Panel.(Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)'
+            );
+          }
           return { success: true };
         }
         const serverConfig = db.serverConfig;
@@ -409,21 +426,6 @@ class MongoConnectionController {
    * create mongo shell connection
    */
   createMongoShell(db, conn, dbVersion) {
-    // l.info(
-    //   'Connection Details: ',
-    //   _.omit(conn, [
-    //     'remoteHost',
-    //     'remotePort',
-    //     'sshHost',
-    //     'remoteUser',
-    //     'remotePass',
-    //     'username',
-    //     'password',
-    //     'authenticationdatabase',
-    //     'database',
-    //     'url'
-    //   ])
-    // );
     const id = conn.id ? conn.id : uuid.v1();
     const shellId = conn.shellId ? conn.shellId : uuid.v1();
     const that = this;
@@ -461,7 +463,7 @@ class MongoConnectionController {
     const that = this;
     return new Promise((resolve, reject) => {
       let mongoScriptsPath;
-      if (global.IS_PROD) {
+      if (global.IS_PRODUCTION) {
         mongoScriptsPath = process.env.MONGO_SCRIPTS_PATH;
       } else {
         mongoScriptsPath = this.app.get('mongoScripts');
