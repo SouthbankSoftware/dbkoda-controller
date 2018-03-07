@@ -1,0 +1,147 @@
+{
+	"info": {
+		"name": "dbkoda-controller-logger",
+		"_postman_id": "eb4ad04e-27c8-207c-4117-bbe593022ed0",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "findAllLoggers",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3030/loggers",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"loggers"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "createLogger",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"path\": \"test_%DATE%.log\",\n\t\"debug\": true\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/loggers",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"loggers"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "patchLogger - content",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"content\": {\n\t\t\"level\": \"debug\",\n\t\t\"message\": \"test\",\n\t\t\"meta\": 123,\n\t\t\"timestamp\": 1520298223145\n\t}\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/loggers/test_%25DATE%25.log",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"loggers",
+						"test_%25DATE%25.log"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "patchLogger - debug",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"debug\": false\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/loggers/test_%25DATE%25.log",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"loggers",
+						"test_%25DATE%25.log"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "removeLogger",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3030/loggers/test_%25DATE%25.log",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"loggers",
+						"test_%25DATE%25.log"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}

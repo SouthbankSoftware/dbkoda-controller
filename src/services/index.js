@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-18T10:36:25+11:00
+ * @Last modified time: 2018-03-05T15:42:28+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -34,6 +34,7 @@ import mongoInspector from './mongo-inspector';
 import mongoReconnect from './mongo-reconnect';
 import autoComplete from './mongo-auto-complete';
 import linter from './linter';
+import logger from './logger';
 import syncExecution from './mongo-sync-execution';
 import file from './file';
 import aggregator from './aggregator';
@@ -66,6 +67,7 @@ module.exports = function() {
   app.configure(mongoReconnect);
   app.configure(autoComplete);
   app.configure(linter);
+  app.configure(logger);
   app.configure(mongoStopExecution);
   app.configure(syncExecution);
   app.configure(file);

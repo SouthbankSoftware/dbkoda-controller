@@ -5,7 +5,7 @@
  * @Date:   2018-02-20T14:01:28+11:00
  * @Email:  guy@southbanksoftware.com
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-02T01:54:21+11:00
+ * @Last modified time: 2018-03-07T02:13:31+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -238,8 +238,6 @@ export default class Alarm extends Transformer {
 
     // TODO: filter unnecessary stats that don't need to be sent back to ui
     // this._detachStats(nextValue);
-
-    nextValue.value.alarm && l.debug(`Alarm: ${JSON.stringify(nextValue.value.alarm, null, 2)}`);
 
     return nextValue;
   };

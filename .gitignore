@@ -41,3 +41,4 @@ all-in-one.js
 nohup\.out
 
 .nyc_output
+test.js

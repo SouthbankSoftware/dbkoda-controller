@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:17:22+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T08:20:47+11:00
+ * @Last modified time: 2018-03-07T10:35:28+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -39,6 +39,7 @@ import hooks from './hooks';
 
 export type ObservableManifest = {
   profileId: UUID,
+  profileAlias: string,
   wrappers: ObservableWrapper[],
   // key: item
   index: Map<string, ObservableWrapper>,
@@ -50,18 +51,35 @@ export type ObservableManifest = {
 };
 
 const SAMPLING_RATE_TOLERANCE = 0.5; // wait maximally 50% of sampling rate in each time window
+const LOG_PATH = 'performance_%DATE%.log';
+
+const handleError = err => l.error(err, err.errors);
+const replacer = (key, value) => (key === 'debugData' ? undefined : value);
+const stringifyAlarm = alarm => JSON.stringify(alarm, replacer, 2);
 
 export class Stats {
   // key: profileId
   observableManifests: Map<UUID, ObservableManifest>;
   events: string[];
+  loggerService: *;
 
   constructor(_options: *) {
     this.events = ['data', 'error'];
   }
 
-  setup(_app: *, _path: *) {
+  setup(app: *) {
     this.observableManifests = new Map();
+    this.loggerService = app.service('/loggers');
+    this.loggerService
+      .create({
+        path: LOG_PATH,
+        debug: false
+      })
+      .catch(handleError);
+  }
+
+  destroy() {
+    this.loggerService.remove(LOG_PATH).catch(handleError);
   }
 
   emitError(profileId: string, error: Error | string, level: 'warn' | 'error' = 'error') {
@@ -175,7 +193,7 @@ export class Stats {
   updateObservableManifest(observableManifest: ObservableManifest) {
     if (!this.areActiveObservableWrappersReady(observableManifest)) return;
 
-    const { profileId, wrappers, samplingRate } = observableManifest;
+    const { profileId, profileAlias, wrappers, samplingRate } = observableManifest;
 
     l.debug(`Updating observable manifest for profile ${profileId}...`);
 
@@ -218,6 +236,21 @@ export class Stats {
           if (observableManifest.debug) {
             l.debug(`Stats: ${JSON.stringify(v)}`);
           }
+
+          // log alarms
+          const { value: { alarm }, timestamp } = v;
+          alarm &&
+            this.loggerService
+              .patch(LOG_PATH, {
+                content: {
+                  message: `Alarm for profile ${profileAlias} (${profileId}): ${stringifyAlarm(
+                    alarm
+                  )}`,
+                  timestamp
+                }
+              })
+              .catch(handleError);
+
           // $FlowFixMe
           this.emit('data', {
             profileId,

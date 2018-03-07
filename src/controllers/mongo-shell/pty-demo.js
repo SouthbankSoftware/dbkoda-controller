@@ -29,7 +29,7 @@ const commonOptions = {
 
 const transports = [new winston.transports.Console(commonOptions)];
 global.l = new winston.Logger({
-  level: global.IS_PROD ? 'info' : 'debug',
+  level: global.IS_PRODUCTION ? 'info' : 'debug',
   padLevels: true,
   levels: {
     error: 0,

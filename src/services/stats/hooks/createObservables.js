@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:29:50+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-02T01:51:10+11:00
+ * @Last modified time: 2018-03-07T10:32:51+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -40,7 +40,7 @@ const DEBOUNCE_DELAY = 1000;
 export default () =>
   processItems(
     (context, item) => {
-      const { profileId, items, debug, samplingRate, stats } = item;
+      const { profileId, profileAlias, items, debug, samplingRate, stats } = item;
       const { service } = context;
       const { observableManifests } = service;
 
@@ -54,6 +54,7 @@ export default () =>
         // $FlowFixMe
         observableManifest = {
           profileId,
+          profileAlias,
           wrappers: _.map(constructors, ({ path, constructor }, k) => {
             // $FlowFixMe
             const Wrapper = require(`../observables/${path}`); // eslint-disable-line import/no-dynamic-require

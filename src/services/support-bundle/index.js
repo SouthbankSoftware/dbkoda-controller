@@ -228,7 +228,7 @@ class SupportBundleService {
   _createBundle() {
     return new Promise((resolve, reject) => {
       // Do all the logic to create a bundle.
-      let controllerLogPath = path.resolve('controller-dev.log');
+      let controllerLogPath;
       let configPath = path.resolve(os.homedir(), '.dbKoda', 'config.yml');
       const statePath = path.resolve(
         os.homedir(),
@@ -260,7 +260,7 @@ class SupportBundleService {
       l.info('Creating new support bundle (dev mode).');
       l.info('The following paths will be added to a support bundle: ');
       let logPath;
-      if (global.IS_PROD) {
+      if (global.IS_PRODUCTION) {
         logPath = process.env.LOG_PATH;
         configPath = process.env.CONFIG_PATH;
       } else if (os.release().match(/Win/gi)) {

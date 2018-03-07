@@ -1,8 +1,11 @@
 /**
- * @Author: guiguan
- * @Date:   2017-10-02T13:50:52+11:00
+ * @flow
+ *
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2018-03-05T15:35:16+11:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-05T16:03:58+11:00
+ * @Last modified time: 2018-03-07T01:07:42+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -23,10 +26,24 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* eslint-disable */
+import processItems from '~/hooks/processItems';
+// $FlowFixMe
+import errors from 'feathers-errors';
 
-declare var l: any;
-declare var IS_PRODUCTION: boolean;
+export default () =>
+  processItems(
+    (context, item) => {
+      const { path } = item;
+      const { loggers } = context.service;
+      const logger = loggers.get(path);
 
-declare type UUID = string;
-declare var log: Function;
+      if (!logger) {
+        throw new errors.NotFound(`Logger ${path} doesn't exist`);
+      }
+
+      logger.close();
+
+      loggers.delete(path);
+    },
+    { idAlias: 'path' }
+  );

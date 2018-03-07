@@ -454,7 +454,7 @@ class MongoConnectionController {
     const that = this;
     return new Promise((resolve, reject) => {
       let mongoScriptsPath;
-      if (global.IS_PROD) {
+      if (global.IS_PRODUCTION) {
         mongoScriptsPath = process.env.MONGO_SCRIPTS_PATH;
       } else {
         mongoScriptsPath = this.app.get('mongoScripts');
