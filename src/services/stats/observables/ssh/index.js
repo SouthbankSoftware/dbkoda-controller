@@ -255,6 +255,7 @@ export default class SSHCounter implements ObservableWrapper {
       const nextObj = _.pick(o, ['value', 'timestamp']);
       nextObj.profileId = this.profileId;
       nextObj.value = _.pick(o.value, this.items);
+      l.debug('get ssh stats', nextObj);
       _.keys(nextObj.value).forEach((key) => {
         if (typeof nextObj.value[key] === 'number' && (!this.historyData[key].maximum || nextObj.value[key] > this.historyData[key].maximum)) {
           this.historyData[key].maximum = nextObj.value[key];

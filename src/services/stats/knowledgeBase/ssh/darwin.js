@@ -34,7 +34,8 @@ const commandParsers = {
   'cpuMemory': (d) => {
     l.info('get data ', d);
     const split = d.output.split('\n');
-    const output = {};
+    const output = {timestamp: (new Date()).getTime()};
+    const tmpMem = {compressed: 0, app: 0, wired: 0};
     split && split.forEach((str) => {
       if (!output.value) {
         output.value = {cpu: {}};
@@ -51,15 +52,23 @@ const commandParsers = {
           output.value.cpu.usage = user + system;
           output.value.cpuDetail = {user, system, idle};
         }
+      } else if (str.indexOf('MemRegions:') > 0) {
+        const match = /.*total,\s{1}(.*)\s{1}resident,\s{1}(.*)\s{1}private,\s{1}(.*)\s{1}shared/.exec(str);
+        if (match && match.length > 3) {
+          tmpMem.compressed = parseInt(match[2], 10) + parseInt(match[3], 10);
+          tmpMem.app = parseInt(match[1], 10);
+        }
       } else if (str.indexOf('PhysMem:') >= 0) {
         // parse memory output
         const left = str.replace(/PhysMem:/, '').split(',');
         let used = left[0].trim().split(' ')[0];
         let unUsed = left[1].trim().split(' ')[0];
+        let wired = left[0].trim().split(' ')[2].replace(/\(/, '');
         used = getMegabyteValue(used);
         unUsed = getMegabyteValue(unUsed);
-        output.value.memory = used / (used + unUsed) * 100;
-        output.value.memoryDetail = {used, unUsed};
+        wired = getMegabyteValue(wired);
+        tmpMem.wired = wired;
+        output.value.memory = (tmpMem.wired + tmpMem.compressed + tmpMem.app) / (used + unUsed) * 100;
       } else if (str.indexOf('Load Avg') >= 0) {
         try {
           const loadAvgs = str.split(' ');
