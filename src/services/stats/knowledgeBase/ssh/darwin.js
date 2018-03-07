@@ -52,7 +52,7 @@ const commandParsers = {
           output.value.cpu.usage = user + system;
           output.value.cpuDetail = {user, system, idle};
         }
-      } else if (str.indexOf('MemRegions:') > 0) {
+      } else if (str.indexOf('MemRegions:') >= 0) {
         const match = /.*total,\s{1}(.*)\s{1}resident,\s{1}(.*)\s{1}private,\s{1}(.*)\s{1}shared/.exec(str);
         if (match && match.length > 3) {
           tmpMem.compressed = parseInt(match[2], 10) + parseInt(match[3], 10);
