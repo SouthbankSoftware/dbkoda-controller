@@ -103,7 +103,7 @@ export default class StatsCalculator extends Transformer {
    * calculate high water mark
    */
   _calculateHwm = (sd: number, mean: number) => {
-    return 3 * sd + mean;
+    return 2 * sd + mean;
   };
 
   /**
