@@ -37,6 +37,7 @@ export default async (context, item) => {
     privateKey: privateKeyPath,
     passphrase,
     profileId,
+    usePasswordStore,
     size,
   } = item;
   const { service } = context;
@@ -50,16 +51,18 @@ export default async (context, item) => {
   }
 
   let storePassword;
-  if (!password && !privateKey && username) {
-    console.log(`creds get ${profileId}-s`);
-    storePassword = await passwordService.get(`${profileId}-s`);
-  } else if (!password && privateKey) {
-    try {
-      console.log(`key get ${profileId}-s`);
+  if (usePasswordStore) {
+    if (!password && !privateKey && username) {
+      console.log(`creds get ${profileId}-s`);
       storePassword = await passwordService.get(`${profileId}-s`);
-    } catch (err) {
-      // Try without a password if there is a keyfile but no password stored
-      storePassword = '';
+    } else if (!password && privateKey) {
+      try {
+        console.log(`key get ${profileId}-s`);
+        storePassword = await passwordService.get(`${profileId}-s`);
+      } catch (err) {
+        // Try without a password if there is a keyfile but no password stored
+        storePassword = '';
+      }
     }
   }
 
