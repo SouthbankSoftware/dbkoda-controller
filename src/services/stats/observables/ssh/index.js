@@ -23,9 +23,9 @@
 
 /* eslint-disable class-methods-use-this */
 
-import {Observable, Observer} from 'rxjs';
+import { Observable, Observer } from 'rxjs';
 // $FlowFixMe
-import {Client} from 'ssh2';
+import { Client } from 'ssh2';
 import _ from 'lodash';
 // $FlowFixMe
 import sshTunnel from 'open-ssh-tunnel';
@@ -33,9 +33,9 @@ import sshTunnel from 'open-ssh-tunnel';
 import errors from 'feathers-errors';
 import os from 'os';
 
-import type {ObservableWrapper, ObservaleValue} from '../ObservableWrapper';
-import {getKnowledgeBaseRules, items} from '../../knowledgeBase/ssh';
-import {buildCommands} from '../../knowledgeBase/utils';
+import type { ObservableWrapper, ObservaleValue } from '../ObservableWrapper';
+import { getKnowledgeBaseRules, items } from '../../knowledgeBase/ssh';
+import { buildCommands } from '../../knowledgeBase/utils';
 
 export default class SSHCounter implements ObservableWrapper {
   osType: Object = {};
@@ -98,7 +98,7 @@ export default class SSHCounter implements ObservableWrapper {
         localAddr: params.localHost,
         readyTimeout: 5000,
         password: params.remotePass,
-        forwardTimeout: 5000,
+        forwardTimeout: 5000
       };
       return sshTunnel(sshOpts);
     }
@@ -107,9 +107,11 @@ export default class SSHCounter implements ObservableWrapper {
 
   create(id: string) {
     if (!this.mongoConnection) {
+      this.emitError('Connection does not exist ' + id);
       return Promise.reject(new Error(`Connection not exist ${id}`));
     }
     if (this.mongoConnection.sshOpts && !this.mongoConnection.sshOpts.host) {
+      this.emitError('SSH not enabled');
       return Promise.reject(new Error('SSH is not enabled.'));
     }
     return this.createConnection(this.mongoConnection);
@@ -134,6 +136,7 @@ export default class SSHCounter implements ObservableWrapper {
         })
         .catch(err => {
           log.error(err);
+          this.emitError('Stats connection failed.');
           reject(err);
         });
     });
@@ -189,9 +192,10 @@ export default class SSHCounter implements ObservableWrapper {
           });
       })
       .on('error', err => {
+        this.emitError('Client Error: ' + err.message);
         reject(new errors.BadRequest('Client Error: ' + err.message));
       })
-      .connect(_.omit({...sshOpts, readyTimeout: 30000}, 'cwd'));
+      .connect(_.omit({ ...sshOpts, readyTimeout: 30000 }, 'cwd'));
   }
 
   exeCmd(cmd: string, ignoreError: boolean = false): Promise<*> {
@@ -199,12 +203,14 @@ export default class SSHCounter implements ObservableWrapper {
     return new Promise((resolve, reject) => {
       try {
         if (!this.client) {
+          this.emitError('Connection is not open');
           return reject(new Error('Connection is not open.'));
         }
         this.client.exec(cmd, (err, stream) => {
           if (err || !stream) {
             if (!ignoreError) {
               log.error(err);
+              this.emitError('Failed to run command through SSH');
               return reject(new Error('Failed to run command through SSH.'));
             }
             return resolve(null);
@@ -269,7 +275,7 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   postProcess(output: Object, k: string) {
-    const params = {output, previous: {}};
+    const params = { output, previous: {} };
     if (this.historyData[k] && this.historyData[k].previous !== undefined) {
       params.previous = this.historyData[k].previous;
     }

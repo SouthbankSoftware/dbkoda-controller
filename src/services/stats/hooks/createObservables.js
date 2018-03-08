@@ -42,7 +42,7 @@ export default () =>
     (context, item) => {
       const { profileId, profileAlias, items, debug, samplingRate, stats } = item;
       const { service } = context;
-      const { observableManifests } = service;
+      const { observableManifests, alarmConfig } = service;
 
       let observableManifest: ObservableManifest = observableManifests.get(profileId);
 
@@ -92,7 +92,7 @@ export default () =>
           transformers: [
             new MetricSmoother(3, ['db_storage']),
             new StatsCalculator(stats),
-            new Alarm()
+            new Alarm(alarmConfig)
           ],
           debug: false,
           _debouncedUpdate: null
