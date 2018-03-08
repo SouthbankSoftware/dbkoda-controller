@@ -23,9 +23,9 @@
 
 /* eslint-disable class-methods-use-this */
 
-import {Observable, Observer} from 'rxjs';
+import { Observable, Observer } from 'rxjs';
 // $FlowFixMe
-import {Client} from 'ssh2';
+import { Client } from 'ssh2';
 import _ from 'lodash';
 // $FlowFixMe
 import sshTunnel from 'open-ssh-tunnel';
@@ -33,9 +33,9 @@ import sshTunnel from 'open-ssh-tunnel';
 import errors from 'feathers-errors';
 import os from 'os';
 
-import type {ObservableWrapper, ObservaleValue} from '../ObservableWrapper';
-import {getKnowledgeBaseRules, items} from '../../knowledgeBase/ssh';
-import {buildCommands} from '../../knowledgeBase/utils';
+import type { ObservableWrapper, ObservaleValue } from '../ObservableWrapper';
+import { getKnowledgeBaseRules, items } from '../../knowledgeBase/ssh';
+import { buildCommands } from '../../knowledgeBase/utils';
 
 export default class SSHCounter implements ObservableWrapper {
   osType: Object = {};
@@ -55,7 +55,7 @@ export default class SSHCounter implements ObservableWrapper {
 
   constructor() {
     this.items = items;
-    this.items.forEach((item) => {
+    this.items.forEach(item => {
       this.historyData[item] = {};
     });
   }
@@ -63,19 +63,23 @@ export default class SSHCounter implements ObservableWrapper {
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
     return this.create(this.profileId).then(() => {
-      this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
-        this.knowledgeBase.samplingRate = this.samplingRate / 1000;
-        this.statsCmds = buildCommands(this.knowledgeBase);
-        if (!this.statsCmds || _.isEmpty(this.statsCmds)) {
-          this.emitError('Cant find command from knowledge base on ' + this.osType);
-          l.error('Cant find command from knowledge base on ' + this.osType);
+      this.rxObservable = Observable.create(
+        (observer: Observer<ObservaleValue>) => {
+          this.knowledgeBase.samplingRate = this.samplingRate / 1000;
+          this.statsCmds = buildCommands(this.knowledgeBase);
+          if (!this.statsCmds || _.isEmpty(this.statsCmds)) {
+            this.emitError(
+              'Cant find command from knowledge base on ' + this.osType
+            );
+            l.error('Cant find command from knowledge base on ' + this.osType);
+          }
+          this.observer = observer;
+          this.execute();
+          return () => {
+            this.pause();
+          };
         }
-        this.observer = observer;
-        this.execute();
-        return () => {
-          this.pause();
-        };
-      });
+      );
     });
   }
 
@@ -94,7 +98,7 @@ export default class SSHCounter implements ObservableWrapper {
         localAddr: params.localHost,
         readyTimeout: 5000,
         password: params.remotePass,
-        forwardTimeout: 5000,
+        forwardTimeout: 5000
       };
       return sshTunnel(sshOpts);
     }
@@ -103,9 +107,11 @@ export default class SSHCounter implements ObservableWrapper {
 
   create(id: string) {
     if (!this.mongoConnection) {
+      this.emitError('Connection does not exist ' + id);
       return Promise.reject(new Error(`Connection not exist ${id}`));
     }
     if (this.mongoConnection.sshOpts && !this.mongoConnection.sshOpts.host) {
+      this.emitError('SSH not enabled');
       return Promise.reject(new Error('SSH is not enabled.'));
     }
     return this.createConnection(this.mongoConnection);
@@ -130,6 +136,7 @@ export default class SSHCounter implements ObservableWrapper {
         })
         .catch(err => {
           log.error(err);
+          this.emitError('Stats connection failed.');
           reject(err);
         });
     });
@@ -159,7 +166,9 @@ export default class SSHCounter implements ObservableWrapper {
           })
           .then(release => {
             if (release) {
-              const splitted = release.split(os.platform() === 'win32' ? '\n\r' : '\n');
+              const splitted = release.split(
+                os.platform() === 'win32' ? '\n\r' : '\n'
+              );
               splitted.forEach(str => {
                 if (str.toLowerCase().match(/name=/)) {
                   this.osType.release = this.getValueFromPair(str);
@@ -172,17 +181,21 @@ export default class SSHCounter implements ObservableWrapper {
             log.info('get os type ', this.osType);
             this.knowledgeBase = getKnowledgeBaseRules(this.osType);
             if (!this.knowledgeBase) {
-              return reject(new Error(`Unsupported Operation System ${this.osType.os}`));
+              return reject(
+                new Error(`Unsupported Operation System ${this.osType.os}`)
+              );
             }
             resolve();
-          }).catch((err) => {
-          reject(err);
-        });
+          })
+          .catch(err => {
+            reject(err);
+          });
       })
       .on('error', err => {
+        this.emitError('Client Error: ' + err.message);
         reject(new errors.BadRequest('Client Error: ' + err.message));
       })
-      .connect(_.omit({...sshOpts, readyTimeout: 30000}, 'cwd'));
+      .connect(_.omit({ ...sshOpts, readyTimeout: 30000 }, 'cwd'));
   }
 
   exeCmd(cmd: string, ignoreError: boolean = false): Promise<*> {
@@ -190,12 +203,14 @@ export default class SSHCounter implements ObservableWrapper {
     return new Promise((resolve, reject) => {
       try {
         if (!this.client) {
+          this.emitError('Connection is not open');
           return reject(new Error('Connection is not open.'));
         }
         this.client.exec(cmd, (err, stream) => {
           if (err || !stream) {
             if (!ignoreError) {
               log.error(err);
+              this.emitError('Failed to run command through SSH');
               return reject(new Error('Failed to run command through SSH.'));
             }
             return resolve(null);
@@ -208,9 +223,9 @@ export default class SSHCounter implements ObservableWrapper {
               output += data.toString('utf8');
             })
             .stderr.on('data', data => {
-            !ignoreError && log.error(data.toString('utf8'));
-            resolve(null);
-          });
+              !ignoreError && log.error(data.toString('utf8'));
+              resolve(null);
+            });
         });
       } catch (err) {
         reject(err);
@@ -222,17 +237,18 @@ export default class SSHCounter implements ObservableWrapper {
     const runCommand = () => {
       _.forOwn(this.statsCmds, (v, k) => {
         this.exeCmd(v)
-          .then((output) => {
+          .then(output => {
             try {
               this.postProcess(output, k);
             } catch (err) {
               l.error(err);
               delete this.statsCmds[k];
             }
-          }).catch((err) => {
-          l.error(err);
-          delete this.statsCmds[k];
-        });
+          })
+          .catch(err => {
+            l.error(err);
+            delete this.statsCmds[k];
+          });
       });
     };
     runCommand();
@@ -246,7 +262,7 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   postProcess(output: Object, k: string) {
-    const params = {output, previous: {}};
+    const params = { output, previous: {} };
     if (this.historyData[k] && this.historyData[k].previous !== undefined) {
       params.previous = this.historyData[k].previous;
     }
@@ -255,19 +271,33 @@ export default class SSHCounter implements ObservableWrapper {
       const nextObj = _.pick(o, ['value', 'timestamp']);
       nextObj.profileId = this.profileId;
       nextObj.value = _.pick(o.value, this.items);
-      _.keys(nextObj.value).forEach((key) => {
-        if (typeof nextObj.value[key] === 'number' && (!this.historyData[key].maximum || nextObj.value[key] > this.historyData[key].maximum)) {
+      _.keys(nextObj.value).forEach(key => {
+        if (
+          typeof nextObj.value[key] === 'number' &&
+          (!this.historyData[key].maximum ||
+            nextObj.value[key] > this.historyData[key].maximum)
+        ) {
           this.historyData[key].maximum = nextObj.value[key];
         }
         if (this.historyData[key].previous) {
           _.forOwn(nextObj.value[key], (v, subKey) => {
-            if (this.historyData[key].previous[subKey] !== undefined
-              && typeof v === 'number' && typeof this.historyData[key].previous[subKey] === 'number') {
-              nextObj.value[key][`${subKey}Delta`] = Math.abs(v - this.historyData[key].previous[subKey]);
-              if (nextObj.timestamp && this.historyData[key].previousTimestamp) {
-                const sr = nextObj.timestamp - this.historyData[key].previousTimestamp;
+            if (
+              this.historyData[key].previous[subKey] !== undefined &&
+              typeof v === 'number' &&
+              typeof this.historyData[key].previous[subKey] === 'number'
+            ) {
+              nextObj.value[key][`${subKey}Delta`] = Math.abs(
+                v - this.historyData[key].previous[subKey]
+              );
+              if (
+                nextObj.timestamp &&
+                this.historyData[key].previousTimestamp
+              ) {
+                const sr =
+                  nextObj.timestamp - this.historyData[key].previousTimestamp;
                 if (sr > 0) {
-                  nextObj.value[key][`${subKey}PerSec`] = nextObj.value[key][`${subKey}Delta`] / (sr / 1000);
+                  nextObj.value[key][`${subKey}PerSec`] =
+                    nextObj.value[key][`${subKey}Delta`] / (sr / 1000);
                 }
               }
             }
