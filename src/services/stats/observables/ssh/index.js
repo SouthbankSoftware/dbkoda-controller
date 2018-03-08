@@ -243,11 +243,28 @@ export default class SSHCounter implements ObservableWrapper {
             } catch (err) {
               l.error(err);
               delete this.statsCmds[k];
+              this.emitError(
+                `parse command ${this.statsCmds[k].split(' ')[0]} failed.`
+              );
+              delete this.statsCmds[k];
+              if (_.isEmpty(this.statsCmds)) {
+                this.observer.complete();
+              }
             }
           })
           .catch(err => {
             l.error(err);
+<<<<<<< HEAD
             delete this.statsCmds[k];
+=======
+            this.emitError(
+              `run command ${this.statsCmds[k].split(' ')[0]} failed.`
+            );
+            delete this.statsCmds[k];
+            if (_.isEmpty(this.statsCmds)) {
+              this.observer.complete();
+            }
+>>>>>>> 2d4542992b5d8ada9d2bd9ff8ba19ad432a91208
           });
       });
     };
@@ -271,6 +288,10 @@ export default class SSHCounter implements ObservableWrapper {
       const nextObj = _.pick(o, ['value', 'timestamp']);
       nextObj.profileId = this.profileId;
       nextObj.value = _.pick(o.value, this.items);
+<<<<<<< HEAD
+=======
+      l.debug('get ssh stats', nextObj);
+>>>>>>> 2d4542992b5d8ada9d2bd9ff8ba19ad432a91208
       _.keys(nextObj.value).forEach(key => {
         if (
           typeof nextObj.value[key] === 'number' &&

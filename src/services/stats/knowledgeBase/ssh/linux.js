@@ -25,7 +25,7 @@
 import _ from 'lodash';
 
 const commandParsers = {
-  'cpuMemory': ({output, samplingRate}) => {
+  'cpu': ({output, samplingRate}) => {
     // log.debug('cpu memory output:', output);
     // parse the vmstat command output
     const splited = output.split('\n');
@@ -80,11 +80,24 @@ const commandParsers = {
       if (usedMemory > totalMemory) {
         usedMemory = totalMemory;
       }
-      data.memory = parseFloat((usedMemory / totalMemory) * 100, 10);
+      // data.memory = parseFloat((usedMemory / totalMemory) * 100, 10);
       data.disk = {'download': data.details.io.bi, 'upload': data.details.io.bo, samplingRate};
       o.value = data;
     }
     return o;
+  },
+  'memory': ({output}) => {
+    const split = output.split(' ').filter(x => x);
+    if (split.length > 6) {
+      const total = parseInt(split[1], 10);
+      const available = parseInt(split[6], 10);
+      let usage = parseFloat((total - available) / total * 100);
+      if (usage > 100) {
+        usage = 100;
+      }
+      const data = {memory: usage};
+      return {value: data, timestamp: (new Date()).getTime()};
+    }
   },
   'network': ({output, samplingRate}) => {
     // log.debug('network output ', output);
@@ -125,7 +138,8 @@ const common = {
   release: 'all', // ubuntu, centos, red hat, etc.
   version: 'all', // 15.0, 16.0, etc.
   cmds: {
-    'cpuMemory': 'vmstat 1 2', // command need to query os stats
+    'cpu': 'vmstat 1 2', // command need to query os stats,
+    'memory': 'free |head -n 2 |tail -n 1',
     'network': 'ifconfig `route | grep \'^default\' | grep -o \'[^ ]*$\'`',
   },
   parse: (key, output, samplingRate) => { // define the parse command output logic, the key is defined in knowledge base
