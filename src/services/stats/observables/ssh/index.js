@@ -238,7 +238,7 @@ export default class SSHCounter implements ObservableWrapper {
               l.error(err);
               delete this.statsCmds[k];
 							this.emitError(
-								`run command ${this.statsCmds.split(' ')[0]} failed.`
+								`parse command ${this.statsCmds[k].split(' ')[0]} failed.`
 							);
 							delete this.statsCmds[k];
 							if (_.isEmpty(this.statsCmds)) {
@@ -249,7 +249,7 @@ export default class SSHCounter implements ObservableWrapper {
           .catch(err => {
             l.error(err);
             this.emitError(
-              `run command ${this.statsCmds.split(' ')[0]} failed.`
+              `run command ${this.statsCmds[k].split(' ')[0]} failed.`
             );
             delete this.statsCmds[k];
             if (_.isEmpty(this.statsCmds)) {
