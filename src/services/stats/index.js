@@ -33,6 +33,7 @@ import errors from 'feathers-errors';
 import { Observable } from 'rxjs';
 import type { Subscription } from 'rxjs';
 import _ from 'lodash';
+import path from 'path';
 import type { ObservaleValue, ObservableWrapper } from './observables/ObservableWrapper';
 import Transformer from './transformers/Transformer';
 import hooks from './hooks';
@@ -52,6 +53,7 @@ export type ObservableManifest = {
 
 const SAMPLING_RATE_TOLERANCE = 0.5; // wait maximally 50% of sampling rate in each time window
 const LOG_PATH = 'performance_%DATE%.log';
+const ALARM_THRESHOLDS_PATH = path.resolve(global.DBKODA_HOME, 'alarmThresholds.json');
 
 const handleError = err => l.error(err, err.errors);
 const replacer = (key, value) => (key === 'debugData' ? undefined : value);
@@ -62,6 +64,8 @@ export class Stats {
   observableManifests: Map<UUID, ObservableManifest>;
   events: string[];
   loggerService: *;
+  fileService: *;
+  alarmConfig: * = {};
 
   constructor(_options: *) {
     this.events = ['data', 'error'];
@@ -76,6 +80,40 @@ export class Stats {
         debug: false
       })
       .catch(handleError);
+
+    this.fileService = app.service('/files');
+    const getAlarmThresholds = (watching = false, handle404 = false) => {
+      this.fileService
+        .get(ALARM_THRESHOLDS_PATH, {
+          query: {
+            watching: 'true'
+          }
+        })
+        .then(({ content }) => {
+          _.assign(this.alarmConfig, JSON.parse(content));
+          l.debug(`Loaded alarm thresholds from ${ALARM_THRESHOLDS_PATH}`);
+
+          watching && this.fileService.on('changed', getAlarmThresholds);
+        })
+        .catch(err => {
+          if (handle404 && err.code === 404) {
+            return this.fileService
+              .get(path.resolve(__dirname, 'transformers/defaultAlarmThresholds.json'), {
+                query: {
+                  copyTo: ALARM_THRESHOLDS_PATH,
+                  watching: 'false'
+                }
+              })
+              .then(() => {
+                getAlarmThresholds(true, false);
+              })
+              .catch(handleError);
+          }
+
+          handleError(err);
+        });
+    };
+    getAlarmThresholds(true, true);
   }
 
   destroy() {

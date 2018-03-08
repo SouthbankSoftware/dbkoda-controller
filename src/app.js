@@ -35,6 +35,7 @@ import primus from 'feathers-primus';
 import swagger from 'feathers-swagger';
 import sh from 'shelljs';
 import { levelConfig, commonFormatter, printfFormatter } from '~/helpers/winston';
+import os from 'os';
 
 require('babel-polyfill');
 
@@ -44,9 +45,11 @@ const app = feathers();
 process.env.NODE_CONFIG_DIR = path.resolve(__dirname, '../config/');
 app.configure(require('feathers-configuration')());
 
+global.UAT = process.env.UAT === 'true';
 global.IS_PRODUCTION = process.env.NODE_ENV === 'production';
 process.env.LOG_PATH = process.env.LOG_PATH || path.resolve(__dirname, '../logs');
-global.UAT = process.env.UAT === 'true';
+process.env.DBKODA_HOME = process.env.DBKODA_HOME || path.resolve(os.homedir(), '.dbKoda');
+global.DBKODA_HOME = process.env.DBKODA_HOME;
 
 // config winston. The logger should be configured first
 (() => {
