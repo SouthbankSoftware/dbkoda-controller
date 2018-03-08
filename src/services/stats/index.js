@@ -86,14 +86,14 @@ export class Stats {
       this.fileService
         .get(ALARM_THRESHOLDS_PATH, {
           query: {
-            watching: 'true'
+            watching: 'true' // this should always to be true
           }
         })
         .then(({ content }) => {
           _.assign(this.alarmConfig, JSON.parse(content));
           l.debug(`Loaded alarm thresholds from ${ALARM_THRESHOLDS_PATH}`);
 
-          watching && this.fileService.on('changed', getAlarmThresholds);
+          watching && this.fileService.on('changed', () => getAlarmThresholds(false, false));
         })
         .catch(err => {
           if (handle404 && err.code === 404) {
