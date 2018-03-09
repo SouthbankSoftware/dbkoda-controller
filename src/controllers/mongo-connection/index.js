@@ -99,13 +99,7 @@ class MongoConnectionController {
       if (params.sshKeyFile) {
         sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
         try {
-          const passPhrase = await this.getStorePassword(
-            params.id,
-            params.remoteUser,
-            params.passPhrase,
-            '-s'
-          );
-          sshOpts.passPhrase = passPhrase;
+          sshOpts.passPhrase = await this.passwordService.get(`${params.id}-s`);
         } catch (err) {
           console.log(err);
         }
