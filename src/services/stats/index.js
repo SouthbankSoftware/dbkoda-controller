@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:17:22+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-07T10:35:28+11:00
+ * @Last modified time: 2018-03-12T16:42:10+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -65,6 +65,7 @@ export class Stats {
   events: string[];
   loggerService: *;
   fileService: *;
+  _fileServiceDisposer: *;
   alarmConfig: * = {};
 
   constructor(_options: *) {
@@ -82,7 +83,7 @@ export class Stats {
       .catch(handleError);
 
     this.fileService = app.service('/files');
-    const getAlarmThresholds = (watching = false, handle404 = false) => {
+    const loadAlarmThresholds = (watching = false, handle404 = false) => {
       this.fileService
         .get(ALARM_THRESHOLDS_PATH, {
           query: {
@@ -93,7 +94,23 @@ export class Stats {
           _.assign(this.alarmConfig, JSON.parse(content));
           l.debug(`Loaded alarm thresholds from ${ALARM_THRESHOLDS_PATH}`);
 
-          watching && this.fileService.on('changed', () => getAlarmThresholds(false, false));
+          if (watching) {
+            this._fileServiceDisposer && this._fileServiceDisposer();
+
+            const handleChanged = () => loadAlarmThresholds(false, false);
+
+            this.fileService.on('changed', handleChanged);
+
+            this._fileServiceDisposer = () => {
+              this.fileService.removeListener('changed', handleChanged);
+              // unwatch
+              return this.fileService
+                .patch(ALARM_THRESHOLDS_PATH, {
+                  watching: false
+                })
+                .catch(handleError);
+            };
+          }
         })
         .catch(err => {
           if (handle404 && err.code === 404) {
@@ -105,7 +122,7 @@ export class Stats {
                 }
               })
               .then(() => {
-                getAlarmThresholds(true, false);
+                loadAlarmThresholds(true, false);
               })
               .catch(handleError);
           }
@@ -113,11 +130,19 @@ export class Stats {
           handleError(err);
         });
     };
-    getAlarmThresholds(true, true);
+    loadAlarmThresholds(true, true);
   }
 
   destroy() {
-    this.loggerService.remove(LOG_PATH).catch(handleError);
+    const ps = [];
+
+    ps.push(this.loggerService.remove(LOG_PATH).catch(handleError));
+    if (this._fileServiceDisposer) {
+      ps.push(this._fileServiceDisposer());
+      this._fileServiceDisposer = null;
+    }
+
+    return Promise.all(ps);
   }
 
   emitError(profileId: string, error: Error | string, level: 'warn' | 'error' = 'error') {
