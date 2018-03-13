@@ -3,7 +3,7 @@
  * @Date:   2017-10-31T09:22:47+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-06T17:02:21+11:00
+ * @Last modified time: 2018-03-12T22:12:32+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -42,10 +42,19 @@ const handleShutdown = err => {
   process.removeListener('uncaughtException', onUncaughtException);
 
   // Exitpoint
-  app.stop(err).then(() => {
-    l.notice('Stopped dbkoda Controller');
-    process.exit(err ? 1 : 0);
-  });
+  app
+    .stop(err)
+    .catch(stopErr => {
+      l.error(stopErr);
+
+      if (!err) {
+        err = stopErr;
+      }
+    })
+    .then(() => {
+      l.notice('Stopped dbkoda Controller');
+      process.exit(err ? 1 : 0);
+    });
 };
 
 app.once('ready', () => {
