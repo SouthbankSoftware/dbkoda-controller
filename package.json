@@ -92,7 +92,7 @@
     "node-pty": "^0.7.4",
     "node-queue-lib": "0.0.28",
     "node-uuid": "^1.4.8",
-    "open-ssh-tunnel": "^0.3.1",
+    "open-ssh-tunnel": "github:SouthbankSoftware/open-ssh-tunnel",
     "openport": "0.0.4",
     "passport": "^0.4.0",
     "queue": "^4.4.2",
