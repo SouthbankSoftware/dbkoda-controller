@@ -34,12 +34,15 @@ import CryptoPassword from './CryptoPass';
 
 export class MasterPass {
   MASTER_PASSWORD_REQUIRED = 'master-pass::password-required';
+  PASSWORD_STORE_RESET = 'master-pass::store-reset';
+  MAX_ATTEMPTS = 5;
   events: Array<string>;
   store: PassStore;
   cryptoPass: CryptoPassword;
+  failedAttempts: number = 0;
 
   constructor(_options: ?{}) {
-    this.events = ['error', this.MASTER_PASSWORD_REQUIRED];
+    this.events = ['error', this.MASTER_PASSWORD_REQUIRED, this.PASSWORD_STORE_RESET];
   }
 
   // $FlowFixMe
@@ -81,9 +84,17 @@ export class MasterPass {
               return this.cryptoPass.compareVerifyHash(masterPassword, storeVerifyHash)
               .then((compareOk) => {
                 if (!compareOk) {
+                  this.failedAttempts += 1;
                   this.cryptoPass.reset();
+                  console.log(`Login failed ${this.failedAttempts}`);
+                  if (this.failedAttempts >= this.MAX_ATTEMPTS) {
+                    this.remove();
+                    this.emit(this.PASSWORD_STORE_RESET, {});
+                    this.failedAttempts = 0;
+                  }
                   throw new errors.NotAuthenticated('Unable to init store with the specified master password.');
                 }
+                this.failedAttempts = 0;
                 return Promise.resolve(this.store.syncStore(profileIds));
               });
             });
