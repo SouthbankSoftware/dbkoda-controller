@@ -88,7 +88,8 @@ export class MasterPass {
                   this.cryptoPass.reset();
                   console.log(`Login failed ${this.failedAttempts}`);
                   if (this.failedAttempts >= this.MAX_ATTEMPTS) {
-                    this.remove();
+                    this.store.removeStore();
+                    // $FlowFixMe
                     this.emit(this.PASSWORD_STORE_RESET, {});
                     this.failedAttempts = 0;
                   }
