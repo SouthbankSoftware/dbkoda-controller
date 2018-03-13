@@ -1246,7 +1246,7 @@ camelcase@^1.0.2:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-1.2.1.tgz#9bb5304d2e0b56698b2c758b08a3eaa9daa58a39"
 
-camelcase@^2.0.0, camelcase@^2.0.1:
+camelcase@^2.0.0:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-2.1.1.tgz#7c1d16d679a1bbe59ca02cacecfb011e201f5a1f"
 
@@ -1391,12 +1391,20 @@ cliui@^2.1.0:
     right-align "^0.1.1"
     wordwrap "0.0.2"
 
-cliui@^3.0.3, cliui@^3.2.0:
+cliui@^3.2.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/cliui/-/cliui-3.2.0.tgz#120601537a916d29940f934da3b48d585a39213d"
   dependencies:
     string-width "^1.0.1"
     strip-ansi "^3.0.1"
+    wrap-ansi "^2.0.0"
+
+cliui@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/cliui/-/cliui-4.0.0.tgz#743d4650e05f36d1ed2575b59638d87322bfbbcc"
+  dependencies:
+    string-width "^2.1.1"
+    strip-ansi "^4.0.0"
     wrap-ansi "^2.0.0"
 
 co@^4.6.0:
@@ -4817,14 +4825,14 @@ onetime@^2.0.0:
   dependencies:
     mimic-fn "^1.0.0"
 
-open-ssh-tunnel@^0.3.1:
+"open-ssh-tunnel@github:SouthbankSoftware/open-ssh-tunnel":
   version "0.3.1"
-  resolved "https://registry.yarnpkg.com/open-ssh-tunnel/-/open-ssh-tunnel-0.3.1.tgz#c7a3e68a3a5c288b6c99810392a66b5f27a5f322"
+  resolved "https://codeload.github.com/SouthbankSoftware/open-ssh-tunnel/tar.gz/41f236025238bf64470402149e8ac3807e73237e"
   dependencies:
     co "^4.6.0"
-    debug "^2.2.0"
-    ssh2 "^0.4.12"
-    yargs "^3.30.0"
+    debug "^3.1.0"
+    ssh2 "^0.6.0"
+    yargs "^11.0.0"
 
 openport@0.0.4:
   version "0.0.4"
@@ -6136,14 +6144,6 @@ srcset@^1.0.0:
     array-uniq "^1.0.2"
     number-is-nan "^1.0.0"
 
-ssh2-streams@~0.0.22:
-  version "0.0.23"
-  resolved "https://registry.yarnpkg.com/ssh2-streams/-/ssh2-streams-0.0.23.tgz#aeef30831bb5fc4af6aa3f6d0a261a413531612b"
-  dependencies:
-    asn1 "~0.2.0"
-    readable-stream "~1.0.0"
-    streamsearch "~0.1.2"
-
 ssh2-streams@~0.1.18:
   version "0.1.20"
   resolved "https://registry.yarnpkg.com/ssh2-streams/-/ssh2-streams-0.1.20.tgz#51118d154555df5469ee1f67e0cf1e7e8a2c0e3a"
@@ -6152,18 +6152,25 @@ ssh2-streams@~0.1.18:
     semver "^5.1.0"
     streamsearch "~0.1.2"
 
-ssh2@^0.4.12:
-  version "0.4.15"
-  resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-0.4.15.tgz#07c6f4106d9f7b6ea6e4df636c6c53f1f9817ff8"
+ssh2-streams@~0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/ssh2-streams/-/ssh2-streams-0.2.0.tgz#cb4ccb6ead7ff02f013f429646394fda107519b3"
   dependencies:
-    readable-stream "~1.0.0"
-    ssh2-streams "~0.0.22"
+    asn1 "~0.2.0"
+    semver "^5.1.0"
+    streamsearch "~0.1.2"
 
 ssh2@^0.5.5:
   version "0.5.5"
   resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-0.5.5.tgz#c7781ecd2ece7304a253cf620fab5a5c22bb2235"
   dependencies:
     ssh2-streams "~0.1.18"
+
+ssh2@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-0.6.0.tgz#e472f27dfeb1b5ad892d346135bdf7532734bb6a"
+  dependencies:
+    ssh2-streams "~0.2.0"
 
 sshpk@^1.7.0:
   version "1.13.1"
@@ -6855,10 +6862,6 @@ window-size@0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/window-size/-/window-size-0.1.0.tgz#5438cd2ea93b202efa3a19fe8887aee7c94f9c9d"
 
-window-size@^0.1.4:
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/window-size/-/window-size-0.1.4.tgz#f8e1aa1ee5a53ec5bf151ffa09742a6ad7697876"
-
 window-size@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/window-size/-/window-size-0.2.0.tgz#b4315bb4214a3d7058ebeee892e13fa24d98b075"
@@ -6889,6 +6892,7 @@ winston-transport@^3.0.1:
     async "^2.6.0"
     diagnostics "^1.0.1"
     isstream "0.1.x"
+    lodash.isplainobject "^4.0.6"
     logform "^1.2.1"
     one-time "0.0.4"
     stack-trace "0.0.x"
@@ -7008,7 +7012,7 @@ xtend@^4.0.0:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/xtend/-/xtend-4.0.1.tgz#a5c6d532be656e23db820efb943a1f04998d63af"
 
-y18n@^3.2.0, y18n@^3.2.1:
+y18n@^3.2.1:
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/y18n/-/y18n-3.2.1.tgz#6d15fba884c08679c0d77e88e7759e811e07fa41"
 
@@ -7039,6 +7043,12 @@ yargs-parser@^8.0.0:
   dependencies:
     camelcase "^4.1.0"
 
+yargs-parser@^9.0.2:
+  version "9.0.2"
+  resolved "https://registry.yarnpkg.com/yargs-parser/-/yargs-parser-9.0.2.tgz#9ccf6a43460fe4ed40a9bb68f48d43b8a68cc077"
+  dependencies:
+    camelcase "^4.1.0"
+
 yargs@^10.0.3:
   version "10.0.3"
   resolved "https://registry.yarnpkg.com/yargs/-/yargs-10.0.3.tgz#6542debd9080ad517ec5048fb454efe9e4d4aaae"
@@ -7056,17 +7066,22 @@ yargs@^10.0.3:
     y18n "^3.2.1"
     yargs-parser "^8.0.0"
 
-yargs@^3.30.0:
-  version "3.32.0"
-  resolved "https://registry.yarnpkg.com/yargs/-/yargs-3.32.0.tgz#03088e9ebf9e756b69751611d2a5ef591482c995"
+yargs@^11.0.0:
+  version "11.0.0"
+  resolved "https://registry.yarnpkg.com/yargs/-/yargs-11.0.0.tgz#c052931006c5eee74610e5fc0354bedfd08a201b"
   dependencies:
-    camelcase "^2.0.1"
-    cliui "^3.0.3"
+    cliui "^4.0.0"
     decamelize "^1.1.1"
-    os-locale "^1.4.0"
-    string-width "^1.0.1"
-    window-size "^0.1.4"
-    y18n "^3.2.0"
+    find-up "^2.1.0"
+    get-caller-file "^1.0.1"
+    os-locale "^2.0.0"
+    require-directory "^2.1.1"
+    require-main-filename "^1.0.1"
+    set-blocking "^2.0.0"
+    string-width "^2.0.0"
+    which-module "^2.0.0"
+    y18n "^3.2.1"
+    yargs-parser "^9.0.2"
 
 yargs@^4.2.0:
   version "4.8.1"

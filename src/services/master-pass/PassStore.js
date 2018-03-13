@@ -40,7 +40,7 @@ export default class PassStore {
   constructor(fileService) {
     this.file = fileService;
     this.storeFilePath = (process.env.UAT == 'true')
-      ? path.resolve('/tmp', 'store.yml')
+      ? path.resolve('/tmp/dbKoda', 'store.yml')
       : path.resolve(os.homedir(), '.dbKoda', 'store.yml');
     this.store = new Map();
   }
