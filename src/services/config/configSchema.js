@@ -41,9 +41,9 @@ export const configDefaults = {
   passwordStoreEnabled: false,
   performancePanel: {
     preventDisplaySleep: false,
-    metricSmoothingWindow: 3,
+    metricSmoothingWindow: 6,
     foregroundSamplingRate: 5000,
-    backgroundSamplingRate: 30000,
+    backgroundSamplingRate: 15000,
     historySize: 720,
     historyBrushSize: 30,
     alarmDisplayingWindow: 60000
