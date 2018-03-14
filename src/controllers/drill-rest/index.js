@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-03-14T22:50:42+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -19,8 +22,6 @@
  */
 
 /* eslint-disable class-methods-use-this */
-
-import {loadCommands} from '../../config';
 
 const { exec } = require('child_process');
 const errors = require('feathers-errors');
@@ -90,7 +91,7 @@ class DrillRestController {
    * create connections for mongodb instance
    */
   create(params) {
-    const configObj = loadCommands();
+    const configObj = global.config; // should be read-only
     log.info('Drill Cmd:', configObj.drillCmd);
 
     if (!configObj.drillCmd) {

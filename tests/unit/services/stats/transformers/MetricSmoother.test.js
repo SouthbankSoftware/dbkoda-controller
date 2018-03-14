@@ -3,7 +3,7 @@
  * @Date:   2018-02-19T15:49:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-27T10:35:58+11:00
+ * @Last modified time: 2018-03-13T23:06:42+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -35,7 +35,8 @@ describe('MetricSmoother', () => {
   let values;
 
   before(() => {
-    smoother = new MetricSmoother(3);
+    _.set(global, 'config.performancePanel.metricSmoothingWindow', 3);
+    smoother = new MetricSmoother();
     values = [
       {
         profileId: '8f65a890-1519-11e8-885b-d14c14dda128',
@@ -220,7 +221,7 @@ describe('MetricSmoother', () => {
   });
 
   it('can dynamically resize smoothing window', () => {
-    smoother.windowSize = 2;
+    _.set(global, 'config.performancePanel.metricSmoothingWindow', 2);
 
     const [, , , , , nextValue] = values;
     const smoothedValue = smoother.transform(_.cloneDeep(nextValue));
@@ -237,7 +238,8 @@ describe('MetricSmoother', () => {
   });
 
   it('can optionally ignore paths', () => {
-    const smoother = new MetricSmoother(3, ['db_storage', 'network_bytesInPs']);
+    _.set(global, 'config.performancePanel.metricSmoothingWindow', 3);
+    const smoother = new MetricSmoother(['db_storage', 'network_bytesInPs']);
     const _values = _.cloneDeep(values.slice(0, 3));
     let smoothedValue;
 

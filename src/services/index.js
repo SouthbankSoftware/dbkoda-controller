@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-05T15:42:28+11:00
+ * @Last modified time: 2018-03-12T20:23:06+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,6 +28,7 @@ import mongoAutoCompleteController from '../controllers/auto-complete';
 import lintingController from '../controllers/linter';
 import syncExecutionController from '../controllers/sync-execution';
 import remoteExecutionController from '../controllers/remote-execution';
+import config from './config';
 import mongoShell from './mongo-shell';
 import mongoConnection from './mongo-connection';
 import mongoInspector from './mongo-inspector';
@@ -53,6 +54,7 @@ import masterPass from './master-pass';
 module.exports = function() {
   const app = this;
 
+  // setup order is defined here
   app.configure(mongoInspectorController);
   app.configure(mongoConnectionController);
   app.configure(mongoAutoCompleteController);
@@ -60,7 +62,9 @@ module.exports = function() {
   app.configure(syncExecutionController);
   app.configure(remoteExecutionController);
 
-
+  app.configure(file);
+  app.configure(mongoCmdValidator);
+  app.configure(config);
   app.configure(mongoShell);
   app.configure(mongoConnection);
   app.configure(mongoInspector);
@@ -70,7 +74,6 @@ module.exports = function() {
   app.configure(logger);
   app.configure(mongoStopExecution);
   app.configure(syncExecution);
-  app.configure(file);
   app.configure(aggregator);
   app.configure(terminal);
   app.configure(stats);
@@ -79,7 +82,6 @@ module.exports = function() {
   app.configure(osCommandsService);
   app.configure(supportBundleService);
   app.configure(driverService);
-  app.configure(mongoCmdValidator);
   app.configure(remoteExecService);
   app.configure(drill);
   app.configure(masterPass);

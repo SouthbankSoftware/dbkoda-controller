@@ -1,8 +1,11 @@
 /**
- * @Author: guiguan
- * @Date:   2017-04-26T17:28:39+10:00
+ * @flow
+ *
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2018-03-05T15:35:16+11:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-14T00:10:50+11:00
+ * @Last modified time: 2018-03-14T16:41:03+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -23,28 +26,10 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getItems } from 'feathers-hooks-common';
+import processItems from '~/hooks/processItems';
+import { getDumpableConfigView } from './patchConfig';
 
-export default _options => hook => {
-  let items = getItems(hook);
-  const isArray = Array.isArray(items);
-  items = isArray ? items : [items];
-  const { watcher } = hook.service;
-
-  const processItem = item => {
-    const { _id: path, watching } = item;
-
-    if (watching) {
-      // need to wait for some time here, otherwise writing will trigger a unwanted file change event
-      setTimeout(() => {
-        watcher.add(path);
-      }, 2000);
-    } else {
-      watcher.unwatch(path);
-    }
-
-    return Promise.resolve();
-  };
-
-  return Promise.all(items.map(processItem)).then(() => hook);
-};
+export default () =>
+  processItems((_context, _item) => {
+    return getDumpableConfigView(global.config);
+  });

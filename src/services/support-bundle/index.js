@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-05T14:43:58+11:00
+ * @Last modified time: 2018-03-13T22:44:05+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,7 +28,6 @@ import archiver from 'archiver';
 import fs from 'fs';
 import _ from 'lodash';
 import { execSync } from 'child_process';
-import { loadCommands } from '../../config';
 import hooks from './hooks';
 
 class SupportBundleService {
@@ -162,7 +161,7 @@ class SupportBundleService {
           // Get Mongo Version.
           let mongoVersion = 'Undetermined';
           try {
-            const configObj = loadCommands();
+            const configObj = global.config; // should be read-only
 
             if (!configObj.mongoVersionCmd) {
               log.error('unkonwn version');

@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-07T03:22:40+11:00
+ * @Last modified time: 2018-03-13T11:32:05+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -36,6 +36,7 @@ import swagger from 'feathers-swagger';
 import sh from 'shelljs';
 import { levelConfig, commonFormatter, printfFormatter } from '~/helpers/winston';
 import os from 'os';
+import fs from 'fs';
 
 require('babel-polyfill');
 
@@ -45,14 +46,21 @@ const app = feathers();
 process.env.NODE_CONFIG_DIR = path.resolve(__dirname, '../config/');
 app.configure(require('feathers-configuration')());
 
+// global and env variables
+// TODO: use IPC to get configs from main process instead of using error-prone child process env var
+// passing
 global.UAT = process.env.UAT === 'true';
 global.IS_PRODUCTION = process.env.NODE_ENV === 'production';
-process.env.LOG_PATH = process.env.LOG_PATH || path.resolve(__dirname, '../logs');
-process.env.DBKODA_HOME = process.env.DBKODA_HOME || path.resolve(os.homedir(), '.dbKoda');
-global.DBKODA_HOME = process.env.DBKODA_HOME;
+global.LOG_PATH = process.env.LOG_PATH = process.env.LOG_PATH || path.resolve(__dirname, '../logs');
+global.DBKODA_HOME = process.env.DBKODA_HOME =
+  process.env.DBKODA_HOME || (global.UAT ? '/tmp/dbKoda' : path.resolve(os.homedir(), '.dbKoda'));
+global.CONFIG_PATH = process.env.CONFIG_PATH =
+  process.env.CONFIG_PATH || path.resolve(global.DBKODA_HOME, 'config.yml');
+global.PROFILES_PATH = process.env.PROFILES_PATH =
+  process.env.PROFILES_PATH || path.resolve(global.DBKODA_HOME, 'profiles.yml');
 
 // config winston. The logger should be configured first
-(() => {
+{
   global.l = createLogger({
     format: format.combine(
       format.splat(),
@@ -76,7 +84,13 @@ global.DBKODA_HOME = process.env.DBKODA_HOME;
   addColors(levelConfig);
 
   global.log = global.l;
-})();
+}
+
+// Ensure profiles.yml exists
+// TODO: refactor this into a separate profiles service
+{
+  !fs.existsSync(global.PROFILES_PATH) && fs.writeFileSync(global.PROFILES_PATH, '');
+}
 
 function checkJavaVersion(callback) {
   const spawn = require('child_process').spawnSync('java', ['-version']);

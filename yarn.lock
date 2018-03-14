@@ -1837,7 +1837,7 @@ decompress-response@^3.2.0:
   dependencies:
     mimic-response "^1.0.0"
 
-deep-diff@^0.3.5:
+deep-diff@^0.3.5, deep-diff@^0.3.8:
   version "0.3.8"
   resolved "https://registry.yarnpkg.com/deep-diff/-/deep-diff-0.3.8.tgz#c01de63efb0eec9798801d40c7e0dae25b582c84"
 
@@ -6887,7 +6887,7 @@ winston-transport@^3.0.1:
 
 "winston@github:guiguan/winston":
   version "3.0.0-rc1"
-  resolved "https://codeload.github.com/guiguan/winston/tar.gz/3cc53542201d800f2604df84329064b39a34ffa3"
+  resolved "https://codeload.github.com/guiguan/winston/tar.gz/1856b51d6f5d5dcebdd00927af95b33657c6f8b8"
   dependencies:
     async "^2.6.0"
     diagnostics "^1.0.1"

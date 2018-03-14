@@ -5,7 +5,7 @@
  * @Date:   2018-02-19T13:42:03+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-27T10:23:23+11:00
+ * @Last modified time: 2018-03-13T23:02:23+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -49,10 +49,9 @@ export default class MetricSmoother extends Transformer {
   _valueManifest: ValueManifest;
   _ignoredPaths: ?(string[]);
 
-  constructor(windowSize: number, ignoredPaths: ?(string[])) {
+  constructor(ignoredPaths: ?(string[])) {
     super();
 
-    this.windowSize = windowSize;
     this._valueManifest = {};
     this._ignoredPaths = ignoredPaths;
   }
@@ -122,8 +121,9 @@ export default class MetricSmoother extends Transformer {
 
           v.inhaledNextValue = false;
 
-          if (htWindow.length > this.windowSize) {
-            const numToDrop = htWindow.length - this.windowSize;
+          if (htWindow.length > global.config.performancePanel.metricSmoothingWindow) {
+            const numToDrop =
+              htWindow.length - global.config.performancePanel.metricSmoothingWindow;
             const droppingEls = htWindow.splice(0, numToDrop);
             let droppingSum = 0;
             let droppingCount = 0;

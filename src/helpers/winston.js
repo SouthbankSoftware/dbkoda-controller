@@ -3,7 +3,7 @@
  * @Date:   2018-03-06T16:47:58+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-13T16:15:07+11:00
+ * @Last modified time: 2018-03-14T00:26:44+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -24,7 +24,6 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import _ from 'lodash';
 import moment from 'moment';
 import { format } from 'winston';
 import util from 'util';
@@ -46,7 +45,19 @@ export const levelConfig = {
   }
 };
 
-const stringify = _.curry(util.inspect)(_, { depth: null });
+const INSPECT_OPTIONS = {
+  depth: 3
+};
+
+const stringify = value => {
+  if (typeof value === 'string') {
+    return value;
+  } else if (value instanceof Error) {
+    return value.stack;
+  }
+
+  return util.inspect(value, INSPECT_OPTIONS);
+};
 
 export const commonFormatter = format(info => {
   const { timestamp, message, meta } = info;

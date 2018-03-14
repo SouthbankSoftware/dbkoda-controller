@@ -1,8 +1,9 @@
 /**
- * @Author: guiguan
- * @Date:   2017-09-22T09:43:34+10:00
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2017-12-12T11:17:37+11:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-12T21:30:18+11:00
+ * @Last modified time: 2018-03-14T09:41:52+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,29 +27,70 @@
 import _ from 'lodash';
 import ajv from '~/helpers/ajv';
 import { validateSchema } from 'feathers-hooks-common';
+import configSchema from '../configSchema';
 
-const createSchema = {
+const getSchema = {
   properties: {
-    mongoCmdPath: {
-      type: 'string'
+    _id: {
+      const: 'current'
     }
   },
-  required: ['mongoCmdPath']
+  required: ['_id'],
+  additionalProperties: false
+};
+
+const patchSchema = {
+  $async: true,
+  properties: {
+    _id: {
+      const: 'current'
+    },
+    config: configSchema,
+    emitChangedEvent: {
+      type: 'boolean',
+      default: true
+    },
+    forceSave: {
+      type: 'boolean',
+      default: false
+    },
+    fromConfigYml: {
+      type: 'boolean',
+      default: false
+    }
+  },
+  required: ['_id', 'config'],
+  additionalProperties: false
 };
 
 const schema = {
   find: {},
-  get: {},
-  create: createSchema,
+  get: getSchema,
+  create: {},
   update: {},
-  patch: {},
+  patch: patchSchema,
   remove: {}
+};
+
+const options = {
+  addNewError(currentFormattedMessages, ajvErrorObject) {
+    const { dataPath, message } = ajvErrorObject;
+    const key = dataPath.slice(1);
+
+    if (!currentFormattedMessages) {
+      return { [key]: message };
+    }
+
+    currentFormattedMessages[key] = message;
+
+    return currentFormattedMessages;
+  }
 };
 
 const validators = _.reduce(
   schema,
   (acc, v, k) => {
-    acc[k] = validateSchema(v, ajv);
+    acc[k] = validateSchema(v, ajv, options);
     return acc;
   },
   {}

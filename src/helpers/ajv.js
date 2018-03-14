@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T03:41:46+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-16T04:12:07+11:00
+ * @Last modified time: 2018-03-13T00:08:24+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -31,6 +31,7 @@ const defaultAjvOptions = {
   useDefaults: true,
   allErrors: true,
   coerceTypes: true,
+  $data: true
 };
 
 export default require('ajv-keywords')(new Ajv(defaultAjvOptions));

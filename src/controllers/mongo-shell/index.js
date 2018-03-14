@@ -2,7 +2,7 @@
  * This class is used to create a wrapper on top of mongo shell and listen on its pty channels.
  *
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-17T15:50:07+11:00
+ * @Last modified time: 2018-03-13T22:42:31+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -34,7 +34,6 @@ import path from 'path';
 import Status from '../mongo-connection/status';
 import Parser from './pty-parser';
 import PtyOptions from './pty-options';
-import { loadCommands } from '../../config';
 
 class MongoShell extends EventEmitter {
   constructor(connection, mongoScriptPath) {
@@ -58,7 +57,7 @@ class MongoShell extends EventEmitter {
 
   getShellVersion() {
     try {
-      const configObj = loadCommands();
+      const configObj = global.config; // should be read-only
       log.info('Mongo Version Cmd:', configObj);
 
       if (!configObj.mongoVersionCmd) {
@@ -133,7 +132,7 @@ class MongoShell extends EventEmitter {
    * create a shell with pty
    */
   createShell() {
-    const configObj = loadCommands();
+    const configObj = global.config; // should be read-only
     log.info('Mongo Cmd:', configObj);
 
     if (!configObj.mongoCmd) {

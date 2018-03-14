@@ -5,7 +5,7 @@
  * @Date:   2017-12-18T10:29:50+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-07T10:32:51+11:00
+ * @Last modified time: 2018-03-13T22:58:00+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -90,7 +90,7 @@ export default () =>
           samplingRate,
           subscription: null,
           transformers: [
-            new MetricSmoother(3, ['db_storage']),
+            new MetricSmoother(['db_storage']),
             new StatsCalculator(stats),
             new Alarm(alarmConfig)
           ],

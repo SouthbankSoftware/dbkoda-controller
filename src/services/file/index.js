@@ -22,7 +22,7 @@
  * @Author: guiguan
  * @Date:   2017-03-30T10:20:31+11:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-05-01T01:33:12+10:00
+ * @Last modified time: 2018-03-14T00:01:11+11:00
  */
 
 /* eslint-disable class-methods-use-this */
@@ -42,7 +42,7 @@ export class File {
       ignoreInitial: true,
       awaitWriteFinish: false
     });
-    this.watcher.on('change', (path) => {
+    this.watcher.on('change', path => {
       this.emit('changed', {
         _id: path
       });
@@ -58,33 +58,23 @@ export class File {
   }
 
   get(_id, _params) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
   create(_data, _params) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
   update(_id, _data, _params) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
   patch(_id, _data, _params) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
   remove(_id, _params) {
-    throw new errors.NotImplemented(
-      'Request should have been processed by hooks'
-    );
+    throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 }
 

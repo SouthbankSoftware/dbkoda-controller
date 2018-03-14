@@ -1,7 +1,7 @@
 /**
  * Created by joey on 21/7/17.
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-17T16:11:37+11:00
+ * @Last modified time: 2018-03-13T22:43:09+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -24,7 +24,6 @@
 
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
-import { loadCommands } from '../../config';
 import { escapeDoubleQuotes } from './processDoubleQuotes';
 import tokeniseCmdString from './tokeniseCmdString';
 
@@ -50,7 +49,7 @@ class OSCommandsController extends EventEmitter {
   }
 
   runCommandFromQueue() {
-    const configObj = loadCommands();
+    const configObj = global.config; // should be read-only
     log.info('Mongo Cmd:', configObj);
     if (this.requestQueue.length <= 0) {
       return;
