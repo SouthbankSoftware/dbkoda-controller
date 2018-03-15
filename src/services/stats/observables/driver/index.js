@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:21:24+11:00
+ * @Last modified time: 2018-03-15T15:20:58+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,12 +21,12 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {Observable, Observer} from 'rxjs';
+import { Observable, Observer } from 'rxjs';
 import _ from 'lodash';
 
-import type {ObservaleValue} from '../ObservableWrapper';
-import {ObservableWrapper} from '../ObservableWrapper';
-import {driverItems, getKnowledgeBaseRules} from '../../knowledgeBase/driver';
+import type { ObservaleValue } from '../ObservableWrapper';
+import { ObservableWrapper } from '../ObservableWrapper';
+import { driverItems, getKnowledgeBaseRules } from '../../knowledgeBase/driver';
 
 const MAX_HISTORY_SIZE = 720;
 
@@ -45,11 +45,41 @@ export default class MongoNativeDriver implements ObservableWrapper {
   statsIntervalId: number;
   storageIntervalId: number;
   historyData: Object = {};
-  commandStatus: Object = {'db_storage': true, 'others': true};
+  commandStatus: Object = { db_storage: true, others: true };
 
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
-    this.db = this.mongoConnection.driver;
+
+    // pre-check
+    const { connectionParameters: { mongoType }, driver } = this.mongoConnection;
+    this.db = driver;
+
+    if (mongoType === 'Mongos') {
+      this.emitError(
+        'Creating Performance Panel on mongos and only minimal statistics is available',
+        'warn'
+      );
+    } else {
+      const adminDb = this.db.admin();
+
+      adminDb &&
+        adminDb
+          .serverStatus()
+          .then(res => {
+            const storageEngine = _.get(res, 'storageEngine.name');
+
+            if (storageEngine !== 'wiredTiger') {
+              this.emitError(
+                `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
+                'warn'
+              );
+            }
+          })
+          .catch(err => {
+            l.error(err);
+          });
+    }
+
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
       this.observer = observer;
       this.commandStatus.others = true;
@@ -78,9 +108,12 @@ export default class MongoNativeDriver implements ObservableWrapper {
 
   startServerStatus(db) {
     if (this.commandStatus.others) {
-      db.command({serverStatus: 1}, {}, (err, data) => {
+      db.command({ serverStatus: 1 }, {}, (err, data) => {
         if (!err) {
-          this.knowledgeBase = getKnowledgeBaseRules({version: data.version, release: data.process});
+          this.knowledgeBase = getKnowledgeBaseRules({
+            version: data.version,
+            release: data.process
+          });
           if (!this.knowledgeBase) {
             return Promise.reject('Cant find knowledge base');
           }
@@ -96,17 +129,21 @@ export default class MongoNativeDriver implements ObservableWrapper {
 
   startDBStorage(db) {
     if (this.commandStatus.db_storage) {
-      db.admin().listDatabases()
-        .then((dbList) => {
-          return Promise.all(dbList.databases.map((database) => {
-            return db.db(database.name).stats();
-          }));
+      db
+        .admin()
+        .listDatabases()
+        .then(dbList => {
+          return Promise.all(
+            dbList.databases.map(database => {
+              return db.db(database.name).stats();
+            })
+          );
         })
-        .then((dbStats) => {
+        .then(dbStats => {
           l.debug('db stats', dbStats);
           this.postProcess(dbStats, 'db_storage');
         })
-        .catch((err) => {
+        .catch(err => {
           l.error(err);
           this.emitError(err);
           this.commandStatus.db_storage = false;
@@ -118,7 +155,13 @@ export default class MongoNativeDriver implements ObservableWrapper {
     if (!this.knowledgeBase) {
       return;
     }
-    const value = this.knowledgeBase.parse(data, this.previousData[key], data.version, this.samplingRate, key);
+    const value = this.knowledgeBase.parse(
+      data,
+      this.previousData[key],
+      data.version,
+      this.samplingRate,
+      key
+    );
     // l.debug('get driver stats from knowledge:', value);
     this.previousData[key] = data;
     if (_.isEmpty(value)) {
@@ -134,7 +177,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
     }
     this.observer.next({
       profileId: this.profileId,
-      timestamp: (new Date()).getTime(),
+      timestamp: new Date().getTime(),
       value
     });
   }
