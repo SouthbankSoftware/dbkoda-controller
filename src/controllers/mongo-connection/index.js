@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-13T22:15:25+11:00
+ * @Last modified time: 2018-03-16T09:58:22+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -93,7 +93,7 @@ class MongoConnectionController {
     if (!sshOpts.port) {
       sshOpts.port = 22;
     }
-    console.log(`Connect SSH Port: ${sshOpts.port}`);
+    l.info(`Connect SSH Port: ${sshOpts.port}`);
     if (params.usePasswordStore) {
       // Do password store stuff
       if (params.sshKeyFile) {
@@ -101,7 +101,7 @@ class MongoConnectionController {
         try {
           sshOpts.passPhrase = await this.passwordService.get(`${params.id}-s`);
         } catch (err) {
-          console.log(err);
+          l.error(err);
         }
       } else {
         sshOpts.password = await this.getStorePassword(
@@ -121,7 +121,6 @@ class MongoConnectionController {
   }
 
   async getStorePassword(id, username, password, postfix = '') {
-    console.log(`${id}, ${username}, ${password}, ${postfix}`);
     if (!username) {
       return '';
     }
@@ -169,7 +168,6 @@ class MongoConnectionController {
     }
 
     const sshOpts = await this.getTunnelParams(params);
-    console.log(sshOpts);
     return new Promise((resolve, reject) => {
       this.createTunnel(sshOpts)
         .then(resTunnel => {
@@ -349,7 +347,7 @@ class MongoConnectionController {
 
       if (this.tunnels[id]) {
         this.tunnels[id].close();
-        console.log('tunnel closed successfully: ', this.tunnels[id]);
+        l.info('tunnel closed successfully: ', this.tunnels[id]);
         delete this.tunnels[id];
       }
       return Promise.resolve({ id, shellIds });
