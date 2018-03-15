@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-03-15T15:51:40+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -32,29 +35,31 @@ class DrillService {
             in: 'query',
             required: true,
             name: 'hostname',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             required: true,
             name: 'port',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             required: false,
             name: 'ssl',
-            type: 'boolean',
-          },
-        ],
+            type: 'boolean'
+          }
+        ]
       },
       remove: {
         description: 'Remove a connection',
-        parameters: [{
-          in: 'query',
-          name: 'id',
-          type: 'int',
-        }]
+        parameters: [
+          {
+            in: 'query',
+            name: 'id',
+            type: 'int'
+          }
+        ]
       },
       update: {
         description: 'Proxy Drill Service',
@@ -63,15 +68,15 @@ class DrillService {
             in: 'path',
             required: true,
             name: 'id',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             name: 'sql',
-            type: 'string',
-          },
-        ],
-      },
+            type: 'string'
+          }
+        ]
+      }
     };
   }
   // setup(app) {
@@ -105,6 +110,8 @@ class DrillService {
     return this.controller.getData(id, params);
   }
   remove(params) {
+    if (!this.controller) return Promise.resolve();
+
     return this.controller.remove(params);
   }
 }
@@ -113,7 +120,7 @@ module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires
-  const service = new DrillService({app_ref: app});
+  const service = new DrillService({ app_ref: app });
   app.use('/drill', service);
 
   // Get our initialize service to that we can bind hooks
