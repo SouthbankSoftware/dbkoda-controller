@@ -47,8 +47,8 @@ class MongoConnectionController {
     this.options = options || {
       connectTimeoutMS: 30000,
       socketTimeoutMS: 30000,
-      // retry to connect for 30 times
-      reconnectTries: 30,
+      // retry to connect for 120 times
+      reconnectTries: 120,
       // wait 1 second before retrying
       reconnectInterval: 1000
     };
