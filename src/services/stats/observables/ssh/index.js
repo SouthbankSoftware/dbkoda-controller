@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-13T22:13:40+11:00
+ * @Last modified time: 2018-03-15T15:47:44+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -107,12 +107,10 @@ export default class SSHCounter implements ObservableWrapper {
 
   create(id: string) {
     if (!this.mongoConnection) {
-      this.emitError('Connection does not exist ' + id);
       return Promise.reject(new Error(`Connection not exist ${id}`));
     }
     if (this.mongoConnection.sshOpts && !this.mongoConnection.sshOpts.host) {
-      this.emitError('SSH not enabled');
-      return Promise.reject(new Error('SSH is not enabled.'));
+      return Promise.reject(new Error('SSH is not enabled'));
     }
     return this.createConnection(this.mongoConnection);
   }
