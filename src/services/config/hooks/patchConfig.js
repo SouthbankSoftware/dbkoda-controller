@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T15:35:16+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-14T16:40:29+11:00
+ * @Last modified time: 2018-03-16T12:20:02+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -63,7 +63,7 @@ const getMongoCmd = () => {
 const updateMongoCmd = mongoCmd => {
   if (!mongoCmd) return;
 
-  global.config.mongoVersionCmd = `${mongoCmd} --version`;
+  global.config.mongoVersionCmd = `"${mongoCmd}" --version`;
 
   const dir = path.dirname(mongoCmd);
   const ext = os.platform() === 'win32' ? '.exe' : '';
