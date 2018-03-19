@@ -1,0 +1,70 @@
+{
+	"info": {
+		"name": "dbkoda-controller-config",
+		"_postman_id": "2773dbdb-c33e-4004-ab6f-f339b4f0335f",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "patchConfig",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"config\": {\n\t\t\"mongoCmd\": \"/usr/local/bin/mongo\",\n\t\t\"drillCmd\": null,\n\t\t\"drillControllerCmd\": null,\n\t\t\"telemetryEnabled\": true,\n\t\t\"showWelcomePageAtStart\": true,\n\t\t\"passwordStoreEnabled\": true,\n\t\t\"performancePanel\": {\n\t\t\t\"preventDisplaySleep\": true,\n\t\t\t\"metricSmoothingWindow\": 4,\n\t\t\t\"foregroundSamplingRate\": 5000,\n\t\t\t\"backgroundSamplingRate\": 5000,\n\t\t\t\"historySize\": 720,\n\t\t\t\"historyBrushSize\": 3,\n\t\t\t\"alarmDisplayingWindow\": 60000\n\t\t}\n\t}\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/config/current",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"config",
+						"current"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "getConfig",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"config\": {\n\t\t\"mongoCmd\": \"/usr/local/bin/mongo\",\n\t\t\"drillCmd\": null,\n\t\t\"drillControllerCmd\": null,\n\t\t\"telemetryEnabled\": true,\n\t\t\"showWelcomePageAtStart\": true,\n\t\t\"passwordStoreEnabled\": true,\n\t\t\"performancePanel\": {\n\t\t\t\"preventDisplaySleep\": false,\n\t\t\t\"metricSmoothingWindow\": 3,\n\t\t\t\"foregroundSamplingRate\": 1000,\n\t\t\t\"backgroundSamplingRate\": 1000,\n\t\t\t\"historySize\": 720,\n\t\t\t\"historyBrushSize\": 30,\n\t\t\t\"alarmDisplayingWindow\": 60000\n\t\t}\n\t}\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/config/current",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"config",
+						"current"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}

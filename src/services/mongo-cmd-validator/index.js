@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T09:43:34+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-03T13:49:24+11:00
+ * @Last modified time: 2018-03-12T21:20:49+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -71,10 +71,10 @@
    const app = this;
 
    // Initialize our service with any options it requires
-   app.use('/mongo-cmd-validators', new MongoCmdValidator());
+   app.use('/mongo-cmd-validator', new MongoCmdValidator());
 
    // Get our initialize service to that we can bind hooks
-   const service = app.service('/mongo-cmd-validators');
+   const service = app.service('/mongo-cmd-validator');
 
    // Set up our before hooks
    service.before(hooks.before);

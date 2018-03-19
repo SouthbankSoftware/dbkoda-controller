@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T09:43:34+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-03T13:38:39+11:00
+ * @Last modified time: 2018-03-12T21:30:18+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -24,41 +24,34 @@
  */
 
 import _ from 'lodash';
-import Ajv from 'ajv';
+import ajv from '~/helpers/ajv';
 import { validateSchema } from 'feathers-hooks-common';
 
-const defaultAjvOptions = {
-  removeAdditional: 'all',
-  useDefaults: true,
-  allErrors: true,
-  coerceTypes: true,
-};
-
-const querySchema = {
+const createSchema = {
   properties: {
     mongoCmdPath: {
-      type: 'string',
-    },
+      type: 'string'
+    }
   },
-  required: ['mongoCmdPath'],
+  required: ['mongoCmdPath']
 };
 
 const schema = {
   find: {},
   get: {},
-  create: querySchema,
+  create: createSchema,
   update: {},
   patch: {},
-  remove: {},
+  remove: {}
 };
 
 const validators = _.reduce(
   schema,
   (acc, v, k) => {
-    acc[k] = validateSchema(v, Ajv, defaultAjvOptions);
+    acc[k] = validateSchema(v, ajv);
     return acc;
   },
-  {},
+  {}
 );
 
 export default _options => hook => validators[hook.method](hook);

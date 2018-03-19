@@ -25,8 +25,8 @@
 
 global.log = {
   info: msg => console.log(msg),
-  error: msg => console.error(msg),
-  debug: msg => console.debug(msg),
+  error: msg => console.log(msg),
+  debug: msg => console.log(msg),
 };
 global.l = global.log;
 
@@ -53,15 +53,31 @@ const sshOpts = {
     host: '10.0.0.25',
     port: 22,
     username: 'core',
-    password: process.env.EC2_SHARD_CLUSTER_PASSWORD
+    password: 'DBEnvy2016',
+
   }
-}
+};
+
+// const privateKey = require('fs').readFileSync('*.pem');
+// const privateKeyOpts = {
+//   sshOpts: {
+//     privateKey: privateKey,
+//     host: 'ec2-13-54-17-227.ap-southeast-2.compute.amazonaws.com',
+//     username: 'ec2-user',
+//     port: 22
+//   }
+// };
 
 const counter = new SSHCounter();
-counter.init('1', {'mongoConnection': sshOpts});
-counter.rxObservable.subscribe(
-  x => console.log('get sub ', x),
-  (e) => console.log('complete1',e)
-)
+counter.samplingRate = 3000;
+counter.profileId = 1;
+counter.emitError = (err) => console.error(err);
+counter.init({'mongoConnection': sshOpts}).then(() => {
+  counter.rxObservable.subscribe(
+    x => console.log('get sub ', x),
+    (e) => console.log('complete1',e)
+  );
+})
 
-setTimeout(() => counter.setSamplingRate(15), 3000);
+
+// setTimeout(() => counter.setSamplingRate(15), 3000);

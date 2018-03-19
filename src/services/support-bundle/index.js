@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-03-13T22:44:05+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,16 +20,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 /* eslint class-methods-use-this: 0 */
 import path from 'path';
 import os from 'os';
 import archiver from 'archiver';
 import fs from 'fs';
 import _ from 'lodash';
-import { loadCommands } from '../../config';
-
-const execSync = require('child_process').execSync;
-const hooks = require('./hooks');
+import { execSync } from 'child_process';
+import hooks from './hooks';
 
 class SupportBundleService {
   constructor(options) {
@@ -35,15 +37,54 @@ class SupportBundleService {
       description: 'A service for creating support bundles.',
       get: {
         description: 'create a support bundle and return location.',
-        parameters: [],
-      },
+        parameters: []
+      }
     };
   }
 
-  async get() {
+  async get(getCreatedDate) {
+    if (getCreatedDate) {
+      const dateFolderCreated = await this._getCreatedDate();
+      return Promise.resolve(dateFolderCreated);
+    }
     const bundlePath = await this._createBundle();
     l.info('Returning support bundle location to UI.');
     return Promise.resolve(bundlePath);
+  }
+
+  _getCreatedDate() {
+    return new Promise((resolve, reject) => {
+      try {
+        const folderStat = fs.statSync(path.resolve(os.homedir(), '.dbKoda'));
+        let birth = folderStat.birthtime;
+        // Get birth.
+        birth = JSON.stringify(birth);
+        birth = new Date(birth.substr(0, 8));
+
+        // Get today.
+        let today = new Date();
+        let dd = today.getDate();
+        let mm = today.getMonth() + 1; // January is 0!
+        const yyyy = today.getFullYear();
+
+        if (dd < 10) {
+          dd = '0' + dd;
+        }
+
+        if (mm < 10) {
+          mm = '0' + mm;
+        }
+
+        today = mm + '/' + dd + '/' + yyyy;
+        today = new Date(today);
+        let daysSinceBirth = today - birth;
+        daysSinceBirth /= 1000 * 60 * 60 * 24;
+        resolve({ dateCreated: birth, daysSinceCreation: daysSinceBirth });
+      } catch (e) {
+        l.error(e);
+        reject(e);
+      }
+    });
   }
 
   _bundleFiles(bundlePath, filePaths) {
@@ -53,20 +94,18 @@ class SupportBundleService {
 
         const output = fs.createWriteStream(bundlePath);
         const archive = archiver('zip', {
-          zlib: { level: 7 }, // Sets compression level
+          zlib: { level: 7 } // Sets compression level
         });
 
         // listen for all archive data to be written.
         output.on('close', () => {
           l.info(archive.pointer() + ' total byes');
-          l.info(
-            'archiver has been finalized and the output file descriptor has closed.',
-          );
+          l.info('archiver has been finalized and the output file descriptor has closed.');
           resolve(bundlePath);
         });
 
         // good practice to catch warnings
-        archive.on('warning', (err) => {
+        archive.on('warning', err => {
           if (err.code === 'ENOENT') {
             l.warn(err);
           } else {
@@ -74,7 +113,7 @@ class SupportBundleService {
           }
         });
 
-        archive.on('error', (err) => {
+        archive.on('error', err => {
           reject(err);
         });
 
@@ -84,7 +123,7 @@ class SupportBundleService {
         if (fs.existsSync(filePaths.statePath)) {
           l.info('Appending State Store...');
           archive.append(fs.createReadStream(filePaths.statePath), {
-            name: 'stateStore.json',
+            name: 'stateStore.json'
           });
         }
 
@@ -92,7 +131,7 @@ class SupportBundleService {
         if (fs.existsSync(filePaths.configPath)) {
           l.info('Appending Config...');
           archive.append(fs.createReadStream(filePaths.configPath), {
-            name: 'config.yml',
+            name: 'config.yml'
           });
         }
 
@@ -100,7 +139,7 @@ class SupportBundleService {
         if (fs.existsSync(filePaths.controllerLogPath)) {
           l.info('Appending Controller Log...');
           archive.append(fs.createReadStream(filePaths.controllerLogPath), {
-            name: 'controllerLog.txt',
+            name: 'controllerLog.txt'
           });
         }
 
@@ -108,7 +147,7 @@ class SupportBundleService {
         if (filePaths.dbKodaLogPath && fs.existsSync(filePaths.dbKodaLogPath)) {
           l.info('Appending App Log...');
           archive.append(fs.createReadStream(filePaths.dbKodaLogPath), {
-            name: 'applicationLog.txt',
+            name: 'applicationLog.txt'
           });
         }
 
@@ -122,27 +161,23 @@ class SupportBundleService {
           // Get Mongo Version.
           let mongoVersion = 'Undetermined';
           try {
-            const configObj = loadCommands();
+            const configObj = global.config; // should be read-only
 
             if (!configObj.mongoVersionCmd) {
               log.error('unkonwn version');
               mongoVersion = 'UNKNOWN';
             } else {
               const output = execSync(configObj.mongoVersionCmd, {
-                encoding: 'utf8',
+                encoding: 'utf8'
               });
               mongoVersion = output;
               const mongoVStr = output.split('\n');
               if (mongoVStr && mongoVStr.length > 0) {
                 if (mongoVStr[0].indexOf('MongoDB shell version v') >= 0) {
-                  mongoVersion = mongoVStr[0]
-                    .replace('MongoDB shell version v', '')
-                    .trim();
+                  mongoVersion = mongoVStr[0].replace('MongoDB shell version v', '').trim();
                 }
                 if (mongoVStr[0].indexOf('MongoDB shell version:') >= 0) {
-                  mongoVersion = mongoVStr[0]
-                    .replace('MongoDB shell version:', '')
-                    .trim();
+                  mongoVersion = mongoVStr[0].replace('MongoDB shell version:', '').trim();
                 }
                 mongoVersion = mongoVStr[0];
               }
@@ -159,7 +194,7 @@ class SupportBundleService {
               osRelease +
               '", "mongoShellVersion": "' +
               mongoVersion.replace('MongoDB shell version v', '') +
-              '"}',
+              '"}'
           );
 
           archive.append(
@@ -170,7 +205,7 @@ class SupportBundleService {
               '", "mongoShellVersion": "' +
               mongoVersion.replace('MongoDB shell version v', '') +
               '"}',
-            { name: 'systemInfo.json' },
+            { name: 'systemInfo.json' }
           );
         }
 
@@ -185,20 +220,11 @@ class SupportBundleService {
   _createBundle() {
     return new Promise((resolve, reject) => {
       // Do all the logic to create a bundle.
-      let controllerLogPath = path.resolve('controller-dev.log');
       let configPath = path.resolve(os.homedir(), '.dbKoda', 'config.yml');
-      const statePath = path.resolve(
-        os.homedir(),
-        '.dbKoda',
-        'stateStore.json',
-      );
+      const statePath = path.resolve(os.homedir(), '.dbKoda', 'stateStore.json');
       let isBundlePathValid = false;
       let bundleNumber = 1;
-      let bundlePath = path.resolve(
-        os.homedir(),
-        '.dbKoda',
-        'supportBundle.zip',
-      );
+      let bundlePath = path.resolve(os.homedir(), '.dbKoda', 'supportBundle.zip');
 
       while (!isBundlePathValid) {
         if (fs.existsSync(bundlePath)) {
@@ -206,7 +232,7 @@ class SupportBundleService {
           bundlePath = path.resolve(
             os.homedir(),
             '.dbKoda',
-            'supportBundle-' + bundleNumber + '.zip',
+            'supportBundle-' + bundleNumber + '.zip'
           );
           bundleNumber += 1;
         } else {
@@ -217,25 +243,13 @@ class SupportBundleService {
       l.info('Creating new support bundle (dev mode).');
       l.info('The following paths will be added to a support bundle: ');
       let logPath;
-      if (global.IS_PROD) {
-        logPath = path.resolve(path.dirname(process.env.LOG_PATH));
+      if (global.IS_PRODUCTION) {
+        logPath = process.env.LOG_PATH;
         configPath = process.env.CONFIG_PATH;
       } else if (os.release().match(/Win/gi)) {
-        logPath = path.resolve(
-          os.homedir(),
-          'AppData',
-          'Roaming',
-          'dbKoda',
-          'logs',
-        );
+        logPath = path.resolve(os.homedir(), 'AppData', 'Roaming', 'dbKoda', 'logs');
       } else {
-        logPath = path.resolve(
-          os.homedir(),
-          'Library',
-          'Application Support',
-          'dbKoda',
-          'logs',
-        );
+        logPath = path.resolve(os.homedir(), 'Library', 'Application Support', 'dbKoda', 'logs');
       }
 
       const files = fs.readdirSync(logPath);
@@ -243,7 +257,7 @@ class SupportBundleService {
       const appLogList = [];
 
       l.info('Files in Log Directory:');
-      files.map((file) => {
+      files.map(file => {
         l.info(file);
         if (file.match(/controller/g)) {
           controllerLogList.push(file);
@@ -252,19 +266,19 @@ class SupportBundleService {
         }
       });
 
-      controllerLogPath = path.join(
+      const controllerLogPath = path.join(
         logPath,
-        _.max(controllerLogList, (f) => {
+        _.max(controllerLogList, f => {
           const fullPath = path.join(logPath, f);
           return fs.statSync(fullPath).ctime;
-        }),
+        })
       );
       const dbKodaLogPath = path.join(
         logPath,
-        _.max(appLogList, (f) => {
+        _.max(appLogList, f => {
           const fullPath = path.join(logPath, f);
           return fs.statSync(fullPath).ctime;
-        }),
+        })
       );
 
       l.info('App Logs: ', dbKodaLogPath);
@@ -277,17 +291,17 @@ class SupportBundleService {
         controllerLogPath,
         dbKodaLogPath,
         statePath,
-        configPath,
+        configPath
       };
 
       // Create Support Bundle at Log Location.
       this._bundleFiles(bundlePath, filePaths)
-        .then((res) => {
+        .then(res => {
           // Return location of file.
           l.info('Support bundles at: ', res);
           resolve(res);
         })
-        .catch((err) => {
+        .catch(err => {
           l.error('Support bundle failed to create with err: ', err);
           reject(err);
         });

@@ -1,6 +1,11 @@
 /**
+ * @flow
+ *
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2018-02-19T13:20:52+11:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-12T14:21:24+11:00
+ * @Last modified time: 2018-02-19T14:33:51+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,6 +26,10 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { mongoNativeDriverKnowledge } from '../../knowledgeBase';
+import type { ObservaleValue } from '../observables/ObservableWrapper';
 
-export const { items } = mongoNativeDriverKnowledge;
+export default class Transformer {
+  transform = (value: ObservaleValue): ObservaleValue => {
+    return value;
+  };
+}

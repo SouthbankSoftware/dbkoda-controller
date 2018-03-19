@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-03-13T11:32:05+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,14 +21,9 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2018-01-02T14:27:15+11:00
- */
-
-import moment from 'moment';
 import _ from 'lodash';
-import winston from 'winston';
+import { createLogger, format, transports, addColors } from 'winston';
+import 'winston-daily-rotate-file';
 import path from 'path';
 import compress from 'compression';
 import cors from 'cors';
@@ -36,6 +34,9 @@ import bodyParser from 'body-parser';
 import primus from 'feathers-primus';
 import swagger from 'feathers-swagger';
 import sh from 'shelljs';
+import { levelConfig, commonFormatter, printfFormatter } from '~/helpers/winston';
+import os from 'os';
+import fs from 'fs';
 
 require('babel-polyfill');
 
@@ -45,73 +46,51 @@ const app = feathers();
 process.env.NODE_CONFIG_DIR = path.resolve(__dirname, '../config/');
 app.configure(require('feathers-configuration')());
 
-global.IS_PROD = process.env.NODE_ENV === 'production';
+// global and env variables
+// TODO: use IPC to get configs from main process instead of using error-prone child process env var
+// passing
 global.UAT = process.env.UAT === 'true';
+global.IS_PRODUCTION = process.env.NODE_ENV === 'production';
+global.LOG_PATH = process.env.LOG_PATH = process.env.LOG_PATH || path.resolve(__dirname, '../logs');
+global.DBKODA_HOME = process.env.DBKODA_HOME =
+  process.env.DBKODA_HOME || (global.UAT ? '/tmp/dbKoda' : path.resolve(os.homedir(), '.dbKoda'));
+global.CONFIG_PATH = process.env.CONFIG_PATH =
+  process.env.CONFIG_PATH || path.resolve(global.DBKODA_HOME, 'config.yml');
+global.PROFILES_PATH = process.env.PROFILES_PATH =
+  process.env.PROFILES_PATH || path.resolve(global.DBKODA_HOME, 'profiles.yml');
 
 // config winston. The logger should be configured first
-(() => {
-  const commonOptions = {
-    colorize: 'all',
-    timestamp() {
-      return moment().format();
-    },
-  };
-
-  const transports = [new winston.transports.Console(commonOptions)];
-
-  if (global.IS_PROD) {
-    require('winston-daily-rotate-file');
-    transports.push(
-      new winston.transports.DailyRotateFile(
-        _.assign({}, commonOptions, {
-          filename: process.env.LOG_PATH,
-          datePattern: 'yyyy-MM-dd.',
-          localTime: true,
-          prepend: true,
-          json: false,
-        }),
-      ),
-    );
-  } else {
-    transports.push(
-      new winston.transports.File({
-        name: 'info-file',
-        filename: 'controller-dev.log',
-        level: 'debug',
-      }),
-    );
-  }
-
-  global.l = new winston.Logger({
-    level: global.IS_PROD ? 'info' : 'debug',
-    padLevels: true,
-    levels: {
-      error: 0,
-      warn: 1,
-      notice: 2,
-      info: 3,
-      debug: 4,
-    },
-    colors: {
-      error: 'red',
-      warn: 'yellow',
-      notice: 'green',
-      info: 'gray',
-      debug: 'blue',
-    },
-    transports,
+{
+  global.l = createLogger({
+    format: format.combine(
+      format.splat(),
+      commonFormatter,
+      format.colorize({ all: true }),
+      printfFormatter
+    ),
+    level: global.IS_PRODUCTION ? 'info' : 'debug',
+    levels: levelConfig.levels,
+    transports: [
+      new transports.Console(),
+      new transports.DailyRotateFile({
+        filename: path.resolve(process.env.LOG_PATH, 'controller_%DATE%.log'),
+        datePattern: 'YYYY-MM-DD',
+        maxSize: '1m',
+        maxFiles: global.IS_PRODUCTION ? '30d' : '3d'
+      })
+    ]
   });
+
+  addColors(levelConfig);
+
   global.log = global.l;
+}
 
-  process.on('unhandledRejection', (reason) => {
-    log.error(reason);
-  });
-
-  process.on('uncaughtException', (err) => {
-    log.error(err.stack);
-    throw err;
-  });
-})();
+// Ensure profiles.yml exists
+// TODO: refactor this into a separate profiles service
+{
+  !fs.existsSync(global.PROFILES_PATH) && fs.writeFileSync(global.PROFILES_PATH, '');
+}
 
 function checkJavaVersion(callback) {
   const spawn = require('child_process').spawnSync('java', ['-version']);
@@ -119,7 +98,7 @@ function checkJavaVersion(callback) {
     return callback(spawn.error, null);
   }
   if (spawn.stderr) {
-    const data = spawn.stderr.toString().split('\n')[0];
+    const [data] = spawn.stderr.toString().split('\n');
     const javaVersion = new RegExp(/(java version)|(openjdk version)/).test(data)
       ? data.split(' ')[2].replace(/"/g, '')
       : false;
@@ -144,6 +123,23 @@ checkJavaVersion((err, ver) => {
 const middleware = require('./middleware');
 const services = require('./services');
 
+// override default setup behaviour
+app.setup = () => {
+  const ps = [];
+  _.forOwn(app.services, (v, k) => {
+    if (_.has(v, 'setup')) {
+      ps.push(v.setup(app, k));
+    }
+  });
+
+  Promise.all(ps)
+    .then(() => {
+      app._isSetup = true;
+      app.emit('ready');
+    })
+    .catch(e => l.error(e.stack));
+};
+
 app
   .use(compress())
   .options('*', cors())
@@ -159,22 +155,22 @@ app
       uiIndex: path.join(__dirname, '../public/docs.html'),
       info: {
         title: process.env.npm_package_fullName,
-        description: process.env.npm_package_description,
-      },
-    }),
+        description: process.env.npm_package_description
+      }
+    })
   )
   .configure(
     primus(
       {
-        transformer: 'websockets',
+        transformer: 'websockets'
       },
-      (primus) => {
+      primus => {
         primus.library();
         const libPath = path.join(__dirname, '../public/dist/primus.js');
         sh.mkdir('-p', path.dirname(libPath));
         primus.save(libPath);
-      },
-    ),
+      }
+    )
   )
   .configure(services)
   .configure(middleware);
@@ -185,7 +181,7 @@ app
  * @param {Error} err - error object
  * @return {Promise} resolve
  */
-app.stop = (err) => {
+app.stop = err => {
   process.stdout.write('\r');
   l.notice('Stopping dbkoda Controller...');
 

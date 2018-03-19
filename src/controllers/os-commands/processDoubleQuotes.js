@@ -1,4 +1,10 @@
-/*
+/**
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2018-01-17T13:02:54+11:00
+ * @Email:  root@guiguan.net
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-01-17T15:59:18+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,26 +24,24 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// const globalHooks = require('../../../hooks');
-// const hooks = require('feathers-hooks');
+const ESCAPE_RE = /"/g;
+const ESCAPE_REPLACEMENT = '\\"';
 
+export const escapeDoubleQuotes = input => {
+  if (typeof input === 'string') {
+    return input.replace(ESCAPE_RE, ESCAPE_REPLACEMENT);
+  }
 
-exports.before = {
-  all: [],
-  find: [],
-  get: [],
-  create: [],
-  update: [],
-  patch: [],
-  remove: []
+  return input;
 };
 
-exports.after = {
-  all: [],
-  find: [],
-  get: [],
-  create: [],
-  update: [],
-  patch: [],
-  remove: []
+const UNESCAPE_RE = /\\"/g;
+const UNESCAPE_REPLACEMENT = '"';
+
+export const unescapeDoubleQuotes = input => {
+  if (typeof input === 'string') {
+    return input.replace(UNESCAPE_RE, UNESCAPE_REPLACEMENT);
+  }
+
+  return input;
 };

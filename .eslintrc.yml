@@ -2,7 +2,7 @@
 # @Date:   2016-06-02T14:58:00+10:00
 # @Email:  root@guiguan.net
 # @Last modified by:   guiguan
-# @Last modified time: 2017-12-15T20:23:34+11:00
+# @Last modified time: 2018-03-12T15:16:55+11:00
 
 extends: [airbnb, plugin:flowtype/recommended]
 parser: babel-eslint
@@ -62,7 +62,18 @@ rules:
   no-use-before-define: [error, {functions: false, classes: true}]
   linebreak-style: off
   function-paren-newline: off
-  prefer-destructuring: warn
+  prefer-destructuring: [warn, {
+    VariableDeclarator: {
+      array: true,
+      object: true
+    },
+    AssignmentExpression: {
+      array: false,
+      object: false
+    }
+  }, {
+    enforceForRenamedProperties: false
+  }]
   prefer-promise-reject-errors: warn
   object-curly-newline: [off, {
     ObjectExpression: { minProperties: 0, multiline: true },
@@ -71,6 +82,9 @@ rules:
   flowtype/no-types-missing-file-annotation: off
   no-mixed-operators: off
   flowtype/generic-spacing: off
+  arrow-parens: off
+  no-lone-blocks: off
+  no-multi-assign: off
 plugins: [react, import, flowtype]
 settings:
   import/resolver:
@@ -81,3 +95,4 @@ settings:
 globals:
   l: false
   log: false
+  IS_PRODUCTION: false

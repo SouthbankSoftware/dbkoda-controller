@@ -71,6 +71,12 @@ const createSchema = {
     passphrase: {
       type: 'string',
     },
+    profileId: {
+      type: 'string',
+    },
+    usePasswordStore: {
+      type: 'boolean',
+    },
     size: sizeSchema,
   },
   required: ['_id', 'type'],

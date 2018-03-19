@@ -31,11 +31,12 @@ import hooks from './hooks';
 
 export class Terminal {
   constructor(_options) {
-    this.events = ['data', 'error', 'warn'];
+    this.events = ['data', 'error'];
   }
 
   setup(_app, _path) {
     this.terminals = new Map();
+    this.passwordService = _app.service('/master-pass');
   }
 
   destroy(_app, _path) {

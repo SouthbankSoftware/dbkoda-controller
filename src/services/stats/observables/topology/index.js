@@ -1,5 +1,6 @@
 /**
- * @flow
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-01-05T16:45:16+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -20,10 +21,11 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {Observable, Observer} from 'rxjs';
+import { Observable, Observer } from 'rxjs';
 
-import type {ObservaleValue} from '../ObservableWrapper';
-import {ObservableWrapper} from '../ObservableWrapper';
+import type { ObservaleValue } from '../ObservableWrapper';
+import { ObservableWrapper } from '../ObservableWrapper';
+import { getKnowledgeBaseRules } from '../../knowledgeBase/topology';
 
 export default class TopologyMonitor implements ObservableWrapper {
   rxObservable: ?Observable<ObservaleValue> = null;
@@ -35,16 +37,20 @@ export default class TopologyMonitor implements ObservableWrapper {
   samplingRate: number;
   items: string[] = ['topology'];
   displayName: string = 'Topology Monitor';
+  knowledgeBase: Object;
 
-  init(profileId: string, options: Object): Promise<*> {
-    this.profileId = profileId;
+  init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
     this.db = this.mongoConnection.driver;
+    this.knowledgeBase = getKnowledgeBaseRules(this.mongoConnection.dbVersion);
+    if (!this.knowledgeBase) {
+      return Promise.reject(new Error('Cant find knowledge base'));
+    }
     this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
       this.observer = observer;
       this.start(this.db);
       return () => {
-        this.db.topology.removeListener('serverDescriptionChanged', this.topologyListener);
+        this.pause();
       };
     });
     return Promise.resolve();
@@ -58,51 +64,51 @@ export default class TopologyMonitor implements ObservableWrapper {
       this.observer.error('failed to find mongodb driver.');
       return;
     }
-    db.admin().command({replSetGetStatus: 1}, (err) => {
+    db.admin().command({ replSetGetStatus: 1 }, err => {
       if (!err) {
         log.info('start monitoring topology');
-        db.topology.on('serverDescriptionChanged', this.topologyListener.bind(this));
+        db.topology.on('serverDescriptionChanged', this.topologyListener);
       } else {
-        log.info('cant monitor single/shard cluster');
-        this.observer.error('this is not mongodb replicaset connection.');
+        log.error('cant monitor single/shard cluster,', err);
+        this.emitError('Failed to get mongodb topology.');
       }
     });
   }
 
-  topologyListener(event: Object) {
+  topologyListener = (event: Object) => {
     console.log('received serverDescriptionChanged,', event);
-    if (event && event.newDescription && event.newDescription.type !== 'Unknown') {
+    if (event && event.newDescription) {
       log.info('replicaset topology was changed');
-      this.queryMemberStatus(this.db).then((members) => {
-        log.info('new members:', members);
+      if (event.newDescription.type !== 'Unknown') {
+        this.knowledgeBase
+          .parse(this.db)
+          .then(members => {
+            log.info('new members:', members);
+            this.observer.next({
+              profileId: this.profileId,
+              timestamp: new Date().getTime(),
+              value: { topology: members },
+            });
+          })
+          .catch(err => this.emitError(err));
+      } else {
         this.observer.next({
           profileId: this.profileId,
-          timestamp: (new Date()).getTime(),
-          value: {topology: members}
+          timestamp: new Date().getTime(),
+          value: { topology: 'Unknown' },
         });
-      }).catch(err => this.observer.error(err));
+      }
     }
-  }
+  };
 
-  queryMemberStatus(db: Object): Promise<*> {
-    return new Promise((resolve, reject) => {
-      db.admin().command({replSetGetStatus: 1}, (err, result) => {
-        if (!result || err) {
-          reject(err);
-          return;
-        }
-        resolve(result.members);
-      });
-    }).catch((err) => {
-      log.error('failed to get replica set ', err);
-      this.observer.error(err);
-    });
+  pause() {
+    if (this.db && this.db.topology) {
+      this.db.topology.removeListener('serverDescriptionChanged', this.topologyListener);
+    }
   }
 
   destroy(): Promise<*> {
-    if (this.db.topology) {
-      this.db.topology.close();
-    }
+    this.pause();
     return Promise.resolve();
   }
 }

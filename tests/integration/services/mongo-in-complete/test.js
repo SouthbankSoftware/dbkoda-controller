@@ -1,8 +1,6 @@
 /**
- * @Author: guiguan
- * @Date:   2017-04-18T08:02:52+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-04-18T11:27:25+10:00
+ * @Last modified time: 2018-01-29T15:12:35+11:00
  */
 
 const winston = require('winston');
@@ -24,8 +22,8 @@ describe('test run shell command', () => {
   before(function (done) {
     this.timeout(TIMEOUT * 3);
     launchSingleInstance(port);
-    setTimeout(() => generateMongoData(port, 'test', 'user', '--num 1000'), MLAUNCH_TIMEOUT);
-    setTimeout(() => generateMongoData(port, 'users', 'user', '--num 2000'), MLAUNCH_TIMEOUT);
+    setTimeout(() => generateMongoData(port, 'test', 'user', 1000), MLAUNCH_TIMEOUT);
+    setTimeout(() => generateMongoData(port, 'users', 'user', 2000), MLAUNCH_TIMEOUT);
     setTimeout(() => {
       connection
       .create(

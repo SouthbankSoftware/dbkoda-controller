@@ -117,9 +117,9 @@ class SyncExecutionController {
       });
       let output = filterThreeDot.join('\n') + data;
       log.debug('all sync output ', output);
-      const commandStr = formatetedCmds.replace(/[\s|\n|\r]+/g, '');
+      const commandStr = formatetedCmds.replace(/[\n|\r]+/g, '');
       log.debug('command:', commandStr);
-      let filterOutput = output.replace(MongoShell.prompt, '').replace(/[\s|\n|\r]+/g, '');
+      let filterOutput = output.replace(MongoShell.prompt, '').replace(/[\n|\r]+/g, '');
       log.debug('filtered output', filterOutput);
       while (filterOutput.indexOf(commandStr) >= 0) {
         filterOutput = filterOutput.replace(commandStr, '');

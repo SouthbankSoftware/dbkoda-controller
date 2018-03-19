@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-16T03:19:16+11:00
+ * @Last modified time: 2018-03-12T20:23:06+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,16 +28,19 @@ import mongoAutoCompleteController from '../controllers/auto-complete';
 import lintingController from '../controllers/linter';
 import syncExecutionController from '../controllers/sync-execution';
 import remoteExecutionController from '../controllers/remote-execution';
+import config from './config';
 import mongoShell from './mongo-shell';
 import mongoConnection from './mongo-connection';
 import mongoInspector from './mongo-inspector';
 import mongoReconnect from './mongo-reconnect';
 import autoComplete from './mongo-auto-complete';
 import linter from './linter';
+import logger from './logger';
 import syncExecution from './mongo-sync-execution';
 import file from './file';
 import aggregator from './aggregator';
 import terminal from './terminal';
+import stats from './stats';
 import blog from './blog';
 import treeAction from './tree-actions';
 import osCommandsService from './os-commands';
@@ -46,10 +49,12 @@ import driverService from './driver';
 import mongoCmdValidator from './mongo-cmd-validator';
 import remoteExecService from './remote-execution';
 import drill from './drill';
+import masterPass from './master-pass';
 
 module.exports = function() {
   const app = this;
 
+  // setup order is defined here
   app.configure(mongoInspectorController);
   app.configure(mongoConnectionController);
   app.configure(mongoAutoCompleteController);
@@ -57,24 +62,27 @@ module.exports = function() {
   app.configure(syncExecutionController);
   app.configure(remoteExecutionController);
 
-
+  app.configure(file);
+  app.configure(mongoCmdValidator);
+  app.configure(config);
   app.configure(mongoShell);
   app.configure(mongoConnection);
   app.configure(mongoInspector);
   app.configure(mongoReconnect);
   app.configure(autoComplete);
   app.configure(linter);
+  app.configure(logger);
   app.configure(mongoStopExecution);
   app.configure(syncExecution);
-  app.configure(file);
   app.configure(aggregator);
   app.configure(terminal);
+  app.configure(stats);
   app.configure(blog);
   app.configure(treeAction);
   app.configure(osCommandsService);
   app.configure(supportBundleService);
   app.configure(driverService);
-  app.configure(mongoCmdValidator);
   app.configure(remoteExecService);
   app.configure(drill);
+  app.configure(masterPass);
 };

@@ -3,7 +3,7 @@
  * @Date:   2017-11-16T10:55:12+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-12-03T15:16:08+11:00
+ * @Last modified time: 2018-03-12T15:13:11+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -32,17 +32,21 @@ export default (context, item) => {
   const { _id, size } = item;
   const { service } = context;
 
+  // avoid env vars pollution. This list should be consistent with the one in `dbkoda/src/app.js`
   const env = _.omit(process.env, [
     'PREFIX',
+    'NODE_ENV',
+    'UAT',
+    'CONTROLLER_PORT',
+    'DBKODA_HOME',
     'LOG_PATH',
     'MONGO_SCRIPTS_PATH',
-    'UAT',
     'CONFIG_PATH',
-    'NODE_ENV',
+    'PROFILES_PATH'
   ]);
 
   _.assign(env, {
-    LANG: 'en_AU.UTF-8',
+    LANG: 'en_AU.UTF-8'
   });
 
   const ptyProcess = pty.spawn(
@@ -53,13 +57,13 @@ export default (context, item) => {
       cols: (size && size.cols) || 80,
       rows: (size && size.rows) || 24,
       cwd: process.env.HOME,
-      env,
-    },
+      env
+    }
   );
 
   l.debug(`Created Local Terminal ${_id}`);
 
-  const onData = (payload) => {
+  const onData = payload => {
     const terminal = service.terminals.get(_id);
     if (terminal && terminal.debug) {
       l.debug(`Local Terminal ${_id}: ${JSON.stringify(payload)}`);
@@ -69,7 +73,7 @@ export default (context, item) => {
 
   setTimeout(() => {
     ptyProcess.on('data', onData);
-    ptyProcess.on('error', (error) => {
+    ptyProcess.on('error', error => {
       l.error(`Local Terminal ${_id} error`, error);
       service.emitError(_id, error.message);
     });

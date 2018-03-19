@@ -1,4 +1,9 @@
-/*
+/**
+ * @Author: guiguan
+ * @Date:   2017-04-26T17:28:39+10:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-03-14T00:10:50+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,22 +23,15 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Author: guiguan
- * @Date:   2017-04-26T17:28:39+10:00
- * @Last modified by:   guiguan
- * @Last modified time: 2017-04-30T17:17:22+10:00
- */
-
 import { getItems } from 'feathers-hooks-common';
 
-export default _options => (hook) => {
+export default _options => hook => {
   let items = getItems(hook);
   const isArray = Array.isArray(items);
   items = isArray ? items : [items];
-  const watcher = hook.service.watcher;
+  const { watcher } = hook.service;
 
-  const processItem = (item) => {
+  const processItem = item => {
     const { _id: path, watching } = item;
 
     if (watching) {
