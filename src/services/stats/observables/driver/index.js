@@ -27,6 +27,7 @@ import _ from 'lodash';
 import type { ObservaleValue } from '../ObservableWrapper';
 import { ObservableWrapper } from '../ObservableWrapper';
 import { driverItems, getKnowledgeBaseRules } from '../../knowledgeBase/driver';
+import {ErrorCodes} from '../../../../errors/Errors';
 
 const MAX_HISTORY_SIZE = 720;
 
@@ -56,7 +57,8 @@ export default class MongoNativeDriver implements ObservableWrapper {
 
     if (mongoType === 'Mongos') {
       this.emitError(
-        'Creating Performance Panel on mongos and only minimal statistics is available',
+        // 'Creating Performance Panel on mongos and only minimal statistics is available',
+        {code: ErrorCodes.PERFORMANCE_LIMIT_MONGOS},
         'warn'
       );
     } else {
@@ -70,7 +72,8 @@ export default class MongoNativeDriver implements ObservableWrapper {
 
             if (storageEngine !== 'wiredTiger') {
               this.emitError(
-                `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
+                {code: ErrorCodes.PERFORMANCE_LIMIT_ENGINE, message: storageEngine},
+                // `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
                 'warn'
               );
             }

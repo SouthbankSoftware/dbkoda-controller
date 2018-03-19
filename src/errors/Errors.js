@@ -29,3 +29,9 @@ export const Errors = {
     return new errors.FeathersError(e.errmsg, 'SlaveOk', e.code, 'slave-ok');
   }
 };
+
+export const ErrorCodes = {
+  PERFORMANCE_LIMIT_MONGOS: 'PERFORMANCE_LIMIT_MONGOS',
+  PERFORMANCE_LIMIT_ENGINE: 'PERFORMANCE_LIMIT_ENGINE',
+};
+
