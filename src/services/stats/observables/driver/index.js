@@ -21,13 +21,17 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Observable, Observer } from 'rxjs';
+import {Observable, Observer} from 'rxjs';
 import _ from 'lodash';
 
-import type { ObservaleValue } from '../ObservableWrapper';
-import { ObservableWrapper } from '../ObservableWrapper';
-import { driverItems, getKnowledgeBaseRules } from '../../knowledgeBase/driver';
+import type {ObservaleValue} from '../ObservableWrapper';
+import {ObservableWrapper} from '../ObservableWrapper';
+import {driverItems, getKnowledgeBaseRules} from '../../knowledgeBase/driver';
 import {ErrorCodes} from '../../../../errors/Errors';
+import ConnectionListener, {
+  EVENT_NAME,
+} from '../../../../controllers/mongo-connection/connection-listener';
+import Status from '../../../../controllers/mongo-connection/status';
 
 const MAX_HISTORY_SIZE = 720;
 
@@ -46,14 +50,19 @@ export default class MongoNativeDriver implements ObservableWrapper {
   statsIntervalId: number;
   storageIntervalId: number;
   historyData: Object = {};
-  commandStatus: Object = { db_storage: true, others: true };
+  commandStatus: Object = {db_storage: true, others: true};
+  linstene: Object;
 
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
 
     // pre-check
-    const { connectionParameters: { mongoType }, driver } = this.mongoConnection;
+    const {connectionParameters: {mongoType}, driver} = this.mongoConnection;
     this.db = driver;
+
+    this.listener = new ConnectionListener(this.profileId);
+    this.listener.addListeners(this.db);
+    this.listener.on(EVENT_NAME, this.stateChanged.bind(this));
 
     if (mongoType === 'Mongos') {
       this.emitError(
@@ -72,7 +81,10 @@ export default class MongoNativeDriver implements ObservableWrapper {
 
             if (storageEngine !== 'wiredTiger') {
               this.emitError(
-                {code: ErrorCodes.PERFORMANCE_LIMIT_ENGINE, message: storageEngine},
+                {
+                  code: ErrorCodes.PERFORMANCE_LIMIT_ENGINE,
+                  message: storageEngine,
+                },
                 // `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
                 'warn'
               );
@@ -83,16 +95,32 @@ export default class MongoNativeDriver implements ObservableWrapper {
           });
     }
 
-    this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
-      this.observer = observer;
-      this.commandStatus.others = true;
-      this.commandStatus.db_storage = true;
-      this.start(this.db);
-      return () => {
-        this.pause();
-      };
-    });
+    this.rxObservable = Observable.create(
+      (observer: Observer<ObservaleValue>) => {
+        this.observer = observer;
+        this.commandStatus.others = true;
+        this.commandStatus.db_storage = true;
+        this.start(this.db);
+        return () => {
+          this.pause();
+        };
+      }
+    );
     return Promise.resolve();
+  }
+
+  stateChanged(e) {
+    l.debug(e);
+    switch (e.status) {
+      case Status.OPEN:
+        // reconnect
+        this.start(this.db);
+        break;
+      case Status.CLOSED:
+        this.pause();
+        break;
+      default:
+    }
   }
 
   /**
@@ -105,17 +133,23 @@ export default class MongoNativeDriver implements ObservableWrapper {
     }
     this.startServerStatus(db);
     this.startDBStorage(db);
-    this.statsIntervalId = setInterval(() => this.startServerStatus(db), this.samplingRate);
-    this.storageIntervalId = setInterval(() => this.startDBStorage(db), this.samplingRate * 3);
+    this.statsIntervalId = setInterval(
+      () => this.startServerStatus(db),
+      this.samplingRate
+    );
+    this.storageIntervalId = setInterval(
+      () => this.startDBStorage(db),
+      this.samplingRate * 3
+    );
   }
 
   startServerStatus(db) {
     if (this.commandStatus.others) {
-      db.command({ serverStatus: 1 }, {}, (err, data) => {
+      db.command({serverStatus: 1}, {}, (err, data) => {
         if (!err) {
           this.knowledgeBase = getKnowledgeBaseRules({
             version: data.version,
-            release: data.process
+            release: data.process,
           });
           if (!this.knowledgeBase) {
             return Promise.reject('Cant find knowledge base');
@@ -176,12 +210,15 @@ export default class MongoNativeDriver implements ObservableWrapper {
     }
     this.historyData[key].push(value);
     if (this.historyData[key].length > MAX_HISTORY_SIZE) {
-      this.historyData[key].splice(0, MAX_HISTORY_SIZE - this.historyData[key].length + 1);
+      this.historyData[key].splice(
+        0,
+        MAX_HISTORY_SIZE - this.historyData[key].length + 1
+      );
     }
     this.observer.next({
       profileId: this.profileId,
       timestamp: new Date().getTime(),
-      value
+      value,
     });
   }
 
@@ -195,6 +232,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
     this.rxObservable = null;
     this.previousData = {};
     this.historyData = {};
+    this.listener.removeListeners();
     return Promise.resolve();
   }
 }

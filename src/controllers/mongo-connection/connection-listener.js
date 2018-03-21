@@ -44,6 +44,14 @@ class ConnectionListener extends EventEmitter {
     db.on('reconnect', this.onReconnect.bind(this));
   }
 
+  removeListeners(db) {
+    db.removeListener('close', this.onClose);
+    db.removeListener('error', this.onError);
+    db.removeListener('timeout', this.onTimeout);
+    db.removeListener('parseError', this.onParseError);
+    db.removeListener('reconnect', this.onReconnect);
+  }
+
   onClose(e) {
     l.info('database connection closed [' + this.id + ']');
     this.emit(ConnectionListener.EVENT_NAME, {
