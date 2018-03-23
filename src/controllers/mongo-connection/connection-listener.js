@@ -48,11 +48,13 @@ class ConnectionListener extends EventEmitter {
   }
 
   removeListeners(db) {
-    db.removeListener('close', this.onClose);
-    db.removeListener('error', this.onError);
-    db.removeListener('timeout', this.onTimeout);
-    db.removeListener('parseError', this.onParseError);
-    db.removeListener('reconnect', this.onReconnect);
+    if (db) {
+      db.removeListener('close', this.onClose);
+      db.removeListener('error', this.onError);
+      db.removeListener('timeout', this.onTimeout);
+      db.removeListener('parseError', this.onParseError);
+      db.removeListener('reconnect', this.onReconnect);
+    }
     this.timeoutTime = -1;
     this.retryTimeout = null;
   }

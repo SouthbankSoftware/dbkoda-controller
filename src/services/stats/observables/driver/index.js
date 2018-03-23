@@ -243,8 +243,10 @@ export default class MongoNativeDriver implements ObservableWrapper {
     this.rxObservable = null;
     this.previousData = {};
     this.historyData = {};
-    this.listener.removeListeners();
-    this.listener.removeListener(EVENT_NAME, this.stateChanged);
+    if (this.listener) {
+      this.listener.removeListeners(this.db);
+      this.listener.removeListener(EVENT_NAME, this.stateChanged);
+    }
     return Promise.resolve();
   }
 }
