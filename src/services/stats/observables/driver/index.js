@@ -51,7 +51,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
   storageIntervalId: number;
   historyData: Object = {};
   commandStatus: Object = {db_storage: true, others: true};
-  linstene: Object;
+  listener: Object;
 
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
@@ -61,7 +61,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
     this.db = driver;
 
     this.listener = new ConnectionListener(this.profileId);
-    this.listener.addListeners(this.db);
+    this.listener.addListeners(this.db, this.mongoConnection.options);
     this.listener.on(EVENT_NAME, this.stateChanged.bind(this));
 
     if (mongoType === 'Mongos') {
@@ -114,10 +114,18 @@ export default class MongoNativeDriver implements ObservableWrapper {
     switch (e.status) {
       case Status.OPEN:
         // reconnect
-        this.start(this.db);
+        l.debug('mongod connection is open, start querying stats.');
+        this.commandStatus.others = true;
+        this.commandStatus.db_storage = true;
+          this.start(this.db, false);
         break;
       case Status.CLOSED:
+        l.debug('mongod connection is closed, pause stats.');
         this.pause();
+        break;
+      case Status.RETRY_FAILED:
+        l.error('mongo retry connection failed.');
+        this.emitError({code: ErrorCodes.MONGO_CONNECTION_CLOSED}, 'warn');
         break;
       default:
     }
@@ -126,13 +134,15 @@ export default class MongoNativeDriver implements ObservableWrapper {
   /**
    * start listening on topology change
    */
-  start(db: Object) {
+  start(db: Object, immediate: boolean = true) {
     if (!db) {
       this.emitError('failed to find mongodb driver.');
       return;
     }
-    this.startServerStatus(db);
-    this.startDBStorage(db);
+    if (immediate) {
+      this.startServerStatus(db);
+      this.startDBStorage(db);
+    }
     this.statsIntervalId = setInterval(
       () => this.startServerStatus(db),
       this.samplingRate
@@ -157,7 +167,6 @@ export default class MongoNativeDriver implements ObservableWrapper {
           this.postProcess(data, 'others');
         } else {
           log.error('cant run serverStatus command through driver.', err);
-          this.emitError('cant run serverStatus command through driver.');
           this.commandStatus.others = false;
         }
       });
@@ -225,6 +234,8 @@ export default class MongoNativeDriver implements ObservableWrapper {
   pause() {
     clearInterval(this.storageIntervalId);
     clearInterval(this.statsIntervalId);
+    this.storageIntervalId = -1;
+    this.statsIntervalId = -1;
   }
 
   destroy(): Promise<*> {
@@ -233,6 +244,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
     this.previousData = {};
     this.historyData = {};
     this.listener.removeListeners();
+    this.listener.removeListener(EVENT_NAME, this.stateChanged);
     return Promise.resolve();
   }
 }

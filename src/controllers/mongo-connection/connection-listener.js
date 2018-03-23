@@ -36,12 +36,15 @@ class ConnectionListener extends EventEmitter {
     this.id = id;
   }
 
-  addListeners(db) {
+  addListeners(db, options) {
     db.on('close', this.onClose.bind(this));
     db.on('error', this.onError.bind(this));
     db.on('timeout', this.onTimeout.bind(this));
     db.on('parseError', this.onParseError.bind(this));
     db.on('reconnect', this.onReconnect.bind(this));
+    if (options) {
+      this.timeoutTime = options.reconnectTries * options.reconnectInterval;
+    }
   }
 
   removeListeners(db) {
@@ -50,6 +53,8 @@ class ConnectionListener extends EventEmitter {
     db.removeListener('timeout', this.onTimeout);
     db.removeListener('parseError', this.onParseError);
     db.removeListener('reconnect', this.onReconnect);
+    this.timeoutTime = -1;
+    this.retryTimeout = null;
   }
 
   onClose(e) {
@@ -59,6 +64,13 @@ class ConnectionListener extends EventEmitter {
       status: Status.CLOSED,
       message: e && e.message,
     });
+    this.retryTimeout = setTimeout(() => {
+      this.emit(ConnectionListener.EVENT_NAME, {
+        id: this.id,
+        status: Status.RETRY_FAILED,
+        message: e && e.message,
+      });
+    }, this.timeoutTime);
   }
 
   onError(e) {
@@ -80,6 +92,10 @@ class ConnectionListener extends EventEmitter {
 
   onReconnect(e) {
     l.error('reconnect success [' + this.id + ']');
+    if (this.retryTimeout) {
+      clearTimeout(this.retryTimeout);
+      this.retryTimeout = null;
+    }
     this.emit(ConnectionListener.EVENT_NAME, {
       id: this.id,
       status: Status.OPEN,
