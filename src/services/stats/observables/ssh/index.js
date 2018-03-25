@@ -52,6 +52,7 @@ export default class SSHCounter implements ObservableWrapper {
   statsCmds: Object;
   intervalId: number;
   historyData: Object = {};
+  reconnectTimes: number = 0;
 
   constructor() {
     this.items = items;
@@ -226,7 +227,26 @@ export default class SSHCounter implements ObservableWrapper {
             });
         });
       } catch (err) {
+        // if connection is disconnected
+        this.reconnectSSH();
         reject(err);
+      }
+    });
+  }
+
+  reconnectSSH() {
+    const p = new Promise((resolve, reject) => {
+      this.createSshConnection(this.mongoConnection, resolve, reject);
+    });
+    p.then(() => {
+      // reconnect success
+      this.reconnectTimes = 0;
+      clearTimeout(this.reconnectTimeout);
+    }).catch(() => {
+      l.error(`reconnect ${this.reconnectTimes} times failed.`);
+      if (this.reconnectTimes < 120) {
+        this.reconnectTimes += 1;
+        this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), 1000);
       }
     });
   }
@@ -252,6 +272,7 @@ export default class SSHCounter implements ObservableWrapper {
           })
           .catch(err => {
             l.error(err);
+            l.error(`run command ${this.statsCmds[k].split(' ')[0]} failed.`);
             this.emitError(
               `run command ${this.statsCmds[k].split(' ')[0]} failed.`
             );
@@ -328,6 +349,7 @@ export default class SSHCounter implements ObservableWrapper {
    */
   destroy(): Promise<*> {
     clearInterval(this.intervalId);
+    clearTimeout(this.reconnectTimeout);
     if (this.client) {
       this.client.end();
       this.client = null;
