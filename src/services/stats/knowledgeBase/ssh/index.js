@@ -29,7 +29,7 @@ import {findRules} from '../utils';
 export const items = ['cpu', 'memory', 'disk', 'network', 'io'];
 
 export const rules = {
-  linux: linuxStats,
+  // linux: linuxStats,
   darwin: darwinStats
 };
 
@@ -44,5 +44,8 @@ export const rules = {
  */
 export const getKnowledgeBaseRules = ({osType, release, version}) => {
   const rule = findRules({osType, release, version}, rules);
+  if (!rule) {
+    return null;
+  }
   return {...rule};
 };

@@ -183,6 +183,7 @@ export default class SSHCounter implements ObservableWrapper {
             log.info('get os type ', this.osType);
             this.knowledgeBase = getKnowledgeBaseRules(this.osType);
             if (!this.knowledgeBase) {
+              this.emitError('Unsupported Operation System', 'error');
               return reject(
                 new Error(`Unsupported Operation System ${this.osType.os}`)
               );
