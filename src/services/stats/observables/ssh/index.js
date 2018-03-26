@@ -114,7 +114,7 @@ export default class SSHCounter implements ObservableWrapper {
       return Promise.reject(new Error(`Connection not exist ${id}`));
     }
     if (this.mongoConnection.sshOpts && !this.mongoConnection.sshOpts.host) {
-      return Promise.reject(new Error('SSH is not enabled'));
+      return Promise.reject({code: ErrorCodes.SSH_NOT_ENABLED});
     }
     return this.createConnection(this.mongoConnection);
   }

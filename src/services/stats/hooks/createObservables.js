@@ -137,7 +137,7 @@ export default () =>
                   } of profile ${profileId}`,
                   err
                 );
-                service.emitError(profileId, err.message);
+                service.emitError(profileId, err);
 
                 // debounce similar requests
                 return new Promise(resolve => {

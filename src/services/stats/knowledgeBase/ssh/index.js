@@ -29,7 +29,7 @@ import {findRules} from '../utils';
 export const items = ['cpu', 'memory', 'disk', 'network', 'io'];
 
 export const rules = {
-  // linux: linuxStats,
+  linux: linuxStats,
   darwin: darwinStats
 };
 
