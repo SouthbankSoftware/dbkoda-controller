@@ -1,0 +1,175 @@
+{
+	"info": {
+		"name": "dbkoda-controller-file",
+		"_postman_id": "d7f5ca24-8ba5-41e3-95f3-a73c7cb8d2d0",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "findWatchedFiles",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3030/files?watchingList=true",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"files"
+					],
+					"query": [
+						{
+							"key": "watchingList",
+							"value": "true",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "getFile",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3030/files/%2FUsers%2Fguiguan%2Ftest.js",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"files",
+						"%2FUsers%2Fguiguan%2Ftest.js"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "copyFile",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3030/files/%2FUsers%2Fguiguan%2Ftest.js?watching=false&copyTo=%2FUsers%2Fguiguan%2Ftest.js.backup",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"files",
+						"%2FUsers%2Fguiguan%2Ftest.js"
+					],
+					"query": [
+						{
+							"key": "watching",
+							"value": "false",
+							"equals": true
+						},
+						{
+							"key": "copyTo",
+							"value": "%2FUsers%2Fguiguan%2Ftest.js.backup",
+							"equals": true
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "createFile",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"_id\": \"/Users/guiguan/test.js\",\n\t\"watching\": true,\n\t\"content\": \"test\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/files",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"files"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "patchFile",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"watching\": false,\n\t\"content\": \"test\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3030/files/%2FUsers%2Fguiguan%2Ftest.js",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"files",
+						"%2FUsers%2Fguiguan%2Ftest.js"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "deleteFile",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3030/files/%2FUsers%2Fguiguan%2Ftest.js",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"files",
+						"%2FUsers%2Fguiguan%2Ftest.js"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
