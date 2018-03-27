@@ -1,4 +1,9 @@
-/*
+/**
+ * @Author: guiguan
+ * @Date:   2017-04-26T12:33:31+10:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-03-27T17:06:39+11:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -16,13 +21,6 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/**
- * @Author: guiguan
- * @Date:   2017-04-26T12:33:31+10:00
- * @Last modified by:   guiguan
- * @Last modified time: 2017-09-19T16:47:16+10:00
  */
 
 import _ from 'lodash';
