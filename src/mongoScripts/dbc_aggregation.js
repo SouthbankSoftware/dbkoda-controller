@@ -30,6 +30,7 @@
 /* eslint no-restricted-globals: 0 */
 /* eslint no-undef: 0 */
 /* eslint prefer-destructuring: 0 */
+/* eslint no-plusplus: 0 */
 
 // Structure and function to store aggregate builder data in the shell
 
@@ -38,6 +39,7 @@ dbk_agg.aggregates = {};
 
 dbk_agg.aggId = 0;
 dbk_agg.sampleSize = 100; // No of rows we sample by default
+dbk_agg.resultSize = 20; // Maximum rows held in result cache
 dbk_agg.debug = false;
 
 dbk_agg.setSampleSize = function(aggId) {
@@ -190,10 +192,14 @@ dbk_agg.getResults = function(aggId, stepId, reset) {
         if (dbk_agg.debug) printjson(partialPipeline); // eslint-disable-line
         mydb = db.getSiblingDB(agg.dbName); // eslint-disable-line
         try {
-            results = mydb // eslint-disable-line
+            results = [];
+            var returnCount = 0;
+            var stepCursor=mydb // eslint-disable-line
                 .getCollection(agg.collectionName)
-                .aggregate(partialPipeline)
-                .toArray();
+                .aggregate(partialPipeline);
+            while (stepCursor.hasNext() && returnCount++ <= dbk_agg.resultSize) {
+              results.push(stepCursor.next());
+            }
         } catch (err) {
             error = err.code;
         }
@@ -483,4 +489,7 @@ dbk_agg.testData = function() {
         dbk_agg.aggregates[myAgg].steps.length === bigSteps.length + 1,
         'steps should be equal to bigsteps'
     ); // eslint-disable-line
+    var bigAgg = [{$match:{1:1}}];
+    myAgg = dbk_agg.newAggBuilder('enron', 'messages').id;
+    dbk_agg.setAllSteps(myAgg, bigAgg);
 };
