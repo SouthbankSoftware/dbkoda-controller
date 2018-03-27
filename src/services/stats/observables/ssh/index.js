@@ -250,6 +250,7 @@ export default class SSHCounter implements ObservableWrapper {
       l.info('ssh reconnect successfully');
       this.reconnectTimes = 0;
       this.statsCmds = buildCommands(this.knowledgeBase);
+      this.emitError({code: ErrorCodes.SSH_RECONNECTION_SUCCESS}, 'warn');
       clearInterval(this.reconnectTimeout);
       this.reconnecting = false;
     }).catch(() => {
