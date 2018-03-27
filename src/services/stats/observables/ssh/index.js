@@ -54,7 +54,7 @@ export default class SSHCounter implements ObservableWrapper {
   intervalId: number;
   historyData: Object = {};
   reconnectTimes: number = 0;
-  sshConnectionRetryTimes = 24;
+  sshConnectionRetryTimes = 120;
   reconnecting = false;
 
   constructor() {
@@ -234,7 +234,7 @@ export default class SSHCounter implements ObservableWrapper {
         // if connection is disconnected
         if (!this.reconnecting) {
           this.reconnecting = true;
-          this.reconnectTimeout = setInterval(() => this.reconnectSSH(), 5000);
+          this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), 1000);
         }
         reject(err);
       }
@@ -242,6 +242,13 @@ export default class SSHCounter implements ObservableWrapper {
   }
 
   reconnectSSH() {
+    // if (this.reconnecting && this.reconnectTimes >= this.sshConnectionRetryTimes) {
+    //   this.reconnecting = false;
+    //   return;
+    // }
+    // if (!this.reconnecting) {
+    //   this.reconnecting = true;
+    // }
     const p = new Promise((resolve, reject) => {
       this.createSshConnection(this.mongoConnection.sshOpts, resolve, reject);
     });
@@ -251,17 +258,18 @@ export default class SSHCounter implements ObservableWrapper {
       this.reconnectTimes = 0;
       this.statsCmds = buildCommands(this.knowledgeBase);
       this.emitError({code: ErrorCodes.SSH_RECONNECTION_SUCCESS}, 'warn');
-      clearInterval(this.reconnectTimeout);
+      clearTimeout(this.reconnectTimeout);
       this.reconnecting = false;
     }).catch(() => {
       l.error(`reconnect ssh ${this.reconnectTimes + 1} times failed.`);
       if (this.reconnectTimes < this.sshConnectionRetryTimes && this.reconnecting && this.rxObservable) {
         this.reconnectTimes += 1;
+        this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), 1000);
       } else {
         l.error('ssh reconnect failed');
         this.reconnecting = false;
         this.reconnectTimes = 0;
-        clearInterval(this.reconnectTimeout);
+        clearTimeout(this.reconnectTimeout);
         this.emitError({code: ErrorCodes.SSH_CONNECTION_CLOSED}, 'warn');
       }
     });
