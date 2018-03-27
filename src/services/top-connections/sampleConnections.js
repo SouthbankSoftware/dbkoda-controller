@@ -5,7 +5,7 @@
  * @Date:   2018-03-26T11:22:44+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-27T10:22:59+11:00
+ * @Last modified time: 2018-03-27T11:53:17+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -122,7 +122,7 @@ export default (options: {
               host = null,
               appName = null,
               client = null,
-              op,
+              op
               // query
             } = v;
 
@@ -159,8 +159,7 @@ export default (options: {
             const {
               opid,
               ns,
-              // eslint-disable-next-line camelcase
-              microsecs_running = 0,
+              microsecs_running: microsecsRunning = 0,
               command = null,
               planSummary = null,
               currentOpTime = null
@@ -171,7 +170,7 @@ export default (options: {
               ops[opid] = {
                 ns,
                 op,
-                us: microsecs_running,
+                us: microsecsRunning,
                 command,
                 planSummary,
                 currentOpTime
@@ -181,10 +180,8 @@ export default (options: {
               const op = ops[opid];
               const { us } = op;
 
-              // eslint-disable-next-line camelcase
-              if (us < microsecs_running) {
-                // eslint-disable-next-line camelcase
-                op.us = microsecs_running;
+              if (us < microsecsRunning) {
+                op.us = microsecsRunning;
                 op.currentOpTime = currentOpTime;
               }
             }
