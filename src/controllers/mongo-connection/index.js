@@ -430,7 +430,8 @@ class MongoConnectionController {
             Status.OPEN,
             conn,
             dbVersion,
-            v.shell.shellVersion
+            v.shell.shellVersion,
+            that.options
           );
           that.connections[id].addShell(shellId, v.shell);
           that.registerMongoStatusListener(id, db);
@@ -606,7 +607,7 @@ class MongoConnectionController {
    */
   registerMongoStatusListener(id, db) {
     const listener = new ConnectionListener(id);
-    listener.addListeners(db);
+    listener.addListeners(db, this.options);
     listener.on(ConnectionListener.EVENT_NAME, e => {
       l.debug('get status change from listeners ', e);
       this.connections[id].status = e.status;

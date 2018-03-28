@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-12T20:23:06+11:00
+ * @Last modified time: 2018-03-26T11:47:24+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -50,6 +50,7 @@ import mongoCmdValidator from './mongo-cmd-validator';
 import remoteExecService from './remote-execution';
 import drill from './drill';
 import masterPass from './master-pass';
+import topConnections from './top-connections';
 
 module.exports = function() {
   const app = this;
@@ -85,4 +86,5 @@ module.exports = function() {
   app.configure(remoteExecService);
   app.configure(drill);
   app.configure(masterPass);
+  app.configure(topConnections);
 };

@@ -21,12 +21,17 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Observable, Observer } from 'rxjs';
+import {Observable, Observer} from 'rxjs';
 import _ from 'lodash';
 
-import type { ObservaleValue } from '../ObservableWrapper';
-import { ObservableWrapper } from '../ObservableWrapper';
-import { driverItems, getKnowledgeBaseRules } from '../../knowledgeBase/driver';
+import type {ObservaleValue} from '../ObservableWrapper';
+import {ObservableWrapper} from '../ObservableWrapper';
+import {driverItems, getKnowledgeBaseRules} from '../../knowledgeBase/driver';
+import {ErrorCodes} from '../../../../errors/Errors';
+import ConnectionListener, {
+  EVENT_NAME,
+} from '../../../../controllers/mongo-connection/connection-listener';
+import Status from '../../../../controllers/mongo-connection/status';
 
 const MAX_HISTORY_SIZE = 720;
 
@@ -45,18 +50,24 @@ export default class MongoNativeDriver implements ObservableWrapper {
   statsIntervalId: number;
   storageIntervalId: number;
   historyData: Object = {};
-  commandStatus: Object = { db_storage: true, others: true };
+  commandStatus: Object = {db_storage: true, others: true};
+  listener: Object;
 
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
 
     // pre-check
-    const { connectionParameters: { mongoType }, driver } = this.mongoConnection;
+    const {connectionParameters: {mongoType}, driver} = this.mongoConnection;
     this.db = driver;
+
+    this.listener = new ConnectionListener(this.profileId);
+    this.listener.addListeners(this.db, this.mongoConnection.options);
+    this.listener.on(EVENT_NAME, this.stateChanged.bind(this));
 
     if (mongoType === 'Mongos') {
       this.emitError(
-        'Creating Performance Panel on mongos and only minimal statistics is available',
+        // 'Creating Performance Panel on mongos and only minimal statistics is available',
+        {code: ErrorCodes.PERFORMANCE_LIMIT_MONGOS},
         'warn'
       );
     } else {
@@ -70,7 +81,11 @@ export default class MongoNativeDriver implements ObservableWrapper {
 
             if (storageEngine !== 'wiredTiger') {
               this.emitError(
-                `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
+                {
+                  code: ErrorCodes.PERFORMANCE_LIMIT_ENGINE,
+                  message: storageEngine,
+                },
+                // `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
                 'warn'
               );
             }
@@ -80,39 +95,71 @@ export default class MongoNativeDriver implements ObservableWrapper {
           });
     }
 
-    this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
-      this.observer = observer;
-      this.commandStatus.others = true;
-      this.commandStatus.db_storage = true;
-      this.start(this.db);
-      return () => {
-        this.pause();
-      };
-    });
+    this.rxObservable = Observable.create(
+      (observer: Observer<ObservaleValue>) => {
+        this.observer = observer;
+        this.commandStatus.others = true;
+        this.commandStatus.db_storage = true;
+        this.start(this.db);
+        return () => {
+          this.pause();
+        };
+      }
+    );
     return Promise.resolve();
+  }
+
+  stateChanged(e) {
+    l.debug(e);
+    switch (e.status) {
+      case Status.OPEN:
+        // reconnect
+        l.debug('mongod connection is open, start querying stats.');
+        this.commandStatus.others = true;
+        this.commandStatus.db_storage = true;
+          this.start(this.db, false);
+        break;
+      case Status.CLOSED:
+        l.debug('mongod connection is closed, pause stats.');
+        this.pause();
+        break;
+      case Status.RETRY_FAILED:
+        l.error('mongo retry connection failed.');
+        this.emitError({code: ErrorCodes.MONGO_CONNECTION_CLOSED}, 'warn');
+        break;
+      default:
+    }
   }
 
   /**
    * start listening on topology change
    */
-  start(db: Object) {
+  start(db: Object, immediate: boolean = true) {
     if (!db) {
       this.emitError('failed to find mongodb driver.');
       return;
     }
-    this.startServerStatus(db);
-    this.startDBStorage(db);
-    this.statsIntervalId = setInterval(() => this.startServerStatus(db), this.samplingRate);
-    this.storageIntervalId = setInterval(() => this.startDBStorage(db), this.samplingRate * 3);
+    if (immediate) {
+      this.startServerStatus(db);
+      this.startDBStorage(db);
+    }
+    this.statsIntervalId = setInterval(
+      () => this.startServerStatus(db),
+      this.samplingRate
+    );
+    this.storageIntervalId = setInterval(
+      () => this.startDBStorage(db),
+      this.samplingRate * 3
+    );
   }
 
   startServerStatus(db) {
     if (this.commandStatus.others) {
-      db.command({ serverStatus: 1 }, {}, (err, data) => {
+      db.command({serverStatus: 1}, {}, (err, data) => {
         if (!err) {
           this.knowledgeBase = getKnowledgeBaseRules({
             version: data.version,
-            release: data.process
+            release: data.process,
           });
           if (!this.knowledgeBase) {
             return Promise.reject('Cant find knowledge base');
@@ -120,7 +167,6 @@ export default class MongoNativeDriver implements ObservableWrapper {
           this.postProcess(data, 'others');
         } else {
           log.error('cant run serverStatus command through driver.', err);
-          this.emitError('cant run serverStatus command through driver.');
           this.commandStatus.others = false;
         }
       });
@@ -173,18 +219,23 @@ export default class MongoNativeDriver implements ObservableWrapper {
     }
     this.historyData[key].push(value);
     if (this.historyData[key].length > MAX_HISTORY_SIZE) {
-      this.historyData[key].splice(0, MAX_HISTORY_SIZE - this.historyData[key].length + 1);
+      this.historyData[key].splice(
+        0,
+        MAX_HISTORY_SIZE - this.historyData[key].length + 1
+      );
     }
     this.observer.next({
       profileId: this.profileId,
       timestamp: new Date().getTime(),
-      value
+      value,
     });
   }
 
   pause() {
     clearInterval(this.storageIntervalId);
     clearInterval(this.statsIntervalId);
+    this.storageIntervalId = -1;
+    this.statsIntervalId = -1;
   }
 
   destroy(): Promise<*> {
@@ -192,6 +243,10 @@ export default class MongoNativeDriver implements ObservableWrapper {
     this.rxObservable = null;
     this.previousData = {};
     this.historyData = {};
+    if (this.listener) {
+      this.listener.removeListeners(this.db);
+      this.listener.removeListener(EVENT_NAME, this.stateChanged);
+    }
     return Promise.resolve();
   }
 }

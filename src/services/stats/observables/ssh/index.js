@@ -36,6 +36,7 @@ import os from 'os';
 import type { ObservableWrapper, ObservaleValue } from '../ObservableWrapper';
 import { getKnowledgeBaseRules, items } from '../../knowledgeBase/ssh';
 import { buildCommands } from '../../knowledgeBase/utils';
+import {ErrorCodes} from '../../../../errors/Errors';
 
 export default class SSHCounter implements ObservableWrapper {
   osType: Object = {};
@@ -52,6 +53,9 @@ export default class SSHCounter implements ObservableWrapper {
   statsCmds: Object;
   intervalId: number;
   historyData: Object = {};
+  reconnectTimes: number = 0;
+  sshConnectionRetryTimes = 120;
+  reconnecting = false;
 
   constructor() {
     this.items = items;
@@ -110,7 +114,7 @@ export default class SSHCounter implements ObservableWrapper {
       return Promise.reject(new Error(`Connection not exist ${id}`));
     }
     if (this.mongoConnection.sshOpts && !this.mongoConnection.sshOpts.host) {
-      return Promise.reject(new Error('SSH is not enabled'));
+      return Promise.reject({code: ErrorCodes.SSH_NOT_ENABLED});
     }
     return this.createConnection(this.mongoConnection);
   }
@@ -179,6 +183,7 @@ export default class SSHCounter implements ObservableWrapper {
             log.info('get os type ', this.osType);
             this.knowledgeBase = getKnowledgeBaseRules(this.osType);
             if (!this.knowledgeBase) {
+              this.emitError('Unsupported Operation System', 'error');
               return reject(
                 new Error(`Unsupported Operation System ${this.osType.os}`)
               );
@@ -190,7 +195,7 @@ export default class SSHCounter implements ObservableWrapper {
           });
       })
       .on('error', err => {
-        this.emitError('Client Error: ' + err.message);
+        this.emitError({code: ErrorCodes.SSH_CONNECTION_CLOSED});
         reject(new errors.BadRequest('Client Error: ' + err.message));
       })
       .connect(_.omit({ ...sshOpts, readyTimeout: 30000 }, 'cwd'));
@@ -208,7 +213,6 @@ export default class SSHCounter implements ObservableWrapper {
           if (err || !stream) {
             if (!ignoreError) {
               log.error(err);
-              this.emitError('Failed to run command through SSH');
               return reject(new Error('Failed to run command through SSH.'));
             }
             return resolve(null);
@@ -221,12 +225,52 @@ export default class SSHCounter implements ObservableWrapper {
               output += data.toString('utf8');
             })
             .stderr.on('data', data => {
+              // error
               !ignoreError && log.error(data.toString('utf8'));
               resolve(null);
             });
         });
       } catch (err) {
+        // if connection is disconnected
+        if (!this.reconnecting) {
+          this.reconnecting = true;
+          this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), 1000);
+        }
         reject(err);
+      }
+    });
+  }
+
+  reconnectSSH() {
+    // if (this.reconnecting && this.reconnectTimes >= this.sshConnectionRetryTimes) {
+    //   this.reconnecting = false;
+    //   return;
+    // }
+    // if (!this.reconnecting) {
+    //   this.reconnecting = true;
+    // }
+    const p = new Promise((resolve, reject) => {
+      this.createSshConnection(this.mongoConnection.sshOpts, resolve, reject);
+    });
+    p.then(() => {
+      // reconnect success
+      l.info('ssh reconnect successfully');
+      this.reconnectTimes = 0;
+      this.statsCmds = buildCommands(this.knowledgeBase);
+      this.emitError({code: ErrorCodes.SSH_RECONNECTION_SUCCESS}, 'warn');
+      clearTimeout(this.reconnectTimeout);
+      this.reconnecting = false;
+    }).catch(() => {
+      l.error(`reconnect ssh ${this.reconnectTimes + 1} times failed.`);
+      if (this.reconnectTimes < this.sshConnectionRetryTimes && this.reconnecting && this.rxObservable) {
+        this.reconnectTimes += 1;
+        this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), 1000);
+      } else {
+        l.error('ssh reconnect failed');
+        this.reconnecting = false;
+        this.reconnectTimes = 0;
+        clearTimeout(this.reconnectTimeout);
+        this.emitError({code: ErrorCodes.SSH_CONNECTION_CLOSED}, 'warn');
       }
     });
   }
@@ -241,24 +285,25 @@ export default class SSHCounter implements ObservableWrapper {
             } catch (err) {
               l.error(err);
               delete this.statsCmds[k];
-              this.emitError(
-                `parse command ${this.statsCmds[k].split(' ')[0]} failed.`
-              );
+              // this.emitError(
+              //   `parse command ${this.statsCmds[k].split(' ')[0]} failed.`
+              // );
               delete this.statsCmds[k];
-              if (_.isEmpty(this.statsCmds)) {
-                this.observer.complete();
-              }
+              // if (_.isEmpty(this.statsCmds)) {
+              //   this.observer.complete();
+              // }
             }
           })
           .catch(err => {
             l.error(err);
-            this.emitError(
-              `run command ${this.statsCmds[k].split(' ')[0]} failed.`
-            );
+            l.error(`run command ${this.statsCmds[k].split(' ')[0]} failed.`);
+            // this.emitError(
+            //   `run command ${this.statsCmds[k].split(' ')[0]} failed.`
+            // );
             delete this.statsCmds[k];
-            if (_.isEmpty(this.statsCmds)) {
-              this.observer.complete();
-            }
+            // if (_.isEmpty(this.statsCmds)) {
+            //   this.observer.complete();
+            // }
           });
       });
     };
@@ -328,6 +373,7 @@ export default class SSHCounter implements ObservableWrapper {
    */
   destroy(): Promise<*> {
     clearInterval(this.intervalId);
+    clearInterval(this.reconnectTimeout);
     if (this.client) {
       this.client.end();
       this.client = null;

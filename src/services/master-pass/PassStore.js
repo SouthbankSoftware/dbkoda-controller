@@ -1,8 +1,8 @@
 /**
  * @flow
  *
- * @Last modified by:   christrott
- * @Last modified time: 2017-01-30T15:17:54+11:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-03-27T17:24:50+11:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -56,13 +56,17 @@ export default class PassStore {
     this.store.set(profileId, password);
     // Save the encrypted store to a file
     const storeDump = yaml.safeDump(PassStore._convertStoreToJson(this.store));
-    return this.file.create({ _id: this.storeFilePath, content: storeDump });
+    return this.file.create({ _id: this.storeFilePath, content: storeDump, watching: false });
   }
 
   initStore(verifyHash: string): Promise<string> {
     // Load the existing file
     return this.file
-      .get(this.storeFilePath)
+      .get(this.storeFilePath, {
+        query: {
+          watching: 'false'
+        }
+      })
       .then((storeFile) => {
         if (storeFile) {
           const storeObj = yaml.safeLoad(storeFile.content, 'utf-8');
@@ -84,7 +88,7 @@ export default class PassStore {
     this.store.set(this.VERIFY_KEY, verifyHash);
     const storeDump = yaml.safeDump(PassStore._convertStoreToJson(this.store));
     this.file
-      .create({ _id: this.storeFilePath, content: storeDump })
+      .create({ _id: this.storeFilePath, content: storeDump, watching: false })
       .then(() => {
         return Promise.resolve();
       });

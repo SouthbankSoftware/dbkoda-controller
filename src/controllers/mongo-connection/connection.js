@@ -24,7 +24,7 @@
  */
 
 class MongoConnection {
-  constructor(id, driver, status, conn, dbVersion, shellVersion) {
+  constructor(id, driver, status, conn, dbVersion, shellVersion, options) {
     this.id = id;
     this.driver = driver;
     this.shells = {};
@@ -43,6 +43,7 @@ class MongoConnection {
     this.requireSlaveOk = conn.requireSlaveOk;
     this.authenticationDatabase = conn.authenticationDatabase;
     this.usePasswordStore = conn.usePasswordStore;
+    this.options = options;
   }
 
   getShell(shellId) {
