@@ -610,7 +610,9 @@ class MongoConnectionController {
     listener.addListeners(db, this.options);
     listener.on(ConnectionListener.EVENT_NAME, e => {
       l.debug('get status change from listeners ', e);
-      this.connections[id].status = e.status;
+      if (this.connections[id]) {
+        this.connections[id].status = e.status;
+      }
       if (Status.CLOSED === e.status) {
         l.debug('send closed event to client ', e.message);
         // notify front end when the mongo instance got closed

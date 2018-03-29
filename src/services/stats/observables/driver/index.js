@@ -28,9 +28,7 @@ import type {ObservaleValue} from '../ObservableWrapper';
 import {ObservableWrapper} from '../ObservableWrapper';
 import {driverItems, getKnowledgeBaseRules} from '../../knowledgeBase/driver';
 import {ErrorCodes} from '../../../../errors/Errors';
-import ConnectionListener, {
-  EVENT_NAME,
-} from '../../../../controllers/mongo-connection/connection-listener';
+import ConnectionListener, {EVENT_NAME} from '../../../../controllers/mongo-connection/connection-listener';
 import Status from '../../../../controllers/mongo-connection/status';
 
 const MAX_HISTORY_SIZE = 720;
@@ -74,25 +72,25 @@ export default class MongoNativeDriver implements ObservableWrapper {
       const adminDb = this.db.admin();
 
       adminDb &&
-        adminDb
-          .serverStatus()
-          .then(res => {
-            const storageEngine = _.get(res, 'storageEngine.name');
+      adminDb
+        .serverStatus()
+        .then(res => {
+          const storageEngine = _.get(res, 'storageEngine.name');
 
-            if (storageEngine !== 'wiredTiger') {
-              this.emitError(
-                {
-                  code: ErrorCodes.PERFORMANCE_LIMIT_ENGINE,
-                  message: storageEngine,
-                },
-                // `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
-                'warn'
-              );
-            }
-          })
-          .catch(err => {
-            l.error(err);
-          });
+          if (storageEngine !== 'wiredTiger') {
+            this.emitError(
+              {
+                code: ErrorCodes.PERFORMANCE_LIMIT_ENGINE,
+                message: storageEngine,
+              },
+              // `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
+              'warn'
+            );
+          }
+        })
+        .catch(err => {
+          l.error(err);
+        });
     }
 
     this.rxObservable = Observable.create(
@@ -117,7 +115,8 @@ export default class MongoNativeDriver implements ObservableWrapper {
         l.debug('mongod connection is open, start querying stats.');
         this.commandStatus.others = true;
         this.commandStatus.db_storage = true;
-          this.start(this.db, false);
+        this.start(this.db, false);
+        this.emitError({code: ErrorCodes.MONGO_RECONNECT_SUCCESS}, 'warn');
         break;
       case Status.CLOSED:
         l.debug('mongod connection is closed, pause stats.');
@@ -186,7 +185,6 @@ export default class MongoNativeDriver implements ObservableWrapper {
           );
         })
         .then(dbStats => {
-          l.debug('db stats', dbStats);
           this.postProcess(dbStats, 'db_storage');
         })
         .catch(err => {

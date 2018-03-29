@@ -55,6 +55,7 @@ export default class SSHCounter implements ObservableWrapper {
   historyData: Object = {};
   reconnectTimes: number = 0;
   sshConnectionRetryTimes = 120;
+  sshReconnectRetryDelay = 1000;
   reconnecting = false;
 
   constructor() {
@@ -183,9 +184,9 @@ export default class SSHCounter implements ObservableWrapper {
             log.info('get os type ', this.osType);
             this.knowledgeBase = getKnowledgeBaseRules(this.osType);
             if (!this.knowledgeBase) {
-              this.emitError('Unsupported Operation System', 'error');
+              this.emitError({code: ErrorCodes.UNSUPPORTED_STATS_OS}, 'error');
               return reject(
-                new Error(`Unsupported Operation System ${this.osType.os}`)
+                new Error('Unsupported Operation System')
               );
             }
             resolve();
@@ -195,7 +196,9 @@ export default class SSHCounter implements ObservableWrapper {
           });
       })
       .on('error', err => {
-        this.emitError({code: ErrorCodes.SSH_CONNECTION_CLOSED});
+        if (!this.knowledgeBase) {
+          this.emitError({code: ErrorCodes.SSH_CONNECTION_CLOSED});
+        }
         reject(new errors.BadRequest('Client Error: ' + err.message));
       })
       .connect(_.omit({ ...sshOpts, readyTimeout: 30000 }, 'cwd'));
@@ -213,6 +216,12 @@ export default class SSHCounter implements ObservableWrapper {
           if (err || !stream) {
             if (!ignoreError) {
               log.error(err);
+              if (!this.knowledgeBase) {
+                this.emitError({code: ErrorCodes.UNSUPPORTED_STATS_OS}, 'error');
+                return reject(
+                  new Error('Unsupported Operation System')
+                );
+              }
               return reject(new Error('Failed to run command through SSH.'));
             }
             return resolve(null);
@@ -234,7 +243,7 @@ export default class SSHCounter implements ObservableWrapper {
         // if connection is disconnected
         if (!this.reconnecting) {
           this.reconnecting = true;
-          this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), 1000);
+          this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), this.sshReconnectRetryDelay);
         }
         reject(err);
       }
@@ -262,7 +271,7 @@ export default class SSHCounter implements ObservableWrapper {
       this.reconnecting = false;
     }).catch(() => {
       l.error(`reconnect ssh ${this.reconnectTimes + 1} times failed.`);
-      if (this.reconnectTimes < this.sshConnectionRetryTimes && this.reconnecting && this.rxObservable) {
+      if (this.reconnectTimes < this.sshConnectionRetryTimes - 1 && this.reconnecting && this.rxObservable) {
         this.reconnectTimes += 1;
         this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), 1000);
       } else {
