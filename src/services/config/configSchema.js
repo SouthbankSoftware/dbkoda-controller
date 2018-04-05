@@ -37,6 +37,7 @@ export const configDefaults = {
   drillCmd: null, // ui will figure this out
   drillControllerCmd: null, // ui will figure this out
   telemetryEnabled: true,
+  tableOutputDefault: false,
   showWelcomePageAtStart: true,
   passwordStoreEnabled: false,
   performancePanel: {
@@ -64,10 +65,13 @@ const configSchema = {
     drillControllerCmd: {
       type: ['string', 'null']
     },
+    showWelcomePageAtStart: {
+      type: 'boolean'
+    },
     telemetryEnabled: {
       type: 'boolean'
     },
-    showWelcomePageAtStart: {
+    tableOutputDefault: {
       type: 'boolean'
     },
     passwordStoreEnabled: {
