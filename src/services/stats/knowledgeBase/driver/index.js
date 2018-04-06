@@ -23,7 +23,7 @@ import _ from 'lodash';
 import {findRules} from '../utils';
 import {getAllItemKeys, parseData} from './rule_parser';
 
-export const driverItems = [...getAllItemKeys(), 'db_storage'];
+export const driverItems = [...getAllItemKeys(), 'db_storage', 'db_profile'];
 
 /**
  * define the mongo stats knowledgebase rules.

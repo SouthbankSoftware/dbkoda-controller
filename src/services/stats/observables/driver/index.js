@@ -28,8 +28,12 @@ import type {ObservaleValue} from '../ObservableWrapper';
 import {ObservableWrapper} from '../ObservableWrapper';
 import {driverItems, getKnowledgeBaseRules} from '../../knowledgeBase/driver';
 import {ErrorCodes} from '../../../../errors/Errors';
-import ConnectionListener, {EVENT_NAME} from '../../../../controllers/mongo-connection/connection-listener';
+import ConnectionListener, {
+  EVENT_NAME,
+} from '../../../../controllers/mongo-connection/connection-listener';
 import Status from '../../../../controllers/mongo-connection/status';
+
+const {ProfilingController} = require('../../../../controllers/profiling');
 
 const MAX_HISTORY_SIZE = 720;
 
@@ -47,6 +51,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
   previousData: Object = {};
   statsIntervalId: number;
   storageIntervalId: number;
+  startProfilingId: number;
   historyData: Object = {};
   commandStatus: Object = {db_storage: true, others: true};
   listener: Object;
@@ -72,25 +77,25 @@ export default class MongoNativeDriver implements ObservableWrapper {
       const adminDb = this.db.admin();
 
       adminDb &&
-      adminDb
-        .serverStatus()
-        .then(res => {
-          const storageEngine = _.get(res, 'storageEngine.name');
+        adminDb
+          .serverStatus()
+          .then(res => {
+            const storageEngine = _.get(res, 'storageEngine.name');
 
-          if (storageEngine !== 'wiredTiger') {
-            this.emitError(
-              {
-                code: ErrorCodes.PERFORMANCE_LIMIT_ENGINE,
-                message: storageEngine,
-              },
-              // `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
-              'warn'
-            );
-          }
-        })
-        .catch(err => {
-          l.error(err);
-        });
+            if (storageEngine !== 'wiredTiger') {
+              this.emitError(
+                {
+                  code: ErrorCodes.PERFORMANCE_LIMIT_ENGINE,
+                  message: storageEngine,
+                },
+                // `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
+                'warn'
+              );
+            }
+          })
+          .catch(err => {
+            l.error(err);
+          });
     }
 
     this.rxObservable = Observable.create(
@@ -98,6 +103,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
         this.observer = observer;
         this.commandStatus.others = true;
         this.commandStatus.db_storage = true;
+        this.commandStatus.profiling = true;
         this.start(this.db);
         return () => {
           this.pause();
@@ -141,6 +147,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
     if (immediate) {
       this.startServerStatus(db);
       this.startDBStorage(db);
+      this.startProfiling(db);
     }
     this.statsIntervalId = setInterval(
       () => this.startServerStatus(db),
@@ -148,6 +155,10 @@ export default class MongoNativeDriver implements ObservableWrapper {
     );
     this.storageIntervalId = setInterval(
       () => this.startDBStorage(db),
+      this.samplingRate * 3
+    );
+    this.startProfilingId = setInterval(
+      () => this.startProfiling(db),
       this.samplingRate * 3
     );
   }
@@ -168,6 +179,23 @@ export default class MongoNativeDriver implements ObservableWrapper {
           log.error('cant run serverStatus command through driver.', err);
           this.commandStatus.others = false;
         }
+      });
+    }
+  }
+
+  startProfiling(db) {
+    if (this.commandStatus.profiling) {
+      const ctr = new ProfilingController(db);
+      ctr.profile(this.samplingRate).then(data => {
+        this.observer.next({
+          profileId: this.profileId,
+          timestamp: new Date().getTime(),
+          value: data,
+          ignoreStats: true,
+        });
+      }).catch(err => {
+        // this.commandStatus.profiling = false;
+        l.error(err);
       });
     }
   }
@@ -232,8 +260,10 @@ export default class MongoNativeDriver implements ObservableWrapper {
   pause() {
     clearInterval(this.storageIntervalId);
     clearInterval(this.statsIntervalId);
+    clearInterval(this.startProfilingId);
     this.storageIntervalId = -1;
     this.statsIntervalId = -1;
+    this.startProfilingId = -1;
   }
 
   destroy(): Promise<*> {
