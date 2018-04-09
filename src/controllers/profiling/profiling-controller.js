@@ -4,12 +4,6 @@ const {ErrorCodes} = require('../../errors/Errors');
 /* eslint-disable */
 
 class ProfilingController extends EventEmitter {
-  constructor(db, options = {level: 1, slowms: 200}) {
-    super();
-    this.db = db;
-    this.options = options;
-  }
-
   setup(app) {
     this.app = app;
   }
