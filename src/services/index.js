@@ -24,6 +24,7 @@
 import mongoStopExecution from './mongo-stop-execution';
 import mongoConnectionController from '../controllers/mongo-connection';
 import mongoInspectorController from '../controllers/inspector';
+import mongoProfileController from '../controllers/profiling';
 import mongoAutoCompleteController from '../controllers/auto-complete';
 import lintingController from '../controllers/linter';
 import syncExecutionController from '../controllers/sync-execution';
@@ -63,6 +64,7 @@ module.exports = function() {
   app.configure(lintingController);
   app.configure(syncExecutionController);
   app.configure(remoteExecutionController);
+  app.configure(mongoProfileController);
 
   app.configure(file);
   app.configure(mongoCmdValidator);

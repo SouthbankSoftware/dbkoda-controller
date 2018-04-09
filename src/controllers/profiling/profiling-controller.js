@@ -1,11 +1,17 @@
 const EventEmitter = require('events');
 const {ErrorCodes} = require('../../errors/Errors');
 
+/* eslint-disable */
+
 class ProfilingController extends EventEmitter {
   constructor(db, options = {level: 1, slowms: 200}) {
     super();
     this.db = db;
     this.options = options;
+  }
+
+  setup(app) {
+    this.app = app;
   }
 
   profile(sampleRate) {
@@ -50,16 +56,21 @@ class ProfilingController extends EventEmitter {
   //   });
   // }
 
-  getProfileLevel() {
+  patch(driver, data) {  // data: {level: 1, slowms: 200, databaseName}
+    l.debug('update profile ', data);
+    return driver.db(data.databaseName).command({ profile : data.level, slowms : data.slowms });
+  }
+
+  get(db) {
     return new Promise((resolve, reject) => {
-      this.db
+      db
         .admin()
         .listDatabases()
         .then(dbs => {
           const proms = dbs.databases.map(
             d =>
               new Promise((r, j) =>
-                this.db
+                db
                   .db(d.name)
                   .command({profile: -1})
                   .then(v => r({dbName: d, v}).catch(err => j(err)))
@@ -75,4 +86,5 @@ class ProfilingController extends EventEmitter {
   }
 }
 
-module.exports = ProfilingController;
+
+module.exports.ProfilingController = ProfilingController;

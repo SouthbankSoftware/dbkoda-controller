@@ -1,5 +1,4 @@
 const hooks = require('./hooks');
-const {ProfilingController} = require('../../controllers/profiling');
 
 class Profile {
   constructor() {
@@ -13,16 +12,16 @@ class Profile {
   }
 
   patch(id, data) {
-    // data is the configuation for profile, it is {level: 1, slowms: 200}
+    // data is the configuation for profile, it is {level: 1, slowms: 200, databaseName: 'test'}
     log.debug('patch profile ', id, data);
-    this.controller.updateProfileConfiguration(id, data);
+    const connectObj = this.connectCtr.connections[id];
+    return this.controller.patch(connectObj.driver, data);
   }
 
   get(id) {
     l.debug('get ' + id);
     const connectObj = this.connectCtr.connections[id];
-    const ctr = new ProfilingController(connectObj.driver);
-    return ctr.getProfileLevel();
+    return this.controller.get(connectObj.driver);
   }
 }
 
