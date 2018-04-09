@@ -33,8 +33,6 @@ import ConnectionListener, {
 } from '../../../../controllers/mongo-connection/connection-listener';
 import Status from '../../../../controllers/mongo-connection/status';
 
-const {ProfilingController} = require('../../../../controllers/profiling');
-
 const MAX_HISTORY_SIZE = 720;
 
 export default class MongoNativeDriver implements ObservableWrapper {
@@ -55,6 +53,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
   historyData: Object = {};
   commandStatus: Object = {db_storage: true, others: true};
   listener: Object;
+  profileCtr: Object;
 
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
@@ -66,7 +65,6 @@ export default class MongoNativeDriver implements ObservableWrapper {
     this.listener = new ConnectionListener(this.profileId);
     this.listener.addListeners(this.db, this.mongoConnection.options);
     this.listener.on(EVENT_NAME, this.stateChanged.bind(this));
-
     if (mongoType === 'Mongos') {
       this.emitError(
         // 'Creating Performance Panel on mongos and only minimal statistics is available',
@@ -147,7 +145,6 @@ export default class MongoNativeDriver implements ObservableWrapper {
     if (immediate) {
       this.startServerStatus(db);
       this.startDBStorage(db);
-      this.startProfiling(db);
     }
     this.statsIntervalId = setInterval(
       () => this.startServerStatus(db),
@@ -155,10 +152,6 @@ export default class MongoNativeDriver implements ObservableWrapper {
     );
     this.storageIntervalId = setInterval(
       () => this.startDBStorage(db),
-      this.samplingRate * 3
-    );
-    this.startProfilingId = setInterval(
-      () => this.startProfiling(db),
       this.samplingRate * 3
     );
   }
@@ -183,10 +176,9 @@ export default class MongoNativeDriver implements ObservableWrapper {
     }
   }
 
-  startProfiling(db) {
+  startProfiling() {
     if (this.commandStatus.profiling) {
-      const ctr = new ProfilingController(db);
-      ctr.profile(this.samplingRate).then(data => {
+      this.profileCtr.profile(this.samplingRate).then(data => {
         this.observer.next({
           profileId: this.profileId,
           timestamp: new Date().getTime(),
@@ -260,10 +252,8 @@ export default class MongoNativeDriver implements ObservableWrapper {
   pause() {
     clearInterval(this.storageIntervalId);
     clearInterval(this.statsIntervalId);
-    clearInterval(this.startProfilingId);
     this.storageIntervalId = -1;
     this.statsIntervalId = -1;
-    this.startProfilingId = -1;
   }
 
   destroy(): Promise<*> {

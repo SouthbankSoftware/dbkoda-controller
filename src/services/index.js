@@ -51,6 +51,7 @@ import remoteExecService from './remote-execution';
 import drill from './drill';
 import masterPass from './master-pass';
 import topConnections from './top-connections';
+import profile from './profile';
 
 module.exports = function() {
   const app = this;
@@ -87,4 +88,5 @@ module.exports = function() {
   app.configure(drill);
   app.configure(masterPass);
   app.configure(topConnections);
+  app.configure(profile);
 };
