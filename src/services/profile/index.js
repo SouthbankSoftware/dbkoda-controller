@@ -12,7 +12,7 @@ class Profile {
   }
 
   patch(id, data) {
-    // data is the configuation for profile, it is {level: 1, slowms: 200, dbName: 'test'}
+    // data is the configuation for profile, it is {level: 1, slowms: 200, dbNames: ['test']}
     log.debug('patch profile ', id, data);
     const connectObj = this.connectCtr.connections[id];
     return this.controller.patch(connectObj.driver, data);

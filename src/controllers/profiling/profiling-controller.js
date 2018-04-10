@@ -51,6 +51,7 @@ const aggregateResult = results => {
 class ProfilingController extends EventEmitter {
   setup(app) {
     this.app = app;
+    this.dbNameSpace = {};
   }
 
   profile(db, dbName, colName) {
@@ -75,12 +76,28 @@ class ProfilingController extends EventEmitter {
     });
   }
 
+  startProfile(db, dbName, colName, sampleRate) {
+    this.profile(db, dbName, colName);
+    this.interval = setInterval(
+      () => this.profile(db, dbName, colName),
+      sampleRate
+    );
+  }
+
+  stop() {
+    clearInterval(this.interval);
+  }
+
   patch(driver, data) {
-    // data: {level: 1, slowms: 200, dbName}
+    // data: {level: 1, slowms: 200, dbNames: [], profileSize: 1m}
     l.debug('update profile ', data);
-    return driver
-      .db(data.dbName)
-      .command({profile: data.level, slowms: data.slowms});
+    const promises = [];
+    data.dbNames.forEach(dbName => {
+      promises.push(
+        driver.db(dbName).command({profile: data.level, slowms: data.slowms})
+      );
+    });
+    return Promise.all(promises);
   }
 
   get(db) {
@@ -92,10 +109,9 @@ class ProfilingController extends EventEmitter {
           const proms = dbs.databases.map(
             d =>
               new Promise((r, j) =>
-                db
-                  .db(d.name)
-                  .command({profile: -1})
-                  .then(v => r({dbName: d, v}).catch(err => j(err)))
+                this.getDatabaseProfileConfiguration(db, d.name).then(v =>
+                  r({dbName: d, v}).catch(err => j(err))
+                )
               )
           );
           return Promise.all(proms);
@@ -105,6 +121,10 @@ class ProfilingController extends EventEmitter {
         })
         .catch(err => reject(err));
     });
+  }
+
+  getDatabaseProfileConfiguration(db, dbName) {
+    return db.db(dbName).command({profile: -1});
   }
 }
 
