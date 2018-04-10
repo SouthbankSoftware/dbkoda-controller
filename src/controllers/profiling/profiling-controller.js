@@ -23,8 +23,8 @@ const aggregateResult = results => {
     let planQuery = '';
     if (ret.query) {
       planQuery = iterateProperty(ret.query, 'query', []);
-    } else if (ret.command && ret.command.query) {
-      planQuery = iterateProperty(ret.command.query, 'query', []);
+    } else if (ret.command) {
+      planQuery = iterateProperty(ret.command, 'command', []);
     }
     slack = {...slack, ...planQuery};
     const hexResult = md5Hex(JSON.stringify(slack));
