@@ -1,5 +1,4 @@
 const EventEmitter = require('events');
-const flatten = require('flat');
 const md5Hex = require('md5-hex');
 const _ = require('lodash');
 
@@ -7,16 +6,27 @@ const {ErrorCodes} = require('../../errors/Errors');
 
 /* eslint-disable class-methods-use-this */
 
+const iterateProperty = (obj, parent, stacks = []) => {
+  return _.keys(obj).reduce((accumulator, key) => {
+    if (typeof obj[key] === 'object') {
+      iterateProperty(obj[key], `${parent}.${key}`, accumulator);
+    } else {
+      accumulator.push(`${parent}.${key}`);
+    }
+    return accumulator;
+  }, stacks);
+};
+
 const aggregateResult = results => {
   return results.reduce((accumulator, ret) => {
     let slack = {ns: ret.ns};
     let planQuery = '';
     if (ret.query) {
-      planQuery = flatten(ret.query);
+      planQuery = iterateProperty(ret.query, 'query', []);
     } else if (ret.command && ret.command.query) {
-      planQuery = flatten(ret.command.query);
+      planQuery = iterateProperty(ret.command.query, 'query', []);
     }
-    slack = _.merge(slack, planQuery);
+    slack = {...slack, ...planQuery};
     const hexResult = md5Hex(JSON.stringify(slack));
     if (accumulator[hexResult]) {
       accumulator[hexResult].count += 1;
@@ -94,4 +104,4 @@ class ProfilingController extends EventEmitter {
   }
 }
 
-module.exports = {ProfilingController, aggregateResult};
+module.exports = {ProfilingController, aggregateResult, iterateProperty};
