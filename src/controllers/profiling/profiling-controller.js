@@ -38,33 +38,25 @@ class ProfilingController extends EventEmitter {
     this.app = app;
   }
 
-  profile(dbName, collectionName) {
+  profile(db, dbName, colName) {
     return new Promise((resolve, reject) => {
-      if (this.db) {
-        if (this.options.level <= 0) {
-          reject(new Error(ErrorCodes.PROFILING_DISABLED));
-        } else {
-          this.db
+      db
+        .db(dbName)
+        .command({profile: -1})
+        .then(d => {
+          if (d.was <= 0) {
+            reject(new Error(ErrorCodes.PROFILING_DISABLED));
+          }
+          return db
             .db(dbName)
-            .command({profile: -1})
-            .then(d => {
-              if (d.was <= 0) {
-                reject(new Error(ErrorCodes.PROFILING_DISABLED));
-              }
-              return this.db
-                .db(dbName)
-                .collection('system.profile')
-                .find({ns: `${dbName}.${collectionName}`})
-                .sort({ts: -1})
-                .limit(20)
-                .toArray();
-            })
-            .then(d => resolve(aggregateResult(d)))
-            .catch(err => reject(err));
-        }
-      } else {
-        reject(new Error(ErrorCodes.MONGO_CONNECTION_CLOSED));
-      }
+            .collection('system.profile')
+            .find({ns: `${dbName}.${colName}`})
+            .sort({ts: -1})
+            .limit(20)
+            .toArray();
+        })
+        .then(d => resolve(aggregateResult(d)))
+        .catch(err => reject(err));
     });
   }
 

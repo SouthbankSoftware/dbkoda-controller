@@ -1,4 +1,4 @@
-import errors from 'feathers-errors';
+const errors = require('feathers-errors');
 
 exports.before = {
   all: [],
@@ -9,6 +9,10 @@ exports.before = {
       const {connections} = service.connectCtr;
       if (!connections[context.id]) {
         throw new errors.BadRequest('connection doesnt exist');
+      }
+      const {op} = context.params.query;
+      if (!op || ['profile', 'configuration'].indexOf(op) < 0) {
+        throw new errors.BadRequest('query parameter is not valid');
       }
     },
   ],

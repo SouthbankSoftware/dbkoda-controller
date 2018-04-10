@@ -18,10 +18,16 @@ class Profile {
     return this.controller.patch(connectObj.driver, data);
   }
 
-  get(id) {
-    l.debug('get ' + id);
+  get(id, params) {
+    l.debug('get ' + id, params);
     const connectObj = this.connectCtr.connections[id];
-    return this.controller.get(connectObj.driver);
+    const {op} = params.query;
+    if (op === 'profile') {
+      const {dbName, colName} = params.query;
+      return this.controller.profile(connectObj.driver, dbName, colName);
+    } else if (op === 'configuration') {
+      return this.controller.get(connectObj.driver);
+    }
   }
 }
 
