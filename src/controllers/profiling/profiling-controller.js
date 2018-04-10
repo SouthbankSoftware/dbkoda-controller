@@ -21,9 +21,12 @@ const aggregateResult = results => {
   return results.reduce((accumulator, ret) => {
     let slack = {ns: ret.ns};
     let planQuery = '';
+    let command = '';
     if (ret.query) {
+      command = ret.query;
       planQuery = iterateProperty(ret.query, 'query', []);
     } else if (ret.command) {
+      command = ret.command;
       planQuery = iterateProperty(ret.command, 'command', []);
     }
     slack = {...slack, ...planQuery};
@@ -34,6 +37,7 @@ const aggregateResult = results => {
     } else {
       accumulator[hexResult] = {};
       accumulator[hexResult].op = ret.op;
+      accumulator[hexResult].example = command;
       accumulator[hexResult].count = 1;
       accumulator[hexResult].millis = ret.millis;
       accumulator[hexResult].planQuery = planQuery;
