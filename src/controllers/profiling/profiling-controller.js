@@ -12,11 +12,11 @@ const aggregateResult = results => {
     let slack = {ns: ret.ns};
     let planQuery = '';
     if (ret.query) {
-      planQuery = ret.query;
+      planQuery = flatten(ret.query);
     } else if (ret.command && ret.command.query) {
-      planQuery = ret.command.query;
+      planQuery = flatten(ret.command.query);
     }
-    slack = _.merge(slack, flatten(planQuery));
+    slack = _.merge(slack, planQuery);
     const hexResult = md5Hex(JSON.stringify(slack));
     if (accumulator[hexResult]) {
       accumulator[hexResult].count += 1;
