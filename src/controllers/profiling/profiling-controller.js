@@ -1,37 +1,65 @@
 const EventEmitter = require('events');
+const flatten = require('flat');
+const md5Hex = require('md5-hex');
+const _ = require('lodash');
+
 const {ErrorCodes} = require('../../errors/Errors');
 
-/* eslint-disable */
+/* eslint-disable class-methods-use-this */
+
+const aggregateResult = results => {
+  return results.reduce((accumulator, ret) => {
+    let slack = {ns: ret.ns};
+    let planQuery = '';
+    if (ret.query) {
+      planQuery = ret.query;
+    } else if (ret.command && ret.command.query) {
+      planQuery = ret.command.query;
+    }
+    slack = _.merge(slack, flatten(planQuery));
+    const hexResult = md5Hex(JSON.stringify(slack));
+    if (accumulator[hexResult]) {
+      accumulator[hexResult].count += 1;
+      accumulator[hexResult].millis += ret.millis;
+    } else {
+      accumulator[hexResult] = {};
+      accumulator[hexResult].example = ret.op;
+      accumulator[hexResult].count = 1;
+      accumulator[hexResult].millis = ret.millis;
+      accumulator[hexResult].planQuery = planQuery;
+      accumulator[hexResult].plansSummary = ret.planSummary;
+    }
+    return accumulator;
+  }, {});
+};
 
 class ProfilingController extends EventEmitter {
   setup(app) {
     this.app = app;
   }
 
-  profile(sampleRate) {
+  profile(dbName, collectionName) {
     return new Promise((resolve, reject) => {
       if (this.db) {
         if (this.options.level <= 0) {
           reject(new Error(ErrorCodes.PROFILING_DISABLED));
         } else {
           this.db
-            .db(this.db.databaseName)
+            .db(dbName)
             .command({profile: -1})
             .then(d => {
               if (d.was <= 0) {
                 reject(new Error(ErrorCodes.PROFILING_DISABLED));
               }
-              const now = new Date();
-              now.setMilliseconds(now.getMilliseconds() - sampleRate);
               return this.db
-                .db(this.db.databaseName)
+                .db(dbName)
                 .collection('system.profile')
-                .find({ts: {$gte: now}})
+                .find({ns: `${dbName}.${collectionName}`})
                 .sort({ts: -1})
-                .limit(100)
+                .limit(20)
                 .toArray();
             })
-            // .then(d => resolve({db_profile: this.aggregateResult(d)}))
+            .then(d => resolve(aggregateResult(d)))
             .catch(err => reject(err));
         }
       } else {
@@ -40,19 +68,12 @@ class ProfilingController extends EventEmitter {
     });
   }
 
-  // aggregateResult(results) {
-  //   results.forEach(ret => {
-  //     if (ret.op) {
-  //       if (ret.op === 'command') {
-
-  //       }
-  //     }
-  //   });
-  // }
-
-  patch(driver, data) {  // data: {level: 1, slowms: 200, databaseName}
+  patch(driver, data) {
+    // data: {level: 1, slowms: 200, databaseName}
     l.debug('update profile ', data);
-    return driver.db(data.databaseName).command({ profile : data.level, slowms : data.slowms });
+    return driver
+      .db(data.databaseName)
+      .command({profile: data.level, slowms: data.slowms});
   }
 
   get(db) {
@@ -80,5 +101,4 @@ class ProfilingController extends EventEmitter {
   }
 }
 
-
-module.exports.ProfilingController = ProfilingController;
+module.exports = {ProfilingController, aggregateResult};

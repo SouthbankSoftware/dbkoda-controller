@@ -4607,6 +4607,12 @@ md5-hex@^1.2.0:
   dependencies:
     md5-o-matic "^0.1.1"
 
+md5-hex@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/md5-hex/-/md5-hex-2.0.0.tgz#d0588e9f1c74954492ecd24ac0ac6ce997d92e33"
+  dependencies:
+    md5-o-matic "^0.1.1"
+
 md5-o-matic@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/md5-o-matic/-/md5-o-matic-0.1.1.tgz#822bccd65e117c514fab176b25945d54100a03c3"
@@ -7393,6 +7399,7 @@ winston-transport@^3.0.1:
     async "^2.6.0"
     diagnostics "^1.0.1"
     isstream "0.1.x"
+    lodash.isplainobject "^4.0.6"
     logform "^1.2.1"
     one-time "0.0.4"
     stack-trace "0.0.x"
