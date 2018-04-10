@@ -33,7 +33,7 @@ const aggregateResult = results => {
       accumulator[hexResult].millis += ret.millis;
     } else {
       accumulator[hexResult] = {};
-      accumulator[hexResult].example = ret.op;
+      accumulator[hexResult].op = ret.op;
       accumulator[hexResult].count = 1;
       accumulator[hexResult].millis = ret.millis;
       accumulator[hexResult].planQuery = planQuery;
@@ -62,7 +62,7 @@ class ProfilingController extends EventEmitter {
             .db(dbName)
             .collection('system.profile')
             .find({ns: `${dbName}.${colName}`})
-            .sort({ts: -1})
+            .sort({millis: -1})
             .limit(20)
             .toArray();
         })
@@ -72,10 +72,10 @@ class ProfilingController extends EventEmitter {
   }
 
   patch(driver, data) {
-    // data: {level: 1, slowms: 200, databaseName}
+    // data: {level: 1, slowms: 200, dbName}
     l.debug('update profile ', data);
     return driver
-      .db(data.databaseName)
+      .db(data.dbName)
       .command({profile: data.level, slowms: data.slowms});
   }
 
