@@ -37,6 +37,7 @@ export const configDefaults = {
   drillCmd: null, // ui will figure this out
   drillControllerCmd: null, // ui will figure this out
   telemetryEnabled: true,
+  showNewFeaturesDialogOnStart: true,
   tableOutputDefault: false,
   showWelcomePageAtStart: true,
   passwordStoreEnabled: false,
@@ -69,6 +70,9 @@ const configSchema = {
       type: 'boolean'
     },
     telemetryEnabled: {
+      type: 'boolean'
+    },
+    showNewFeaturesDialogOnStart: {
       type: 'boolean'
     },
     tableOutputDefault: {
