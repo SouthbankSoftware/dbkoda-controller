@@ -28,6 +28,7 @@ const aggregateResult = results => {
       accumulator[hexResult].millis = ret.millis;
       accumulator[hexResult].planQuery = planQuery;
       accumulator[hexResult].plansSummary = ret.planSummary;
+      accumulator[hexResult].execStats = ret.execStats;
     }
     return accumulator;
   }, {});
