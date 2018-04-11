@@ -78,18 +78,6 @@ class ProfilingController extends EventEmitter {
     });
   }
 
-  startProfile(db, dbName, colName, sampleRate) {
-    this.profile(db, dbName, colName);
-    this.interval = setInterval(
-      () => this.profile(db, dbName, colName),
-      sampleRate
-    );
-  }
-
-  stop() {
-    clearInterval(this.interval);
-  }
-
   patch(driver, data) {
     // data: [{level: 1, slowms: 200, dbName, profileSize: 1m}]
     l.debug('update profile ', data);
@@ -144,17 +132,18 @@ class ProfilingController extends EventEmitter {
           console.log(ret);
           return this.setProfileConfiguration(driver, data);
         });
-    } else {
-      return this.setProfileConfiguration(driver, data);
     }
+    return this.setProfileConfiguration(driver, data);
   }
 
   setProfileConfiguration(driver, data) {
     return Promise.all(
       data.map(d => {
-        return driver
+        driver
           .db(d.dbName)
-          .command({profile: d.level, slowms: d.slowms});
+          // .setProfilingLevel(d.level, {slowms: d.slowms});
+          .command({profile: d.level, slowms: d.slowms})
+          .then(ret => ret);
       })
     );
   }
