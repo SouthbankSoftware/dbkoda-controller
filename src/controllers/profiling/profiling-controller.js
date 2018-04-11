@@ -91,7 +91,10 @@ class ProfilingController extends EventEmitter {
             .map(d => {
               if (d.profileSize !== undefined) {
                 const stats = _.find(dbStats, {dbName: d.dbName});
-                if (stats && d.profileSize !== stats.stats.maxSize) {
+                if (
+                  stats &&
+                  d.profileSize * 1024 / 1000 !== stats.stats.maxSize
+                ) {
                   return driver
                     .db(d.dbName)
                     .command({profile: 0})
@@ -138,13 +141,11 @@ class ProfilingController extends EventEmitter {
 
   setProfileConfiguration(driver, data) {
     return Promise.all(
-      data.map(d => {
+      data.map(d =>
         driver
           .db(d.dbName)
-          // .setProfilingLevel(d.level, {slowms: d.slowms});
           .command({profile: d.level, slowms: d.slowms})
-          .then(ret => ret);
-      })
+      )
     );
   }
 
