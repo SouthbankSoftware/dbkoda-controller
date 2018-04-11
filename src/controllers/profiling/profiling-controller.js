@@ -6,6 +6,8 @@ const {ErrorCodes} = require('../../errors/Errors');
 
 /* eslint-disable class-methods-use-this */
 
+const systemProfileCollectionName = 'system.profile';
+
 const iterateProperty = (obj, parent, stacks = []) => {
   return _.keys(obj).reduce((accumulator, key) => {
     if (typeof obj[key] === 'object') {
@@ -89,15 +91,72 @@ class ProfilingController extends EventEmitter {
   }
 
   patch(driver, data) {
-    // data: {level: 1, slowms: 200, dbNames: [], profileSize: 1m}
+    // data: [{level: 1, slowms: 200, dbName, profileSize: 1m}]
     l.debug('update profile ', data);
-    const promises = [];
-    data.dbNames.forEach(dbName => {
-      promises.push(
-        driver.db(dbName).command({profile: data.level, slowms: data.slowms})
-      );
-    });
-    return Promise.all(promises);
+    const sizeChangeDb = _.filter(data, d => d.profileSize !== undefined);
+
+    if (sizeChangeDb.length > 0) {
+      const sizeChangeDbNames = sizeChangeDb.map(d => d.dbName);
+      return this.getSystemProfileStats(driver, sizeChangeDbNames)
+        .then(dbStats => {
+          const disablePromise = data
+            .map(d => {
+              if (d.profileSize !== undefined) {
+                const stats = _.find(dbStats, {dbName: d.dbName});
+                if (stats && d.profileSize !== stats.stats.maxSize) {
+                  return driver
+                    .db(d.dbName)
+                    .command({profile: 0})
+                    .then(_ => ({
+                      dbName: d.dbName,
+                      profileSize: d.profileSize,
+                    }));
+                }
+              }
+              return null;
+            })
+            .filter(x => x != null);
+          return Promise.all(disablePromise);
+        })
+        .then(dbs => {
+          const dropPromises = dbs.map(dbData =>
+            driver
+              .db(dbData.dbName)
+              .collection(systemProfileCollectionName)
+              .drop()
+              .then(_ => dbData)
+          );
+          return Promise.all(dropPromises);
+        })
+        .then(dbs => {
+          return Promise.all(
+            dbs.map(dbData => {
+              return driver
+                .db(dbData.dbName)
+                .createCollection(systemProfileCollectionName, {
+                  capped: true,
+                  size: dbData.profileSize,
+                });
+            })
+          );
+        })
+        .then(ret => {
+          console.log(ret);
+          return this.setProfileConfiguration(driver, data);
+        });
+    } else {
+      return this.setProfileConfiguration(driver, data);
+    }
+  }
+
+  setProfileConfiguration(driver, data) {
+    return Promise.all(
+      data.map(d => {
+        return driver
+          .db(d.dbName)
+          .command({profile: d.level, slowms: d.slowms});
+      })
+    );
   }
 
   get(db) {
@@ -110,7 +169,7 @@ class ProfilingController extends EventEmitter {
             d =>
               new Promise((r, j) =>
                 this.getDatabaseProfileConfiguration(db, d.name).then(v =>
-                  r({dbName: d, v}).catch(err => j(err))
+                  r({[d.name]: v}).catch(err => j(err))
                 )
               )
           );
@@ -125,6 +184,20 @@ class ProfilingController extends EventEmitter {
 
   getDatabaseProfileConfiguration(db, dbName) {
     return db.db(dbName).command({profile: -1});
+  }
+
+  getSystemProfileStats(driver, dbNames) {
+    const promises = dbNames.map(name => {
+      // return new Promise((r, j) => {
+      return driver
+        .db(name)
+        .collection(systemProfileCollectionName)
+        .stats()
+        .then(stats => {
+          return {dbName: name, stats};
+        });
+    });
+    return Promise.all(promises);
   }
 }
 

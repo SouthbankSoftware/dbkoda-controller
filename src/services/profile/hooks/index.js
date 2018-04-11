@@ -1,13 +1,18 @@
 const errors = require('feathers-errors');
 
+const getConnection = context => {
+  const {service} = context;
+  const {connections} = service.connectCtr;
+  return connections[context.id];
+};
+
 exports.before = {
   all: [],
   find: [],
   get: [
     context => {
-      const {service} = context;
-      const {connections} = service.connectCtr;
-      if (!connections[context.id]) {
+      const connection = getConnection(context);
+      if (!connection) {
         throw new errors.BadRequest('connection doesnt exist');
       }
       const {op} = context.params.query;
@@ -18,7 +23,14 @@ exports.before = {
   ],
   create: [],
   update: [],
-  patch: [],
+  patch: [
+    context => {
+      const connection = getConnection(context);
+      if (!connection) {
+        throw new errors.BadRequest('connection doesnt exist');
+      }
+    }
+  ],
   remove: [],
 };
 
