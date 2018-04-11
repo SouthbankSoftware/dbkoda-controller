@@ -45,6 +45,7 @@ const aggregateResult = results => {
       accumulator[hexResult].planQuery = planQuery;
       accumulator[hexResult].plansSummary = ret.planSummary;
       accumulator[hexResult].execStats = ret.execStats;
+      accumulator[hexResult].ns = ret.ns;
     }
     return accumulator;
   }, {});
@@ -57,6 +58,7 @@ class ProfilingController extends EventEmitter {
   }
 
   profile(db, dbName, colName) {
+    const nsFilter = colName ? `${dbName}.${colName}` : {$regex: `${dbName}.*`};
     return new Promise((resolve, reject) => {
       db
         .db(dbName)
@@ -68,7 +70,7 @@ class ProfilingController extends EventEmitter {
           return db
             .db(dbName)
             .collection('system.profile')
-            .find({ns: `${dbName}.${colName}`})
+            .find({ns: nsFilter})
             .sort({millis: -1})
             .limit(20)
             .toArray();
