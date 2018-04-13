@@ -134,6 +134,7 @@ class ProfilingController extends EventEmitter {
           );
         })
         .then(ret => {
+          l.debug(ret);
           return this.setProfileConfiguration(driver, data);
         });
     }
