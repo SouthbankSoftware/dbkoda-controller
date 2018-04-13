@@ -41,11 +41,11 @@ const aggregateResult = results => {
       accumulator[hexResult].op = ret.op;
       accumulator[hexResult].example = command;
       accumulator[hexResult].count = 1;
+      accumulator[hexResult].ns = ret.ns;
       accumulator[hexResult].millis = ret.millis;
       accumulator[hexResult].planQuery = planQuery;
       accumulator[hexResult].plansSummary = ret.planSummary;
       accumulator[hexResult].execStats = ret.execStats;
-      accumulator[hexResult].ns = ret.ns;
     }
     return accumulator;
   }, {});
@@ -134,7 +134,6 @@ class ProfilingController extends EventEmitter {
           );
         })
         .then(ret => {
-          console.log(ret);
           return this.setProfileConfiguration(driver, data);
         });
     }
@@ -144,9 +143,7 @@ class ProfilingController extends EventEmitter {
   setProfileConfiguration(driver, data) {
     return Promise.all(
       data.map(d =>
-        driver
-          .db(d.dbName)
-          .command({profile: d.level, slowms: d.slowms})
+        driver.db(d.dbName).command({profile: d.level, slowms: d.slowms})
       )
     );
   }
@@ -160,9 +157,9 @@ class ProfilingController extends EventEmitter {
           const proms = dbs.databases.map(
             d =>
               new Promise((r, j) =>
-                this.getDatabaseProfileConfiguration(db, d.name).then(v =>
-                  r({[d.name]: v}).catch(err => j(err))
-                )
+                this.getDatabaseProfileConfiguration(db, d.name)
+                  .then(v => r({[d.name]: v}))
+                  .catch(err => j(err))
               )
           );
           return Promise.all(proms);
