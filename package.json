@@ -93,7 +93,7 @@
     "lodash": "^4.17.2",
     "md5-hex": "^2.0.0",
     "moment": "^2.21.0",
-    "mongodb": "^2.2.33",
+    "mongodb": "^3.0.6",
     "mongodb-uri": "^0.9.7",
     "node-pty": "^0.7.4",
     "node-queue-lib": "0.0.28",

@@ -22,11 +22,12 @@ class Profile {
     l.debug('get ' + id, params);
     const connectObj = this.connectCtr.connections[id];
     const {op} = params.query;
+    const {driver, db} = connectObj;
     if (op === 'profile') {
       const {dbName, colName} = params.query;
-      return this.controller.profile(connectObj.driver, dbName, colName);
+      return this.controller.profile(driver, dbName, colName);
     } else if (op === 'configuration') {
-      return this.controller.get(connectObj.driver);
+      return this.controller.get(driver, db);
     }
   }
 }

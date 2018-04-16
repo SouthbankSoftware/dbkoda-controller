@@ -35,15 +35,15 @@ class MongoShardsInspector {
     this.serverInspector = new MongoServerInspector();
   }
 
-  inspect(db) {
+  inspect(driver, db) {
     return new Promise((resolve, reject) => {
       Promise.all([
-        this.getAllShards(db),
-        this.getAllConfigs(db),
-        this.getAllMongos(db),
-        this.serverInspector.inspectDatabases(db),
-        this.serverInspector.inspectUsers(db),
-        this.serverInspector.inspectAllRoles(db),
+        this.getAllShards(driver),
+        this.getAllConfigs(driver),
+        this.getAllMongos(driver),
+        this.serverInspector.inspectDatabases(driver, db),
+        this.serverInspector.inspectUsers(driver),
+        this.serverInspector.inspectAllRoles(driver, db),
         this.serverInspector.inspectReplicaMembers(db),
       ])
         .then((value) => {
@@ -88,9 +88,9 @@ class MongoShardsInspector {
     });
   }
 
-  getAllShards(db) {
+  getAllShards(driver) {
     return new Promise((resolve) => {
-      const collection = db
+      const collection = driver
         .db(MongoShardsInspector.CONFIG_DB)
         .collection(MongoShardsInspector.SHARDS_COLLECTION);
       collection.find({}).toArray((err, docs) => {

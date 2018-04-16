@@ -32,12 +32,12 @@ const _ = require('lodash');
 const treeNodeTypes = require('./tree_node_types').TreeNodeType;
 
 class MongoServerInspector {
-  inspect(db) {
+  inspect(driver, db) {
     return new Promise((resolve, reject) => {
       Promise.all([
-        this.inspectDatabases(db),
-        this.inspectUsers(db),
-        this.inspectAllRoles(db),
+        this.inspectDatabases(driver, db),
+        this.inspectUsers(driver),
+        this.inspectAllRoles(driver, db),
         this.inspectReplicaMembers(db),
       ])
         .then((value) => {
@@ -57,9 +57,9 @@ class MongoServerInspector {
   /**
    * discover all databases in a mongodb instance
    */
-  inspectDatabases(db) {
+  inspectDatabases(driver, currentDb) {
     return new Promise((resolve, _reject) => {
-      const adminDb = db.admin();
+      const adminDb = currentDb.admin();
       const inspectResult = {text: 'Databases', children: []};
       adminDb
         .listDatabases()
@@ -67,7 +67,7 @@ class MongoServerInspector {
           const promises = [];
           // inspect into each database
           dbs.databases.map((database) => {
-            promises.push(this.inspectDatabase(db, database.name));
+            promises.push(this.inspectDatabase(driver, database.name));
           });
           Promise.all(promises)
             .then((values) => {
@@ -81,7 +81,7 @@ class MongoServerInspector {
         })
         .catch((err) => {
           log.warn(err.message);
-          this.inspectDatabase(db, db.databaseName)
+          this.inspectDatabase(driver, currentDb.databaseName)
             .then((value) => {
               inspectResult.children = [value];
               resolve(inspectResult);
@@ -167,10 +167,10 @@ class MongoServerInspector {
    *
    * @param db
    */
-  inspectUsers(db) {
+  inspectUsers(driver) {
     const users = {text: 'Users', children: []};
     return new Promise((resolve) => {
-      const userCollection = db.db('admin').collection('system.users');
+      const userCollection = driver.db('admin').collection('system.users');
       if (!userCollection) {
         resolve(users);
         return;
@@ -204,14 +204,14 @@ class MongoServerInspector {
     });
   }
 
-  inspectAllRoles(db) {
+  inspectAllRoles(driver, db) {
     const allRoles = { text: 'Roles', children: [] };
     return new Promise((resolve) => {
       const promises = [];
       const adminDb = db.admin();
       adminDb.listDatabases().then((dbs) => {
         _.map(dbs.databases, (currentDb) => {
-          promises.push(this.inspectRoles(db, currentDb));
+          promises.push(this.inspectRoles(driver, currentDb));
         });
         Promise.all(promises).then((values) => {
           values = values.filter((value) => {
@@ -233,11 +233,11 @@ class MongoServerInspector {
     });
   }
 
-  inspectRoles(db, currentDb) {
+  inspectRoles(driver, currentDb) {
     return new Promise((resolve) => {
       const dbName = currentDb.name;
       const showBuiltin = (dbName === 'admin');
-      db.db(dbName).command({ rolesInfo: 1, showBuiltinRoles: showBuiltin })
+      driver.db(dbName).command({ rolesInfo: 1, showBuiltinRoles: showBuiltin })
         .then((roleList) => {
           const roles = { text: dbName, children: [], type: treeNodeTypes.ROLES };
           if (!roleList || roleList.length <= 0) {

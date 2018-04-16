@@ -52,19 +52,19 @@ class InspectorController {
       l.error('cant find connection with the id ', id);
       throw new errors.BadRequest('cant find connection with the id ' + id);
     }
-    const db = connection.driver;
+    const {db, driver} = connection;
 
     return new Promise((resolve, reject) => {
       db
         .command({isMaster: 1})
-        .then((value) => {
-          if (value.configsvr || db.serverConfig.constructor == mongodb.Mongos) {
+        .then(() => {
+          if (driver.topology.constructor == mongodb.Mongos) {
             l.info('inspect mongo os');
-            const configTree = this.shardsInspector.inspect(db);
+            const configTree = this.shardsInspector.inspect(driver, db);
             return configTree;
           }
           l.info('inspect mongo instance');
-          const configTree = this.serverInspector.inspect(db);
+          const configTree = this.serverInspector.inspect(driver, db);
           return configTree;
         })
         .then((v) => {

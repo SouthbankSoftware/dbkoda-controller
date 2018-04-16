@@ -54,13 +54,15 @@ export default class MongoNativeDriver implements ObservableWrapper {
   commandStatus: Object = {db_storage: true, others: true};
   listener: Object;
   profileCtr: Object;
+  driver: Object;
 
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
 
     // pre-check
-    const {connectionParameters: {mongoType}, driver} = this.mongoConnection;
-    this.db = driver;
+    const {connectionParameters: {mongoType}, db, driver} = this.mongoConnection;
+    this.db = db;
+    this.driver = driver;
 
     this.listener = new ConnectionListener(this.profileId);
     this.listener.addListeners(this.db, this.mongoConnection.options);
@@ -144,14 +146,14 @@ export default class MongoNativeDriver implements ObservableWrapper {
     }
     if (immediate) {
       this.startServerStatus(db);
-      this.startDBStorage(db);
+      this.startDBStorage(this.driver, this.db);
     }
     this.statsIntervalId = setInterval(
       () => this.startServerStatus(db),
       this.samplingRate
     );
     this.storageIntervalId = setInterval(
-      () => this.startDBStorage(db),
+      () => this.startDBStorage(this.driver, this.db),
       this.samplingRate * 3
     );
   }
@@ -192,7 +194,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
     }
   }
 
-  startDBStorage(db) {
+  startDBStorage(driver, db) {
     if (this.commandStatus.db_storage) {
       db
         .admin()
@@ -200,7 +202,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
         .then(dbList => {
           return Promise.all(
             dbList.databases.map(database => {
-              return db.db(database.name).stats();
+              return driver.db(database.name).stats();
             })
           );
         })
