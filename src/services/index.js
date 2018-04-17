@@ -29,6 +29,8 @@ import mongoAutoCompleteController from '../controllers/auto-complete';
 import lintingController from '../controllers/linter';
 import syncExecutionController from '../controllers/sync-execution';
 import remoteExecutionController from '../controllers/remote-execution';
+import driverCommandsController from '../controllers/driver-commands';
+
 import config from './config';
 import mongoShell from './mongo-shell';
 import mongoConnection from './mongo-connection';
@@ -53,6 +55,7 @@ import drill from './drill';
 import masterPass from './master-pass';
 import topConnections from './top-connections';
 import profile from './profile';
+import driverCommandsService from './driver-command';
 
 module.exports = function() {
   const app = this;
@@ -65,6 +68,7 @@ module.exports = function() {
   app.configure(syncExecutionController);
   app.configure(remoteExecutionController);
   app.configure(mongoProfileController);
+  app.configure(driverCommandsController);
 
   app.configure(file);
   app.configure(mongoCmdValidator);
@@ -91,4 +95,5 @@ module.exports = function() {
   app.configure(masterPass);
   app.configure(topConnections);
   app.configure(profile);
+  app.configure(driverCommandsService);
 };
