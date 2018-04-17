@@ -40,8 +40,8 @@ export default (options: {
   connection: *
 }) => {
   const { profileId, n, samplingTime, samplingRate, dev, service, connection } = options;
-  const { driver } = connection;
-  const adminDb = driver.admin();
+  const { db } = connection;
+  const adminDb = db.admin();
   let startTime;
   let intervalId;
   let timeoutId;
