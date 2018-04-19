@@ -39,6 +39,7 @@ export const configDefaults = {
   telemetryEnabled: true,
   showNewFeaturesDialogOnStart: true,
   tableOutputDefault: false,
+  automaticAutoComplete: true,
   showWelcomePageAtStart: true,
   passwordStoreEnabled: false,
   performancePanel: {
@@ -76,6 +77,9 @@ const configSchema = {
       type: 'boolean'
     },
     tableOutputDefault: {
+      type: 'boolean'
+    },
+    automaticAutoComplete: {
       type: 'boolean'
     },
     passwordStoreEnabled: {
