@@ -173,7 +173,7 @@ class ProfilingController extends EventEmitter {
             return this.getSingleSystemProfileStats(driver, dbName).then(stats => {
               dbValue.size = stats.stats.maxSize * 1000 / 1024;
               return {[dbName]: dbValue};
-            }).catch(() => null);
+            }).catch(() => ({[dbName]: dbValue}));
           });
           return Promise.all(proms);
         })
