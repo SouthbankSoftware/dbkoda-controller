@@ -166,7 +166,19 @@ class ProfilingController extends EventEmitter {
           return Promise.all(proms);
         })
         .then(v => {
-          resolve(v);
+          const proms = v.map(value => {
+            console.log(value);
+            const [dbName] = _.keys(value);
+            const dbValue = value[dbName];
+            return this.getSingleSystemProfileStats(driver, dbName).then(stats => {
+              dbValue.size = stats.stats.maxSize * 1000 / 1024;
+              return {[dbName]: dbValue};
+            }).catch(() => null);
+          });
+          return Promise.all(proms);
+        })
+        .then(v => {
+          resolve(v.filter(x => x));
         })
         .catch(err => reject(err));
     });
@@ -178,16 +190,30 @@ class ProfilingController extends EventEmitter {
 
   getSystemProfileStats(driver, dbNames) {
     const promises = dbNames.map(name => {
-      // return new Promise((r, j) => {
-      return driver
-        .db(name)
-        .collection(systemProfileCollectionName)
-        .stats()
-        .then(stats => {
-          return {dbName: name, stats};
-        });
+      // return driver
+      //   .db(name)
+      //   .collection(systemProfileCollectionName)
+      //   .stats()
+      //   .then(stats => {
+      //     return {dbName: name, stats};
+      //   });
+      return this.getSingleSystemProfileStats(driver, name);
     });
     return Promise.all(promises);
+  }
+
+  getSingleSystemProfileStats(driver, dbName) {
+    return driver
+      .db(dbName)
+      .collection(systemProfileCollectionName)
+      .stats()
+      .then(stats => {
+        return {dbName, stats};
+      })
+      .catch(err => {
+        l.error(err);
+        return null;
+      });
   }
 }
 
