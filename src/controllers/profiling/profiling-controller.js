@@ -162,8 +162,15 @@ class ProfilingController extends EventEmitter {
 
   setProfileConfiguration(driver, data) {
     return Promise.all(
-      data.map(d =>
-        driver.db(d.dbName).command({profile: d.level, slowms: d.slowms})
+      data.map(
+        d =>
+          new Promise((resolve, reject) => {
+            driver
+              .db(d.dbName)
+              .command({profile: d.level, slowms: d.slowms})
+              .then(res => resolve({...res, was: d.level, name: d.dbName}))
+              .catch(err => reject(err));
+          })
       )
     );
   }
@@ -189,10 +196,12 @@ class ProfilingController extends EventEmitter {
             console.log(value);
             const [dbName] = _.keys(value);
             const dbValue = value[dbName];
-            return this.getSingleSystemProfileStats(driver, dbName).then(stats => {
-              dbValue.size = stats.stats.maxSize * 1000 / 1024;
-              return {[dbName]: dbValue};
-            }).catch(() => ({[dbName]: dbValue}));
+            return this.getSingleSystemProfileStats(driver, dbName)
+              .then(stats => {
+                dbValue.size = stats.stats.maxSize * 1000 / 1024;
+                return {[dbName]: dbValue};
+              })
+              .catch(() => ({[dbName]: dbValue}));
           });
           return Promise.all(proms);
         })
