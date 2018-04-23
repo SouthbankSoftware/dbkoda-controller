@@ -31,6 +31,7 @@ import { execSync } from 'child_process';
 import { EventEmitter } from 'events';
 import os from 'os';
 import path from 'path';
+import fs from 'fs';
 import Status from '../mongo-connection/status';
 import Parser from './pty-parser';
 import PtyOptions from './pty-options';
@@ -256,6 +257,16 @@ class MongoShell extends EventEmitter {
   }
 
   readParserOutput(data) {
+    if (data.indexOf('// ingore_emit_begin ') >= 0) {
+      this.ignoreEmit = true;
+    }
+    if (data.indexOf('// ingore_emit_ended ') >= 0) {
+      this.ignoreEmit = false;
+      return;
+    }
+    if (this.ignoreEmit) {
+      return;
+    }
     if (!this.initialized && data.indexOf('shell') >= 0) {
       this.writeToShell(`${this.changePromptCmd}`);
     }
@@ -281,6 +292,14 @@ class MongoShell extends EventEmitter {
     }
     log.info('load pre defined scripts ' + scriptPath);
     this.writeToShell(command + MongoShell.enter);
+  }
+
+  readScriptsFileIntoShell() {
+    const fileBuffer = fs.readFileSync(path.join(this.mongoScriptPath + '/all-in-one.js'));
+    const fileContent = fileBuffer.toString('utf8');
+    this.write('// ingore_emit_begin ' + MongoShell.enter);
+    this.write(fileContent + MongoShell.enter);
+    this.write('// ingore_emit_ended ' + MongoShell.enter);
   }
 
   /**
