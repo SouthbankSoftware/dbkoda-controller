@@ -206,26 +206,6 @@ class MongoConnectionController {
       })
       .then(v => {
         dbVersion = v.version;
-        // if (conn.username && conn.password) {
-        // return new Promise((resolve, reject) => {
-        //   let authDb = db.db(conn.database);
-        //   if (conn.authenticationDatabase) {
-        //     authDb = db.db(conn.authenticationDatabase);
-        //   }
-        // authDb.authenticate(
-        //   conn.username,
-        //   conn.password,
-        //   (err, _result) => {
-        //     if (!err) {
-        //       resolve(db);
-        //     } else {
-        //       log.error('authentication error ', err);
-        //       reject(new errors.NotAuthenticated('Authentication Failed'));
-        //     }
-        //   }
-        // );
-        // });
-        // }
         return db;
       })
       .then(() => {
