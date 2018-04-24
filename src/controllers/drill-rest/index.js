@@ -1,6 +1,6 @@
 /**
- * @Last modified by:   guiguan
- * @Last modified time: 2018-03-14T22:50:42+11:00
+ * @Last modified by:   wahaj
+ * @Last modified time: 2018-04-24T11:48:55+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -55,7 +55,9 @@ class DrillRestController {
   }
 
   async launchJavaControllProcess(drillPath, drillControllerPath) {
-    const cmd = `java -Dloader.path=${drillPath}/jars/jdbc-driver/drill-jdbc-all-1.11.0.jar -jar ${drillControllerPath}`;
+    const regExVer = /(\S+)(-)(\S+)/;
+    const [,,, drillVersion] = regExVer.exec(drillPath);
+    const cmd = `java -Dloader.path=${drillPath}/jars/jdbc-driver/drill-jdbc-all-${drillVersion}.jar -jar ${drillControllerPath}`;
     console.log('Drill Controller Command:', cmd);
     try {
       let success = false;
