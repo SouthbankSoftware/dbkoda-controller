@@ -21,11 +21,10 @@
  * Created by joey on 30/6/17.
  */
 
-
 const errors = require('feathers-errors');
 
 export const Errors = {
-  ConnectSlaveOk: (e) => {
+  ConnectSlaveOk: e => {
     return new errors.FeathersError(e.errmsg, 'SlaveOk', e.code, 'slave-ok');
   }
 };
@@ -41,6 +40,5 @@ export const ErrorCodes = {
   SSH_RECONNECTING: 'SSH_RECONNECTING',
   SSH_NOT_ENABLED: 'SSH_NOT_ENABLED',
   UNSUPPORTED_STATS_OS: 'UNSUPPORTED_STATS_OS',
-  PROFILING_DISABLED: 'PROFILING_DISABLED',
+  PROFILING_DISABLED: 'PROFILING_DISABLED'
 };
-

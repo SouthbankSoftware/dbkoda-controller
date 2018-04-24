@@ -21,7 +21,7 @@ const EventEmitter = require('events');
 const md5Hex = require('md5-hex');
 const _ = require('lodash');
 
-const {ErrorCodes} = require('../../errors/Errors');
+const { ErrorCodes } = require('../../errors/Errors');
 
 /* eslint-disable class-methods-use-this */
 
@@ -40,7 +40,7 @@ const iterateProperty = (obj, parent, stacks = []) => {
 
 const aggregateResult = results => {
   return results.reduce((accumulator, ret) => {
-    let slack = {ns: ret.ns};
+    let slack = { ns: ret.ns };
     let planQuery = '';
     let command = '';
     if (ret.query) {
@@ -50,7 +50,7 @@ const aggregateResult = results => {
       command = ret.command;
       planQuery = iterateProperty(ret.command, 'command', []);
     }
-    slack = {...slack, ...planQuery};
+    slack = { ...slack, ...planQuery };
     const hexResult = md5Hex(JSON.stringify(slack));
     if (accumulator[hexResult]) {
       accumulator[hexResult].count += 1;
@@ -77,11 +77,11 @@ class ProfilingController extends EventEmitter {
   }
 
   profile(db, dbName, colName) {
-    const nsFilter = colName ? `${dbName}.${colName}` : {$regex: `${dbName}.*`};
+    const nsFilter = colName ? `${dbName}.${colName}` : { $regex: `${dbName}.*` };
     return new Promise((resolve, reject) => {
       db
         .db(dbName)
-        .command({profile: -1})
+        .command({ profile: -1 })
         .then(d => {
           if (d.was <= 0) {
             reject(new Error(ErrorCodes.PROFILING_DISABLED));
@@ -89,8 +89,8 @@ class ProfilingController extends EventEmitter {
           return db
             .db(dbName)
             .collection('system.profile')
-            .find({ns: nsFilter})
-            .sort({millis: -1})
+            .find({ ns: nsFilter })
+            .sort({ millis: -1 })
             .limit(20)
             .toArray();
         })
@@ -111,17 +111,14 @@ class ProfilingController extends EventEmitter {
           const disablePromise = data
             .map(d => {
               if (d.profileSize !== undefined) {
-                const stats = _.find(dbStats, {dbName: d.dbName});
-                if (
-                  stats &&
-                  d.profileSize * 1024 / 1000 !== stats.stats.maxSize
-                ) {
+                const stats = _.find(dbStats, { dbName: d.dbName });
+                if (stats && d.profileSize * 1024 / 1000 !== stats.stats.maxSize) {
                   return driver
                     .db(d.dbName)
-                    .command({profile: 0})
+                    .command({ profile: 0 })
                     .then(_ => ({
                       dbName: d.dbName,
-                      profileSize: d.profileSize,
+                      profileSize: d.profileSize
                     }));
                 }
               }
@@ -143,12 +140,10 @@ class ProfilingController extends EventEmitter {
         .then(dbs => {
           return Promise.all(
             dbs.map(dbData => {
-              return driver
-                .db(dbData.dbName)
-                .createCollection(systemProfileCollectionName, {
-                  capped: true,
-                  size: dbData.profileSize,
-                });
+              return driver.db(dbData.dbName).createCollection(systemProfileCollectionName, {
+                capped: true,
+                size: dbData.profileSize
+              });
             })
           );
         })
@@ -167,8 +162,8 @@ class ProfilingController extends EventEmitter {
           new Promise((resolve, reject) => {
             driver
               .db(d.dbName)
-              .command({profile: d.level, slowms: d.slowms})
-              .then(res => resolve({...res, was: d.level, name: d.dbName}))
+              .command({ profile: d.level, slowms: d.slowms })
+              .then(res => resolve({ ...res, was: d.level, name: d.dbName }))
               .catch(err => reject(err));
           })
       )
@@ -185,7 +180,7 @@ class ProfilingController extends EventEmitter {
             d =>
               new Promise((r, j) =>
                 this.getDatabaseProfileConfiguration(driver, d.name)
-                  .then(v => r({[d.name]: v}))
+                  .then(v => r({ [d.name]: v }))
                   .catch(err => j(err))
               )
           );
@@ -199,9 +194,9 @@ class ProfilingController extends EventEmitter {
             return this.getSingleSystemProfileStats(driver, dbName)
               .then(stats => {
                 dbValue.size = stats.stats.maxSize * 1000 / 1024;
-                return {[dbName]: dbValue};
+                return { [dbName]: dbValue };
               })
-              .catch(() => ({[dbName]: dbValue}));
+              .catch(() => ({ [dbName]: dbValue }));
           });
           return Promise.all(proms);
         })
@@ -213,7 +208,7 @@ class ProfilingController extends EventEmitter {
   }
 
   getDatabaseProfileConfiguration(db, dbName) {
-    return db.db(dbName).command({profile: -1});
+    return db.db(dbName).command({ profile: -1 });
   }
 
   getSystemProfileStats(driver, dbNames) {
@@ -236,7 +231,7 @@ class ProfilingController extends EventEmitter {
       .collection(systemProfileCollectionName)
       .stats()
       .then(stats => {
-        return {dbName, stats};
+        return { dbName, stats };
       })
       .catch(err => {
         l.error(err);
@@ -245,4 +240,4 @@ class ProfilingController extends EventEmitter {
   }
 }
 
-module.exports = {ProfilingController, aggregateResult, iterateProperty};
+module.exports = { ProfilingController, aggregateResult, iterateProperty };

@@ -28,7 +28,7 @@ import { getItems } from 'feathers-hooks-common';
 import errors from 'feathers-errors';
 import _ from 'lodash';
 
-export default (processItem: (context: {}, item: {}) => Promise, options) => (context) => {
+export default (processItem: (context: {}, item: {}) => Promise, options) => context => {
   const { idAlias = '_id' } = options || {};
   let items = getItems(context);
   const isArray = Array.isArray(items);
@@ -41,10 +41,10 @@ export default (processItem: (context: {}, item: {}) => Promise, options) => (co
         .then(payload => ({ [idAlias]: item[idAlias], payload }))
         .catch(error => ({
           [idAlias]: item[idAlias],
-          error: error instanceof errors.FeathersError ? error : error.message || String(error),
-        })),
-    ),
-  ).then((results) => {
+          error: error instanceof errors.FeathersError ? error : error.message || String(error)
+        }))
+    )
+  ).then(results => {
     if (isArray) {
       context.result = results;
     } else {

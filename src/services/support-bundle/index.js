@@ -83,9 +83,7 @@ class SupportBundleService {
         // listen for all archive data to be written.
         output.on('close', () => {
           l.info(archive.pointer() + ' total byes');
-          l.info(
-            'archiver has been finalized and the output file descriptor has closed.'
-          );
+          l.info('archiver has been finalized and the output file descriptor has closed.');
           resolve(bundlePath);
         });
         // good practice to catch warnings
@@ -150,14 +148,10 @@ class SupportBundleService {
               const mongoVStr = output.split('\n');
               if (mongoVStr && mongoVStr.length > 0) {
                 if (mongoVStr[0].indexOf('MongoDB shell version v') >= 0) {
-                  mongoVersion = mongoVStr[0]
-                    .replace('MongoDB shell version v', '')
-                    .trim();
+                  mongoVersion = mongoVStr[0].replace('MongoDB shell version v', '').trim();
                 }
                 if (mongoVStr[0].indexOf('MongoDB shell version:') >= 0) {
-                  mongoVersion = mongoVStr[0]
-                    .replace('MongoDB shell version:', '')
-                    .trim();
+                  mongoVersion = mongoVStr[0].replace('MongoDB shell version:', '').trim();
                 }
                 mongoVersion = mongoVStr[0];
               }
@@ -197,18 +191,10 @@ class SupportBundleService {
     return new Promise((resolve, reject) => {
       // Do all the logic to create a bundle.
       let configPath = path.resolve(os.homedir(), '.dbKoda', 'config.yml');
-      const statePath = path.resolve(
-        os.homedir(),
-        '.dbKoda',
-        'stateStore.json'
-      );
+      const statePath = path.resolve(os.homedir(), '.dbKoda', 'stateStore.json');
       let isBundlePathValid = false;
       let bundleNumber = 1;
-      let bundlePath = path.resolve(
-        os.homedir(),
-        '.dbKoda',
-        'supportBundle.zip'
-      );
+      let bundlePath = path.resolve(os.homedir(), '.dbKoda', 'supportBundle.zip');
       while (!isBundlePathValid) {
         if (fs.existsSync(bundlePath)) {
           l.info('Support bundle already exists.');
@@ -229,21 +215,9 @@ class SupportBundleService {
         logPath = process.env.LOG_PATH;
         configPath = process.env.CONFIG_PATH;
       } else if (os.release().match(/Win/gi)) {
-        logPath = path.resolve(
-          os.homedir(),
-          'AppData',
-          'Roaming',
-          'dbKoda',
-          'logs'
-        );
+        logPath = path.resolve(os.homedir(), 'AppData', 'Roaming', 'dbKoda', 'logs');
       } else {
-        logPath = path.resolve(
-          os.homedir(),
-          'Library',
-          'Application Support',
-          'dbKoda',
-          'logs'
-        );
+        logPath = path.resolve(os.homedir(), 'Library', 'Application Support', 'dbKoda', 'logs');
       }
       const files = fs.readdirSync(logPath);
       const controllerLogList = [];

@@ -59,7 +59,7 @@ export const parseSingleStatDefValue = (stats, statDef, dbVersion) => {
     return getDataFromSourcePath(stats, statDef.defaultSource);
   }
   // parse the value from version
-  const matchedVersion = _.find(statDef.versions, (v) => checkVersion(dbVersion, v.versionMask));
+  const matchedVersion = _.find(statDef.versions, v => checkVersion(dbVersion, v.versionMask));
   if (matchedVersion && matchedVersion.source) {
     return getDataFromSourcePath(stats, matchedVersion.source);
   }
@@ -85,9 +85,9 @@ export const parseStatDefValue = (stats, statDef, dbVersion, prevStats, sampling
   return currentValue;
 };
 
-export const findAllVars = (expression) => {
+export const findAllVars = expression => {
   const vars = [];
-  const searchNode = (ast) => {
+  const searchNode = ast => {
     if (ast.node === 'name') {
       vars.push(ast.template);
     }
@@ -102,21 +102,23 @@ export const parseCalculations = (calculations, statsValues) => {
   if (!calculations) {
     return statsValues;
   }
-  const retValue = {...statsValues};
-  calculations.map((calculation) => {
+  const retValue = { ...statsValues };
+  calculations.map(calculation => {
     const expressionFunc = mkFunc(calculation.expression);
     const allVars = findAllVars(calculation.expression);
     const params = {};
-    allVars.forEach((variable) => {
+    allVars.forEach(variable => {
       if (statsValues[variable] !== undefined) {
         params[variable] = statsValues[variable];
       }
     });
     if (retValue[calculation.name] === undefined) {
       retValue[calculation.name] = expressionFunc(params);
-      if (_.isNaN(retValue[calculation.name])
-        || retValue[calculation.name] === 'NaN'
-        || retValue[calculation.name] === Infinity) {
+      if (
+        _.isNaN(retValue[calculation.name]) ||
+        retValue[calculation.name] === 'NaN' ||
+        retValue[calculation.name] === Infinity
+      ) {
         if (calculation.ifZeroDivide !== undefined) {
           retValue[calculation.name] = calculation.ifZeroDivide;
         } else {
@@ -130,19 +132,19 @@ export const parseCalculations = (calculations, statsValues) => {
 
 export const parseDataByRules = (rules, stats, dbVersion, prevStats, samplingRate) => {
   const statsValues = {};
-  rules.statisticDefinitions.forEach((statDef) => {
+  rules.statisticDefinitions.forEach(statDef => {
     const value = parseStatDefValue(stats, statDef, dbVersion, prevStats, samplingRate);
     statsValues[statDef.name] = value;
   });
   return parseCalculations(rules.calculations, statsValues);
 };
 
-export const parseAllKeys = (rules) => {
+export const parseAllKeys = rules => {
   const keys = [];
-  rules.statisticDefinitions.forEach((statDef) => {
+  rules.statisticDefinitions.forEach(statDef => {
     keys.push(statDef.name);
   });
-  rules.calculations.forEach((cal) => {
+  rules.calculations.forEach(cal => {
     keys.push(cal.name);
   });
   return keys;

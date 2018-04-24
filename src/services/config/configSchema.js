@@ -64,7 +64,7 @@ const configSchema = {
       validMongoCmd: null
     },
     mongoVersionCmd: {
-      type: ['string', 'null'],
+      type: ['string', 'null']
     },
     drillCmd: {
       type: ['string', 'null']

@@ -39,16 +39,16 @@ class LintingService {
             in: 'query',
             required: true,
             name: 'code',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             required: false,
             name: 'options',
-            type: 'string',
-          },
-        ],
-      },
+            type: 'string'
+          }
+        ]
+      }
     };
   }
 

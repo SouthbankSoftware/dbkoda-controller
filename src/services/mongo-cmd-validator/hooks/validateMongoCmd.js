@@ -27,13 +27,13 @@ import { getItems } from 'feathers-hooks-common';
 import errors from 'feathers-errors';
 import { execSync } from 'child_process';
 
-export default _options => (hook) => {
+export default _options => hook => {
   let items = getItems(hook);
   const isArray = Array.isArray(items);
   items = isArray ? items : [items];
 
   // processItem should only return resolvable promise
-  const processItem = async (item) => {
+  const processItem = async item => {
     const { mongoCmdPath } = item;
 
     try {
@@ -49,18 +49,18 @@ export default _options => (hook) => {
       }
       if (version) {
         return {
-          mongoCmdVersion: version,
+          mongoCmdVersion: version
         };
       }
       throw new Error('Unknown mongo version');
     } catch (err) {
       return new errors.Unprocessable(err.message, {
-        mongoCmdPath,
+        mongoCmdPath
       });
     }
   };
 
-  return Promise.all(items.map(processItem)).then((results) => {
+  return Promise.all(items.map(processItem)).then(results => {
     if (isArray && results.length > 1) {
       hook.result = results;
     } else {

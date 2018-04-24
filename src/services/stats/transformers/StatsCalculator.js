@@ -27,7 +27,7 @@
  */
 
 import _ from 'lodash';
-import type {ObservaleValue} from '../observables/ObservableWrapper';
+import type { ObservaleValue } from '../observables/ObservableWrapper';
 import Transformer from './Transformer';
 
 type Stats = {
@@ -46,12 +46,12 @@ type Stats = {
   /* Number of samples this stats represent */
   count: number,
   /* high water mark */
-  hwm: number,
+  hwm: number
 };
 
 type StatsManifest =
   | {
-      [string]: Stats | StatsManifest,
+      [string]: Stats | StatsManifest
     }
   | (Stats | StatsManifest)[];
 
@@ -68,7 +68,7 @@ export default class StatsCalculator extends Transformer {
   constructor(stats: ?StatsManifest, options?: *) {
     super();
 
-    const {enabledEmStats = false, alpha = 0.2} = options || {};
+    const { enabledEmStats = false, alpha = 0.2 } = options || {};
 
     this.alpha = alpha;
     this._statsManifest = stats || {};
@@ -115,12 +115,7 @@ export default class StatsCalculator extends Transformer {
     return prevMean + nextDelta / count;
   };
 
-  _calculateNextS = (
-    prevS: number,
-    nextDelta: number,
-    nextSample: number,
-    nextMean: number
-  ) => {
+  _calculateNextS = (prevS: number, nextDelta: number, nextSample: number, nextMean: number) => {
     return prevS + nextDelta * (nextSample - nextMean);
   };
 
@@ -128,10 +123,7 @@ export default class StatsCalculator extends Transformer {
     return Math.sqrt(nextS / (count - 1));
   };
 
-  _calculateNextStats = (
-    statsManifest: StatsManifest,
-    nextValue: {[string]: any}
-  ) => {
+  _calculateNextStats = (statsManifest: StatsManifest, nextValue: { [string]: any }) => {
     _.forEach(nextValue, (v, k) => {
       if (v == null) return;
 
@@ -146,21 +138,21 @@ export default class StatsCalculator extends Transformer {
               ? {
                   ema: v,
                   emv: 0,
-                  emsd: 0,
+                  emsd: 0
                 }
               : undefined),
             mean: v,
             s: 0,
             sd: 0,
             count: 1,
-            hwm: v,
+            hwm: v
           };
           statsManifest[k] = stats;
         } else {
           stats.count += 1;
 
           if (this._enabledEmStats) {
-            const {ema: prevEma, emv: prevEmv} = stats;
+            const { ema: prevEma, emv: prevEmv } = stats;
             // $FlowFixMe
             const nextDelta = this._calculateNextDelta(prevEma, v);
             // $FlowFixMe
@@ -170,7 +162,7 @@ export default class StatsCalculator extends Transformer {
             stats.emsd = this._calculateNextEmsd(stats.emv);
           }
 
-          const {mean: prevMean, s: prevS, count} = stats;
+          const { mean: prevMean, s: prevS, count } = stats;
           const nextDelta = this._calculateNextDelta(prevMean, v);
           stats.mean = this._calculateNextMean(prevMean, nextDelta, count);
           stats.s = this._calculateNextS(prevS, nextDelta, v, stats.mean);

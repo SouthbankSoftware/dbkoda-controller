@@ -26,14 +26,14 @@
 import { getItems } from 'feathers-hooks-common';
 import errors from 'feathers-errors';
 
-export default _options => (hook) => {
+export default _options => hook => {
   let items = getItems(hook);
   const isArray = Array.isArray(items);
   items = isArray ? items : [items];
   const { mongoConnection } = hook.service;
 
   // processItem should only return resolvable promise
-  const processItem = async (item) => {
+  const processItem = async item => {
     try {
       const { editorId, connectionId, database, collection, pipeline, options } = item;
       const connection = mongoConnection.connections[connectionId];
@@ -43,10 +43,10 @@ export default _options => (hook) => {
       }
 
       const db = connection.driver.db(database);
-      const emitResult = (result) => {
+      const emitResult = result => {
         hook.service.emit('result', {
           editorId,
-          result: result instanceof Error ? result.message : result,
+          result: result instanceof Error ? result.message : result
         });
       };
 
@@ -63,7 +63,7 @@ export default _options => (hook) => {
     }
   };
 
-  return Promise.all(items.map(processItem)).then((results) => {
+  return Promise.all(items.map(processItem)).then(results => {
     if (isArray && results.length > 1) {
       hook.result = results;
     } else {

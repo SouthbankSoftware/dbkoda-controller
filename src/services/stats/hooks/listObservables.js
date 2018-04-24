@@ -75,5 +75,5 @@ export default () =>
 
       return result;
     },
-    { idAlias: 'profileId' },
+    { idAlias: 'profileId' }
   );

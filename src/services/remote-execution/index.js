@@ -32,23 +32,25 @@ class RemoteExecService {
             in: 'query',
             required: true,
             name: 'hostname',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             required: true,
             name: 'port',
-            type: 'string',
+            type: 'string'
           }
-        ],
+        ]
       },
       remove: {
         description: 'Remove a connection',
-        parameters: [{
-          in: 'query',
-          name: 'id',
-          type: 'int',
-        }]
+        parameters: [
+          {
+            in: 'query',
+            name: 'id',
+            type: 'int'
+          }
+        ]
       },
       update: {
         description: 'execute command via ssh connection',
@@ -57,15 +59,15 @@ class RemoteExecService {
             in: 'path',
             required: true,
             name: 'id',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             name: 'cmd',
-            type: 'string',
-          },
-        ],
-      },
+            type: 'string'
+          }
+        ]
+      }
     };
   }
 
@@ -92,7 +94,7 @@ module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires
-  const service = new RemoteExecService({app_ref: app});
+  const service = new RemoteExecService({ app_ref: app });
   app.use('/ssh-remote-execution', service);
 
   // Get our initialize service to that we can bind hooks

@@ -35,18 +35,20 @@ class StopService {
       description: 'A service to cancel an action on the shell with the passed id',
       get: {
         description: 'Send the cancel command to the shell',
-        parameters: [{
-          in: 'path',
-          required: true,
-          name: 'id',
-          type: 'string'
-        },
-        {
-          in: 'query',
-          required: true,
-          name: 'shellId',
-          type: 'string'
-        }]
+        parameters: [
+          {
+            in: 'path',
+            required: true,
+            name: 'id',
+            type: 'string'
+          },
+          {
+            in: 'query',
+            required: true,
+            name: 'shellId',
+            type: 'string'
+          }
+        ]
       }
     };
   }

@@ -35,22 +35,26 @@ class SyncExecutionService {
       description: 'A service to create mongo shell and execute command',
       put: {
         description: 'run mongo commands through shell sync',
-        parameters: [{
-          in: 'path',
-          required: true,
-          name: 'id',
-          type: 'string'
-        }, {
-          in: 'query',
-          required: true,
-          name: 'commands',
-          type: 'string'
-        }, {
-          in: 'query',
-          required: true,
-          name: 'shellId',
-          type: 'string'
-        }]
+        parameters: [
+          {
+            in: 'path',
+            required: true,
+            name: 'id',
+            type: 'string'
+          },
+          {
+            in: 'query',
+            required: true,
+            name: 'commands',
+            type: 'string'
+          },
+          {
+            in: 'query',
+            required: true,
+            name: 'shellId',
+            type: 'string'
+          }
+        ]
       }
     };
   }
@@ -68,14 +72,14 @@ class SyncExecutionService {
     if (data.swapProfile == true) {
       log.info('swap to databse ', id, data.shellId, data.newProfile);
       return this.controller.swapProfile(id, data.shellId, data.newProfile);
-    } else { // eslint-disable-line
-      log.info('run script commands', id, data, data.shellId);
-      return this.controller.writeSyncCommand(id, data.shellId, data.commands, data.responseType);
     }
+    // eslint-disable-line
+    log.info('run script commands', id, data, data.shellId);
+    return this.controller.writeSyncCommand(id, data.shellId, data.commands, data.responseType);
   }
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires

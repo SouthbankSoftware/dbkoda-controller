@@ -21,10 +21,9 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 import linuxStats from './linux';
 import darwinStats from './darwin';
-import {findRules} from '../utils';
+import { findRules } from '../utils';
 
 export const items = ['cpu', 'memory', 'disk', 'network', 'io'];
 
@@ -32,7 +31,6 @@ export const rules = {
   linux: linuxStats,
   darwin: darwinStats
 };
-
 
 /**
  * find the knowledge base rules
@@ -42,10 +40,10 @@ export const rules = {
  * @param version   the os version
  * @returns {*}
  */
-export const getKnowledgeBaseRules = ({osType, release, version}) => {
-  const rule = findRules({osType, release, version}, rules);
+export const getKnowledgeBaseRules = ({ osType, release, version }) => {
+  const rule = findRules({ osType, release, version }, rules);
   if (!rule) {
     return null;
   }
-  return {...rule};
+  return { ...rule };
 };

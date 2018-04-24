@@ -44,59 +44,59 @@ class MongoShardsInspector {
         this.serverInspector.inspectDatabases(driver, db),
         this.serverInspector.inspectUsers(driver),
         this.serverInspector.inspectAllRoles(driver, db),
-        this.serverInspector.inspectReplicaMembers(db),
+        this.serverInspector.inspectReplicaMembers(db)
       ])
-        .then((value) => {
+        .then(value => {
           resolve(
-            value.filter((v) => {
+            value.filter(v => {
               return v !== null && v !== undefined;
             })
           );
         })
-        .catch((err) => {
+        .catch(err => {
           reject(err);
         })
-        .catch((err) => {
+        .catch(err => {
           reject(err);
         });
-    }).catch((err) => {
+    }).catch(err => {
       l.error('get error ', err);
     });
   }
 
   getAllConfigs(db) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const adminDB = db.db(MongoShardsInspector.ADMIN_DB);
       const configTree = { text: 'Config Servers', children: [] };
       adminDB
         .command({ getShardMap: 1 })
-        .then((shardMap) => {
+        .then(shardMap => {
           if (shardMap.map && shardMap.map.config) {
             const confHosts = shardMap.map.config.split('/')[1].split(',');
-            confHosts.map((conf) => {
+            confHosts.map(conf => {
               configTree.children.push({ text: conf, type: treeNodeTypes.CONFIG });
             });
             resolve(configTree);
           }
         })
-        .catch((err) => {
+        .catch(err => {
           l.error('failed to get shard map ', err);
           resolve(configTree);
         });
-    }).catch((err) => {
+    }).catch(err => {
       l.info('cant run get shard map command ', err);
     });
   }
 
   getAllShards(driver) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const collection = driver
         .db(MongoShardsInspector.CONFIG_DB)
         .collection(MongoShardsInspector.SHARDS_COLLECTION);
       collection.find({}).toArray((err, docs) => {
         const shardsTree = { text: 'Shards' };
         shardsTree.children = [];
-        _.map(docs, (doc) => {
+        _.map(docs, doc => {
           const shards = doc.host.split(',');
           if (shards && shards.length > 1) {
             let shardRepName = '';
@@ -106,7 +106,7 @@ class MongoShardsInspector {
               shards[0] = nameSplit[1];
             }
             const shardTree = { text: shardRepName };
-            shardTree.children = _.map(shards, (shard) => {
+            shardTree.children = _.map(shards, shard => {
               return { text: shard, type: treeNodeTypes.SHARD };
             });
             shardsTree.children.push(shardTree);
@@ -116,25 +116,25 @@ class MongoShardsInspector {
         });
         return resolve(shardsTree);
       });
-    }).catch((err) => {
+    }).catch(err => {
       l.error('get all shards error', err);
       throw new errors.BadRequest(err);
     });
   }
 
   getAllMongos(db) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const collection = db
         .db(MongoShardsInspector.CONFIG_DB)
         .collection(MongoShardsInspector.MONGOS_COLLECTION);
       collection.find({}).toArray((err, docs) => {
         const shardsTree = { text: 'Routers', children: [] };
-        _.map(docs, (doc) => {
+        _.map(docs, doc => {
           shardsTree.children.push({ text: doc._id, type: treeNodeTypes.MONGOS });
         });
         resolve(shardsTree);
       });
-    }).catch((err) => {
+    }).catch(err => {
       l.error('get all mongos error', err);
       throw new errors.BadRequest(err);
     });

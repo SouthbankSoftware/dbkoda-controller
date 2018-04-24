@@ -19,4 +19,4 @@
  */
 const isDockerCommand = cmd => cmd.indexOf('docker') >= 0;
 
-module.exports = {isDockerCommand};
+module.exports = { isDockerCommand };

@@ -89,7 +89,7 @@ const escapeSequence = {
   /** Space */
   SP: 0x20,
   /** Delete (Caret : ^?) */
-  DEL: 0x7f,
+  DEL: 0x7f
 };
 
 module.exports = escapeSequence;

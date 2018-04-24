@@ -45,11 +45,10 @@ export default class CryptoPass {
   }
 
   getVerifyHash(): Promise<string> {
-    return bcrypt.hash(this._masterPassword, 10)
-        .then((verifyHash) => {
-          this._verifyHash = verifyHash;
-          return Promise.resolve(verifyHash);
-        });
+    return bcrypt.hash(this._masterPassword, 10).then(verifyHash => {
+      this._verifyHash = verifyHash;
+      return Promise.resolve(verifyHash);
+    });
   }
 
   compareVerifyHash(masterHash: string, verifyHash: ?string): Promise<boolean> {

@@ -87,7 +87,7 @@ export default class TopologyMonitor implements ObservableWrapper {
             this.observer.next({
               profileId: this.profileId,
               timestamp: new Date().getTime(),
-              value: { topology: members },
+              value: { topology: members }
             });
           })
           .catch(err => this.emitError(err));
@@ -95,7 +95,7 @@ export default class TopologyMonitor implements ObservableWrapper {
         this.observer.next({
           profileId: this.profileId,
           timestamp: new Date().getTime(),
-          value: { topology: 'Unknown' },
+          value: { topology: 'Unknown' }
         });
       }
     }

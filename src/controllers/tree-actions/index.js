@@ -23,7 +23,6 @@
 
 const _ = require('lodash');
 
-
 const findAttributes = (db, params) => {
   log.debug('try to find attribute on ', params);
   const collection = params.collection;
@@ -32,15 +31,18 @@ const findAttributes = (db, params) => {
       if (err) {
         reject('Cant find the collection', collection);
       }
-      col.find().limit(20).toArray((err, docs) => {
-        log.debug('find document ', docs.length);
-        let merged = {};
-        docs.map((doc) => {
-          log.debug('doc: ', doc);
-          merged = _.merge(merged, doc);
+      col
+        .find()
+        .limit(20)
+        .toArray((err, docs) => {
+          log.debug('find document ', docs.length);
+          let merged = {};
+          docs.map(doc => {
+            log.debug('doc: ', doc);
+            merged = _.merge(merged, doc);
+          });
+          resolve(merged);
         });
-        resolve(merged);
-      });
     });
   });
 };

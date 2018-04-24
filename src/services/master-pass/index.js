@@ -59,30 +59,33 @@ export class MasterPass {
   get(_id: string, _params: {}) {
     if (!this.cryptoPass || !this.cryptoPass.masterPassword) {
       // $FlowFixMe
-      this.emit(this.MASTER_PASSWORD_REQUIRED, { 'method': 'get' });
+      this.emit(this.MASTER_PASSWORD_REQUIRED, { method: 'get' });
       throw new errors.NotAuthenticated('Password Store not authenticated');
     }
-    return this.store.getPassword(_id)
-      .then((passwordEnc: string) => {
-        if (!passwordEnc) {
-          Promise.reject();
-          throw new errors.NotFound(`Password store item ${_id} doesn't exist`);
-        }
-        const password: string = this.cryptoPass.decrypt(passwordEnc);
-        return Promise.resolve(password);
-      });
+    return this.store.getPassword(_id).then((passwordEnc: string) => {
+      if (!passwordEnc) {
+        Promise.reject();
+        throw new errors.NotFound(`Password store item ${_id} doesn't exist`);
+      }
+      const password: string = this.cryptoPass.decrypt(passwordEnc);
+      return Promise.resolve(password);
+    });
   }
 
-  create(_data: { masterPassword: string, profileIds: Array<string> }, _params: {}): ?Promise<Array<string>> {
+  create(
+    _data: { masterPassword: string, profileIds: Array<string> },
+    _params: {}
+  ): ?Promise<Array<string>> {
     const { masterPassword, profileIds } = _data;
     this.cryptoPass = new CryptoPassword(masterPassword);
-    return this.cryptoPass.getVerifyHash()
-      .then((verifyHash) => {
-        return this.store.initStore(verifyHash)
-          .then(() => {
-            return this.store.getPassword('verify').then((storeVerifyHash) => {
-              return this.cryptoPass.compareVerifyHash(masterPassword, storeVerifyHash)
-              .then((compareOk) => {
+    return this.cryptoPass
+      .getVerifyHash()
+      .then(verifyHash => {
+        return this.store.initStore(verifyHash).then(() => {
+          return this.store.getPassword('verify').then(storeVerifyHash => {
+            return this.cryptoPass
+              .compareVerifyHash(masterPassword, storeVerifyHash)
+              .then(compareOk => {
                 if (!compareOk) {
                   this.failedAttempts += 1;
                   this.cryptoPass.reset();
@@ -93,15 +96,17 @@ export class MasterPass {
                     this.emit(this.PASSWORD_STORE_RESET, {});
                     this.failedAttempts = 0;
                   }
-                  throw new errors.NotAuthenticated('Unable to init store with the specified master password.');
+                  throw new errors.NotAuthenticated(
+                    'Unable to init store with the specified master password.'
+                  );
                 }
                 this.failedAttempts = 0;
                 return Promise.resolve(this.store.syncStore(profileIds));
               });
-            });
           });
+        });
       })
-      .catch((error) => {
+      .catch(error => {
         console.log(error);
         return Promise.reject(error);
       });
@@ -110,7 +115,7 @@ export class MasterPass {
   patch(_id: string, _data: { password: string }, _params: {}): Promise<boolean> {
     if (!this.cryptoPass || !this.cryptoPass.masterPassword) {
       // $FlowFixMe
-      this.emit(this.MASTER_PASSWORD_REQUIRED, { 'method': 'get' });
+      this.emit(this.MASTER_PASSWORD_REQUIRED, { method: 'get' });
       throw new errors.NotAuthenticated('Password Store not authenticated');
     }
     const profileId = _id;

@@ -26,16 +26,16 @@
 /* eslint-disable class-methods-use-this */
 
 import _ from 'lodash';
-import {spawn} from 'node-pty';
-import {execSync} from 'child_process';
-import {EventEmitter} from 'events';
+import { spawn } from 'node-pty';
+import { execSync } from 'child_process';
+import { EventEmitter } from 'events';
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import Status from '../mongo-connection/status';
 import Parser from './pty-parser';
 import PtyOptions from './pty-options';
-import {isDockerCommand} from '../docker';
+import { isDockerCommand } from '../docker';
 
 class MongoShell extends EventEmitter {
   constructor(connection, mongoScriptPath) {
@@ -67,7 +67,7 @@ class MongoShell extends EventEmitter {
         return 'UNKNOWN';
       }
 
-      const output = execSync(configObj.mongoVersionCmd, {encoding: 'utf8'});
+      const output = execSync(configObj.mongoVersionCmd, { encoding: 'utf8' });
       const mongoVStr = output.split('\n');
       if (mongoVStr && mongoVStr.length > 0) {
         if (mongoVStr[0].indexOf('MongoDB shell version v') >= 0) {
@@ -90,14 +90,12 @@ class MongoShell extends EventEmitter {
       .substring(0, 6)
       .trim();
     const mongo30 = ver.indexOf('3.0') >= 0;
-    const {connection} = this;
+    const { connection } = this;
     let params = [];
     if (mongo30) {
       params.push('--host');
       if (connection.options && connection.options.replicaSet) {
-        params = params.concat([
-          connection.options.replicaSet + '/' + connection.hosts,
-        ]);
+        params = params.concat([connection.options.replicaSet + '/' + connection.hosts]);
       } else {
         params = params.concat([connection.hosts]);
       }
@@ -107,9 +105,7 @@ class MongoShell extends EventEmitter {
       params.push(connection.database);
     } else {
       if (connection.url && connection.url.indexOf('ssl=') > 0) {
-        const url = connection.url
-          .replace(/.ssl=true/, '')
-          .replace(/.ssl=false/, '');
+        const url = connection.url.replace(/.ssl=true/, '').replace(/.ssl=false/, '');
         params.push(url);
       } else {
         params.push(connection.url);
@@ -121,7 +117,7 @@ class MongoShell extends EventEmitter {
         }
       }
     }
-    const {username, password} = connection;
+    const { username, password } = connection;
     if (username) {
       params = params.concat(['--username', username]);
       if (password) {
@@ -129,10 +125,7 @@ class MongoShell extends EventEmitter {
       }
     }
     if (connection.authenticationDatabase) {
-      params = params.concat([
-        '--authenticationDatabase',
-        connection.authenticationDatabase,
-      ]);
+      params = params.concat(['--authenticationDatabase', connection.authenticationDatabase]);
     }
     return params;
   }
@@ -167,7 +160,7 @@ class MongoShell extends EventEmitter {
       throw err;
     }
 
-    const {mongoCmd} = configObj;
+    const { mongoCmd } = configObj;
 
     let mongoCmdArray;
 
@@ -183,18 +176,14 @@ class MongoShell extends EventEmitter {
     if (os.platform() !== 'win32') {
       _.assign(PtyOptions, {
         uid: process.getuid(),
-        gid: process.getgid(),
+        gid: process.getgid()
       });
     }
 
     const parameters = this.createMongoShellParameters();
 
     try {
-      this.shell = spawn(
-        mongoCmdArray[0],
-        [...mongoCmdArray.slice(1), ...parameters],
-        PtyOptions
-      );
+      this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], PtyOptions);
     } catch (error) {
       l.error(error);
       throw error;
@@ -215,10 +204,7 @@ class MongoShell extends EventEmitter {
     this.shell.on('data', this.parser.onRead.bind(this.parser));
     this.parser.on('data', this.readParserOutput.bind(this));
     this.parser.on('command-ended', this.commandEnded.bind(this));
-    this.parser.on(
-      'incomplete-command-ended',
-      this.incompleteCommandEnded.bind(this)
-    );
+    this.parser.on('incomplete-command-ended', this.incompleteCommandEnded.bind(this));
 
     // handle shell output
     if (this.connection.requireSlaveOk) {
@@ -300,12 +286,7 @@ class MongoShell extends EventEmitter {
       this.autoCompleteOutput += data.trim();
     } else if (this.syncExecution && data !== MongoShell.prompt) {
       this.emit(MongoShell.SYNC_OUTPUT_EVENT, data);
-    } else if (
-      !(
-        data === this.previousOutput &&
-        this.previousOutput === MongoShell.prompt
-      )
-    ) {
+    } else if (!(data === this.previousOutput && this.previousOutput === MongoShell.prompt)) {
       this.emitOutput(data + MongoShell.enter);
     }
     this.previousOutput = data;
@@ -322,9 +303,7 @@ class MongoShell extends EventEmitter {
   }
 
   readScriptsFileIntoShell() {
-    const fileBuffer = fs.readFileSync(
-      path.join(this.mongoScriptPath + '/all-in-one.js')
-    );
+    const fileBuffer = fs.readFileSync(path.join(this.mongoScriptPath + '/all-in-one.js'));
     const fileContent = fileBuffer.toString('utf8');
     this.write('// ignore_emit_begin ' + MongoShell.enter);
     this.write(fileContent + MongoShell.enter);

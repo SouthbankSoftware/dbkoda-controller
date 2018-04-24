@@ -46,10 +46,11 @@ dbcShards.trimServerName = function(serverName) {
   return newServerName;
 };
 
-dbcShards.chunks = function () {
-  var myDb = db.getSiblingDB("config"); // eslint-disable-line
+dbcShards.chunks = function() {
+  var myDb = db.getSiblingDB('config'); // eslint-disable-line
   var results = {};
-  results.chunks = myDb.chunks.aggregate([
+  results.chunks = myDb.chunks
+    .aggregate([
       {
         $group: {
           _id: {
@@ -72,7 +73,7 @@ dbcShards.chunks = function () {
   return results;
 };
 
-dbcShards.threads = function () {
+dbcShards.threads = function() {
   var hostStats = {};
   var poolStats = db.adminCommand({ shardConnPoolStats: 1 }); // eslint-disable-line
   var id;
@@ -92,12 +93,11 @@ dbcShards.threads = function () {
   return hostStats;
 };
 
-
-
-dbcShards.collectionChunks = function () {
-  var myDb = db.getSiblingDB("config"); // eslint-disable-line
+dbcShards.collectionChunks = function() {
+  var myDb = db.getSiblingDB('config'); // eslint-disable-line
   var results = {};
-  results = myDb.chunks.aggregate([
+  results = myDb.chunks
+    .aggregate([
       { $group: { _id: { ns: '$ns', shard: '$shard' }, count: { $sum: 1 } } },
       {
         $project: {
@@ -106,7 +106,8 @@ dbcShards.collectionChunks = function () {
           chunks: '$count',
           _id: 0
         }
-      },{$sort:{"chunks":-1}}
+      },
+      { $sort: { chunks: -1 } }
     ])
     .toArray();
   return results;
@@ -119,10 +120,10 @@ dbcShards.details = function() {
   Object.keys(thrdata).forEach(function(host) {
     // print(host);
     // printjson(thrdata[host]);
-    threadsByHost.push({host:host, created:thrdata[host].created});
+    threadsByHost.push({ host: host, created: thrdata[host].created });
   });
   output.chunks = dbcShards.chunks().chunks;
   output.threadsByHost = threadsByHost;
   output.collectionChunks = dbcShards.collectionChunks();
-  return (output);
+  return output;
 };

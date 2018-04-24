@@ -26,7 +26,7 @@
 global.log = {
   info: msg => console.log(msg),
   error: msg => console.log(msg),
-  debug: msg => console.log(msg),
+  debug: msg => console.log(msg)
 };
 global.l = global.log;
 
@@ -45,7 +45,7 @@ const sshTunnelOpts = {
   remotePass: process.env.EC2_SHARD_CLUSTER_PASSWORD,
   sshTunnel: true,
   sshUser: 'core',
-  sshPassword: process.env.EC2_SHARD_CLUSTER_PASSWORD,
+  sshPassword: process.env.EC2_SHARD_CLUSTER_PASSWORD
 };
 
 const sshOpts = {
@@ -53,8 +53,7 @@ const sshOpts = {
     host: '10.0.0.25',
     port: 22,
     username: 'core',
-    password: 'DBEnvy2016',
-
+    password: 'DBEnvy2016'
   }
 };
 
@@ -71,13 +70,9 @@ const sshOpts = {
 const counter = new SSHCounter();
 counter.samplingRate = 3000;
 counter.profileId = 1;
-counter.emitError = (err) => console.error(err);
-counter.init({'mongoConnection': sshOpts}).then(() => {
-  counter.rxObservable.subscribe(
-    x => console.log('get sub ', x),
-    (e) => console.log('complete1',e)
-  );
-})
-
+counter.emitError = err => console.error(err);
+counter.init({ mongoConnection: sshOpts }).then(() => {
+  counter.rxObservable.subscribe(x => console.log('get sub ', x), e => console.log('complete1', e));
+});
 
 // setTimeout(() => counter.setSamplingRate(15), 3000);

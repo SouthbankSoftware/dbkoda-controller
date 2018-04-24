@@ -31,11 +31,13 @@ class InspectorService {
     this.docs = {
       get: {
         description: 'Inspect a Mongo Instance',
-        parameters: [{
-          in: 'path',
-          name: 'id',
-          type: 'string',
-        }]
+        parameters: [
+          {
+            in: 'path',
+            name: 'id',
+            type: 'string'
+          }
+        ]
       }
     };
   }
@@ -50,7 +52,7 @@ class InspectorService {
   }
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires

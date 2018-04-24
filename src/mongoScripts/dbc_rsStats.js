@@ -29,7 +29,7 @@
 
 var dbc_rsStats = {};
 
- dbc_rsStats.lags = function() {
+dbc_rsStats.lags = function() {
   var rs1 = rs.status(); // eslint-disable-line
   var lags = [];
   var lag;
@@ -42,10 +42,10 @@ var dbc_rsStats = {};
   rs1.members.forEach(function(mem) {
     if (mem.hasOwnProperty('optime')) {
       lag = optimeBase - mem.optime.ts.t;
-      lags.push({ host: mem.name, lag:lag });
+      lags.push({ host: mem.name, lag: lag });
     }
   });
-  return (lags);
+  return lags;
 };
 
 dbc_rsStats.details = function() {
@@ -59,7 +59,7 @@ dbc_rsStats.members = function() {
   var rs1 = rs.status(); // eslint-disable-line
   var members = [];
   var optimedate;
-  rs1.members.forEach(function (r) {
+  rs1.members.forEach(function(r) {
     if (r.hasOwnProperty('optimeDate')) {
       optimedate = r.optimeDate.toJSON();
     } else {

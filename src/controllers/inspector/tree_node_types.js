@@ -18,7 +18,6 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 module.exports = {
   TreeNodeType: {
     DATABASE: 'database',
@@ -34,7 +33,6 @@ module.exports = {
     REPLICA_MEMBER: 'replica_member',
     PRIMARY: 'primary',
     SECONDARY: 'secondary',
-    ARBITER: 'arbiter',
+    ARBITER: 'arbiter'
   }
-
 };

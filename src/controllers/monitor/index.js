@@ -33,12 +33,12 @@ class MongoDBMonitor extends EventEmitter {
     l.info('start mongodb monitor.');
     const that = this;
     this.heartbeat.start();
-    this.heartbeat.on('error', (err) => {
+    this.heartbeat.on('error', err => {
       l.error('heartbeat error ', err);
       that.emit('error', err);
     });
 
-    this.heartbeat.on('heartbeat', (data) => {
+    this.heartbeat.on('heartbeat', data => {
       l.debug('heartbeat ', data);
     });
   }

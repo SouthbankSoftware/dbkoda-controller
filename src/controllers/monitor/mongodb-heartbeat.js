@@ -29,7 +29,7 @@ const DEFAULTS = {
   timeout: 3000,
   interval: 3000,
   tolerance: 3,
-  command: 'ping',
+  command: 'ping'
 };
 
 /**
@@ -76,43 +76,37 @@ class MongoDBHeartBeat extends EventEmitter {
     l.debug('run mongo command to check connection ');
     const that = this;
 
-    return setTimeout(
-      () => {
-        const command = {};
-        command[this.options.command] = 1;
-        try {
-          this.connection.command(
-            command,
-            {
-              timeout: that.options.timeout,
-              socketTimeoutMS: that.options.timeout,
-            },
-            (err, data) => {
-              that.currFailures = err ? that.currFailures + 1 : 0;
-              if (err) {
-                if (that.currFailures >= that.options.tolerance) {
-                  l.error('heartbeat failed after ' + that.currFailures + ' times tried.');
-                  that.fail(err);
-                  return;
-                }
-                l.error('heartbean failed on ' + that.currFailures + ' times.');
-              } else {
-                that.emit('heartbeat', data);
+    return setTimeout(() => {
+      const command = {};
+      command[this.options.command] = 1;
+      try {
+        this.connection.command(
+          command,
+          {
+            timeout: that.options.timeout,
+            socketTimeoutMS: that.options.timeout
+          },
+          (err, data) => {
+            that.currFailures = err ? that.currFailures + 1 : 0;
+            if (err) {
+              if (that.currFailures >= that.options.tolerance) {
+                l.error('heartbeat failed after ' + that.currFailures + ' times tried.');
+                that.fail(err);
+                return;
               }
-              setTimeout(
-                () => {
-                  that.checkConnection();
-                },
-                that.options.interval,
-              );
-            },
-          );
-        } catch (err) {
-          l.error('failed to run ping command ', err.message);
-        }
-      },
-      this.options.timeout,
-    );
+              l.error('heartbean failed on ' + that.currFailures + ' times.');
+            } else {
+              that.emit('heartbeat', data);
+            }
+            setTimeout(() => {
+              that.checkConnection();
+            }, that.options.interval);
+          }
+        );
+      } catch (err) {
+        l.error('failed to run ping command ', err.message);
+      }
+    }, this.options.timeout);
   }
 }
 

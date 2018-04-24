@@ -39,22 +39,22 @@ class TreeActionService {
             in: 'path',
             required: true,
             name: 'id',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             required: true,
             name: 'type',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             required: true,
             name: 'parameters',
-            type: 'string',
-          },
-        ],
-      },
+            type: 'string'
+          }
+        ]
+      }
     };
   }
 

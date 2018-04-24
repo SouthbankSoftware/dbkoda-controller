@@ -34,7 +34,7 @@ const before = {
   create: [aggregate()],
   update: [],
   patch: [],
-  remove: [],
+  remove: []
 };
 
 const after = {
@@ -44,10 +44,10 @@ const after = {
   create: [],
   update: [],
   patch: [],
-  remove: [],
+  remove: []
 };
 
 export default {
   before,
-  after,
+  after
 };

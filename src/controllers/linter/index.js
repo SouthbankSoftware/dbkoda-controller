@@ -33,7 +33,6 @@ const { CLIEngine } = require('eslint');
  * this controller is used to handle auto complete for mongo shell
  */
 class LintingController {
-
   setup(app) {
     this.app = app;
   }
@@ -57,7 +56,7 @@ class LintingController {
 
   getConfig() {
     return {
-      'extends': [
+      extends: [
         'defaults/rules/eslint/best-practices/eslint',
         'defaults/rules/eslint/errors/eslint',
         'defaults/rules/eslint/es6/eslint',
@@ -78,24 +77,21 @@ class LintingController {
       }
     };
   }
-
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
   // Initialize our service with any options it requires
   const service = new LintingController();
   app.use('linter/controller', service);
-  app
-    .service('linter/controller')
-    .before({
-      // Users can not be created by external access
-      create: hooks.disallow('external'),
-      remove: hooks.disallow('external'),
-      update: hooks.disallow('external'),
-      find: hooks.disallow('external'),
-      get: hooks.disallow('external')
-    });
+  app.service('linter/controller').before({
+    // Users can not be created by external access
+    create: hooks.disallow('external'),
+    remove: hooks.disallow('external'),
+    update: hooks.disallow('external'),
+    find: hooks.disallow('external'),
+    get: hooks.disallow('external')
+  });
   return service;
 };
 

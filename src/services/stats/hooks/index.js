@@ -38,7 +38,7 @@ const before = {
   create: [createObservables()],
   update: [],
   patch: [patchObservables()],
-  remove: [removeObservables()],
+  remove: [removeObservables()]
 };
 
 const after = {
@@ -48,10 +48,10 @@ const after = {
   create: [],
   update: [],
   patch: [],
-  remove: [],
+  remove: []
 };
 
 export default {
   before,
-  after,
+  after
 };

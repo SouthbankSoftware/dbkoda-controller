@@ -21,7 +21,6 @@
  * Created by joey on 2/1/18.
  */
 
-
 /* eslint-disable */
 
 // import {getKnowledgeBaseRules} from '../../knowledgeBase/driver';
@@ -33,16 +32,14 @@ const _ = require('lodash');
 global.log = {
   info: msg => console.log(msg),
   error: msg => console.error(msg),
-  debug: msg => console.debug(msg),
+  debug: msg => console.debug(msg)
 };
 global.l = global.log;
-
-
 
 const MongoClient = require('mongodb').MongoClient;
 
 let url = 'mongodb://10.0.0.24:27019,10.0.0.24:27020,10.0.0.24:27021/admin?replicaSet=replset';
-url='mongodb://localhost';
+url = 'mongodb://localhost';
 // url = 'mongodb://ec2-13-54-17-227.ap-southeast-2.compute.amazonaws.com:27036';
 // url = 'mongodb://localhost:27017';  // 3.4
 // url = 'mongodb://10.0.0.25:40012';  // 3.0
@@ -55,14 +52,24 @@ MongoClient.connect(url, function(err, db) {
   //   _.forOwn(flat(data), (v, k) => {
   //     console.log(k);
   //   });
-    // db.admin().setProfilingLevel('slow_only').then(e => console.log('set:', e));
-    // db.admin().command({ profile : 1, slowms : 400 });
-    db.db('test').command({ profile : 2  });
-    // db.db('test').profilingLevel().then(e => console.log('level:', e));
-    db.db('test').command({profile: -1}).then(e => console.log(e));
-    const now = new Date();
-    now.setDate(now.getDate() - 1);
-    db.db('admin').collection('system.profile').find({ts: {$gte: now}}, {ts:1, _id:0}).sort({ts: -1}).limit(10).toArray().then(d => console.log(d[d.length -1]));
+  // db.admin().setProfilingLevel('slow_only').then(e => console.log('set:', e));
+  // db.admin().command({ profile : 1, slowms : 400 });
+  db.db('test').command({ profile: 2 });
+  // db.db('test').profilingLevel().then(e => console.log('level:', e));
+  db
+    .db('test')
+    .command({ profile: -1 })
+    .then(e => console.log(e));
+  const now = new Date();
+  now.setDate(now.getDate() - 1);
+  db
+    .db('admin')
+    .collection('system.profile')
+    .find({ ts: { $gte: now } }, { ts: 1, _id: 0 })
+    .sort({ ts: -1 })
+    .limit(10)
+    .toArray()
+    .then(d => console.log(d[d.length - 1]));
   // const monitor = new MongoNativeDriver();
   // monitor.samplingRate = 1000;
   // monitor.init({mongoConnection: {driver: db, dbVersion: '3.6'}});

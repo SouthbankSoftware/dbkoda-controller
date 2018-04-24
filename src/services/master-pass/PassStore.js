@@ -39,9 +39,10 @@ export default class PassStore {
   // $FlowFixMe
   constructor(fileService) {
     this.file = fileService;
-    this.storeFilePath = (process.env.UAT == 'true')
-      ? path.resolve('/tmp/dbKoda', 'store.yml')
-      : path.resolve(os.homedir(), '.dbKoda', 'store.yml');
+    this.storeFilePath =
+      process.env.UAT == 'true'
+        ? path.resolve('/tmp/dbKoda', 'store.yml')
+        : path.resolve(os.homedir(), '.dbKoda', 'store.yml');
     this.store = new Map();
   }
 
@@ -67,14 +68,14 @@ export default class PassStore {
           watching: 'false'
         }
       })
-      .then((storeFile) => {
+      .then(storeFile => {
         if (storeFile) {
           const storeObj = yaml.safeLoad(storeFile.content, 'utf-8');
           this.store = PassStore._convertJsonToStore(storeObj);
           return Promise.resolve();
         }
       })
-      .catch((error) => {
+      .catch(error => {
         if (error && error.code === 404) {
           Promise.resolve(this.createStore(verifyHash));
         } else {
@@ -87,11 +88,9 @@ export default class PassStore {
     // Init the store and an empty file
     this.store.set(this.VERIFY_KEY, verifyHash);
     const storeDump = yaml.safeDump(PassStore._convertStoreToJson(this.store));
-    this.file
-      .create({ _id: this.storeFilePath, content: storeDump, watching: false })
-      .then(() => {
-        return Promise.resolve();
-      });
+    this.file.create({ _id: this.storeFilePath, content: storeDump, watching: false }).then(() => {
+      return Promise.resolve();
+    });
   }
 
   syncStore(profileIds: Array<string>): Promise<Array<string>> {
@@ -99,7 +98,7 @@ export default class PassStore {
     const missingIds: Array<string> = _.difference(profileIds, storeIds);
     const redundantIds: Array<string> = _.difference(storeIds, profileIds);
     // Remove ids that no longer exist in the UI
-    _.forEach(redundantIds, (currentId) => {
+    _.forEach(redundantIds, currentId => {
       if (currentId != this.VERIFY_KEY) {
         this.store.delete(currentId);
       }

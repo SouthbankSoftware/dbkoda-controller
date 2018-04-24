@@ -31,22 +31,22 @@ const defaultAjvOptions = {
   removeAdditional: 'all',
   useDefaults: true,
   allErrors: true,
-  coerceTypes: true,
+  coerceTypes: true
 };
 
 const querySchema = {
   properties: {
     editorId: {
-      type: 'string',
+      type: 'string'
     },
     connectionId: {
-      type: 'string',
+      type: 'string'
     },
     database: {
-      type: 'string',
+      type: 'string'
     },
     collection: {
-      type: 'string',
+      type: 'string'
     },
     pipeline: {
       type: 'array',
@@ -56,10 +56,10 @@ const querySchema = {
     },
     options: {
       type: 'object',
-      default: {},
-    },
+      default: {}
+    }
   },
-  required: ['editorId', 'connectionId', 'database', 'collection', 'pipeline'],
+  required: ['editorId', 'connectionId', 'database', 'collection', 'pipeline']
 };
 
 const schema = {
@@ -68,7 +68,7 @@ const schema = {
   create: querySchema,
   update: {},
   patch: {},
-  remove: {},
+  remove: {}
 };
 
 const validators = _.reduce(
@@ -77,7 +77,7 @@ const validators = _.reduce(
     acc[k] = validateSchema(v, Ajv, defaultAjvOptions);
     return acc;
   },
-  {},
+  {}
 );
 
 export default _options => hook => validators[hook.method](hook);

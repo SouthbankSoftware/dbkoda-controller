@@ -27,7 +27,7 @@ import _ from 'lodash';
 import errors from 'feathers-errors';
 import { getItems } from 'feathers-hooks-common';
 
-const consolidateQueryParams = (hook) => {
+const consolidateQueryParams = hook => {
   hook.data = _.assign(hook.data, hook.params.query);
 };
 
@@ -37,17 +37,17 @@ const consoldateId = (hook, idAlias) => {
   }
 };
 
-const checkIdAndItems = (hook) => {
+const checkIdAndItems = hook => {
   const items = getItems(hook);
   if (hook.id && _.isArray(items)) {
     throw new errors.BadRequest('Data must be an object if an id is specified');
   }
 };
 
-export default (options) => {
+export default options => {
   const { idAlias = '_id' } = options || {};
 
-  return (hook) => {
+  return hook => {
     consolidateQueryParams(hook);
     switch (hook.method) {
       case 'get': {

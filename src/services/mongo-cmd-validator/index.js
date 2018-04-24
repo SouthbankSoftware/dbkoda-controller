@@ -23,62 +23,50 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /* eslint-disable class-methods-use-this */
+/* eslint-disable class-methods-use-this */
 
- import errors from 'feathers-errors';
- import hooks from './hooks';
+import errors from 'feathers-errors';
+import hooks from './hooks';
 
- export class MongoCmdValidator {
-   find(_params) {
-     throw new errors.NotImplemented(
-       'Request should have been processed by hooks'
-     );
-   }
+export class MongoCmdValidator {
+  find(_params) {
+    throw new errors.NotImplemented('Request should have been processed by hooks');
+  }
 
-   get(_id, _params) {
-     throw new errors.NotImplemented(
-       'Request should have been processed by hooks'
-     );
-   }
+  get(_id, _params) {
+    throw new errors.NotImplemented('Request should have been processed by hooks');
+  }
 
-   create(_data, _params) {
-     throw new errors.NotImplemented(
-       'Request should have been processed by hooks'
-     );
-   }
+  create(_data, _params) {
+    throw new errors.NotImplemented('Request should have been processed by hooks');
+  }
 
-   update(_id, _data, _params) {
-     throw new errors.NotImplemented(
-       'Request should have been processed by hooks'
-     );
-   }
+  update(_id, _data, _params) {
+    throw new errors.NotImplemented('Request should have been processed by hooks');
+  }
 
-   patch(_id, _data, _params) {
-     throw new errors.NotImplemented(
-       'Request should have been processed by hooks'
-     );
-   }
+  patch(_id, _data, _params) {
+    throw new errors.NotImplemented('Request should have been processed by hooks');
+  }
 
-   remove(_id, _params) {
-     throw new errors.NotImplemented(
-       'Request should have been processed by hooks'
-     );
-   }
- }
+  remove(_id, _params) {
+    throw new errors.NotImplemented('Request should have been processed by hooks');
+  }
+}
 
- /** @ignore */
- export default function() {
-   const app = this;
+/** @ignore */
+export default function() {
+  const app = this;
 
-   // Initialize our service with any options it requires
-   app.use('/mongo-cmd-validator', new MongoCmdValidator());
+  // Initialize our service with any options it requires
+  app.use('/mongo-cmd-validator', new MongoCmdValidator());
 
-   // Get our initialize service to that we can bind hooks
-   const service = app.service('/mongo-cmd-validator');
+  // Get our initialize service to that we can bind hooks
+  const service = app.service('/mongo-cmd-validator');
 
-   // Set up our before hooks
-   service.before(hooks.before);
+  // Set up our before hooks
+  service.before(hooks.before);
 
-   // Set up our after hooks
-   service.after(hooks.after);
- }
+  // Set up our after hooks
+  service.after(hooks.after);
+}

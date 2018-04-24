@@ -64,13 +64,13 @@ class ConnectionListener extends EventEmitter {
     this.emit(ConnectionListener.EVENT_NAME, {
       id: this.id,
       status: Status.CLOSED,
-      message: e && e.message,
+      message: e && e.message
     });
     this.retryTimeout = setTimeout(() => {
       this.emit(ConnectionListener.EVENT_NAME, {
         id: this.id,
         status: Status.RETRY_FAILED,
-        message: e && e.message,
+        message: e && e.message
       });
     }, this.timeoutTime);
   }
@@ -80,7 +80,7 @@ class ConnectionListener extends EventEmitter {
     this.emit(ConnectionListener.EVENT_NAME, {
       id: this.id,
       status: Status.ERROR,
-      message: e && e.message,
+      message: e && e.message
     });
   }
 
@@ -101,7 +101,7 @@ class ConnectionListener extends EventEmitter {
     this.emit(ConnectionListener.EVENT_NAME, {
       id: this.id,
       status: Status.OPEN,
-      message: e && e.message,
+      message: e && e.message
     });
   }
 }

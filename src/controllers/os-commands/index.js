@@ -73,7 +73,7 @@ class OSCommandsController extends EventEmitter {
         this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, {
           id,
           shellId,
-          output: data.toString('utf8'),
+          output: data.toString('utf8')
         });
       });
 
@@ -82,7 +82,7 @@ class OSCommandsController extends EventEmitter {
         this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, {
           id,
           shellId,
-          output: data.toString('utf8'),
+          output: data.toString('utf8')
         });
       });
 
@@ -98,7 +98,7 @@ class OSCommandsController extends EventEmitter {
             shellId,
             output: `child process exited with code ${code}\n\r`,
             cmd,
-            code,
+            code
           });
         }
         this.runCommandFromQueue();

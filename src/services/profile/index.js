@@ -40,10 +40,10 @@ class Profile {
   get(id, params) {
     l.debug('get ' + id, params);
     const connectObj = this.connectCtr.connections[id];
-    const {op} = params.query;
-    const {driver, db} = connectObj;
+    const { op } = params.query;
+    const { driver, db } = connectObj;
     if (op === 'profile') {
-      const {dbName, colName} = params.query;
+      const { dbName, colName } = params.query;
       return this.controller.profile(driver, dbName, colName);
     } else if (op === 'configuration') {
       return this.controller.get(driver, db);

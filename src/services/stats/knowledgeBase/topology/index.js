@@ -24,26 +24,28 @@ import _ from 'lodash';
 
 export const items = ['topology'];
 
-const rules = [{
-  serverVersion: 'all',
-  parse: (db) => {
-    return new Promise((resolve, reject) => {
-      db.admin().command({replSetGetStatus: 1}, (err, result) => {
-        if (!result || err) {
-          reject(err);
-          return;
-        }
-        resolve(result.members);
+const rules = [
+  {
+    serverVersion: 'all',
+    parse: db => {
+      return new Promise((resolve, reject) => {
+        db.admin().command({ replSetGetStatus: 1 }, (err, result) => {
+          if (!result || err) {
+            reject(err);
+            return;
+          }
+          resolve(result.members);
+        });
+      }).catch(err => {
+        log.error('failed to get replica set ', err);
+        this.observer.error(err);
       });
-    }).catch((err) => {
-      log.error('failed to get replica set ', err);
-      this.observer.error(err);
-    });
+    }
   }
-}];
+];
 
-export const getKnowledgeBaseRules = (serverVersion) => {
-  const matched = _.find(rules, {serverVersion});
+export const getKnowledgeBaseRules = serverVersion => {
+  const matched = _.find(rules, { serverVersion });
   if (!matched && rules.length > 0) {
     return rules[0];
   }

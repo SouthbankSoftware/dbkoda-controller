@@ -1,4 +1,4 @@
-const {DriverController} = require('./driver-controller');
+const { DriverController } = require('./driver-controller');
 const hooks = require('./hooks');
 
 module.exports = function() {

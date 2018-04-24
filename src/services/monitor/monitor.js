@@ -23,8 +23,12 @@
 const prom = require('prom-client');
 
 export const Monitor = {
-  newConnection:new prom.Counter('create_connection', 'The number of requests'),
+  newConnection: new prom.Counter('create_connection', 'The number of requests'),
   histogram: () => {
-    return new prom.Histogram({ name: 'xxxxxx', help: 'metric_help', buckets: [0.10, 5, 15, 50, 100, 500] });
-  },
+    return new prom.Histogram({
+      name: 'xxxxxx',
+      help: 'metric_help',
+      buckets: [0.1, 5, 15, 50, 100, 500]
+    });
+  }
 };

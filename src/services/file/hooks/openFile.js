@@ -31,15 +31,15 @@ import fs from 'fs-extra';
 
 const ENCODING = 'utf8';
 
-export default _options => (hook) => {
+export default _options => hook => {
   let items = getItems(hook);
   const isArray = Array.isArray(items);
   items = isArray ? items : [items];
 
-  const processItem = (item) => {
+  const processItem = item => {
     const path = item._id;
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (item.copyTo) {
         const copyTo = item.copyTo;
 
@@ -51,37 +51,37 @@ export default _options => (hook) => {
             {
               overwrite: true,
               dereference: false,
-              preserveTimestamps: false,
+              preserveTimestamps: false
             },
-            (err) => {
+            err => {
               if (err) {
                 if (err.code === 'ENOENT') {
                   return resolve(
                     new errors.NotFound(err.message, {
                       _id: path,
-                      copyTo,
-                    }),
+                      copyTo
+                    })
                   );
                 }
                 return resolve(
                   new errors.Unprocessable(err.message, {
                     _id: path,
-                    copyTo,
-                  }),
+                    copyTo
+                  })
                 );
               }
               resolve({
                 _id: path,
-                copyTo,
+                copyTo
               });
-            },
+            }
           );
         } catch (err) {
           return resolve(
             new errors.Unprocessable(err.message, {
               _id: path,
-              copyTo,
-            }),
+              copyTo
+            })
           );
         }
 
@@ -94,33 +94,33 @@ export default _options => (hook) => {
             if (err.code === 'ENOENT') {
               return resolve(
                 new errors.NotFound(err.message, {
-                  _id: path,
-                }),
+                  _id: path
+                })
               );
             }
             return resolve(
               new errors.Unprocessable(err.message, {
-                _id: path,
-              }),
+                _id: path
+              })
             );
           }
           resolve({
             _id: path,
             content,
-            encoding: ENCODING,
+            encoding: ENCODING
           });
         });
       } catch (err) {
         return resolve(
           new errors.Unprocessable(err.message, {
-            _id: path,
-          }),
+            _id: path
+          })
         );
       }
     });
   };
 
-  return Promise.all(items.map(processItem)).then((results) => {
+  return Promise.all(items.map(processItem)).then(results => {
     if (isArray && results.length > 1) {
       hook.result = results;
     } else {

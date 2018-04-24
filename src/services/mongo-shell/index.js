@@ -33,12 +33,12 @@ class ShellService {
       'shell-output',
       'mongo-execution-end',
       'mongo-shell-reconnected',
-      'mongo-shell-process-exited',
+      'mongo-shell-process-exited'
     ];
     this.docs = {
       description: 'A service to create mongo shell and execute command',
       find: {
-        description: 'Get all opening shells',
+        description: 'Get all opening shells'
       },
       get: {
         description: 'Execute cmd in a shell',
@@ -47,7 +47,7 @@ class ShellService {
             in: 'path',
             required: true,
             name: 'id',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
@@ -56,15 +56,15 @@ class ShellService {
             type: 'string',
             description:
               'this paramter can either be script|cmd, if script specified,  ' +
-              'service will run the script in mongo shell; othewise this service will run the command.',
+              'service will run the script in mongo shell; othewise this service will run the command.'
           },
           {
             in: 'query',
             required: true,
             name: 'content',
-            type: 'string',
-          },
-        ],
+            type: 'string'
+          }
+        ]
       },
       create: {
         description: 'Create a new shell',
@@ -73,15 +73,15 @@ class ShellService {
             in: 'query',
             required: true,
             name: 'hostname',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             required: true,
             name: 'port',
-            type: 'string',
-          },
-        ],
+            type: 'string'
+          }
+        ]
       },
       remove: {
         description: 'Remove a shell',
@@ -90,9 +90,9 @@ class ShellService {
             in: 'path',
             required: true,
             name: 'id',
-            type: 'string',
-          },
-        ],
+            type: 'string'
+          }
+        ]
       },
       put: {
         description: 'run mongo commands through shell',
@@ -101,10 +101,10 @@ class ShellService {
             in: 'query',
             required: true,
             name: 'id',
-            type: 'string',
-          },
-        ],
-      },
+            type: 'string'
+          }
+        ]
+      }
     };
   }
 

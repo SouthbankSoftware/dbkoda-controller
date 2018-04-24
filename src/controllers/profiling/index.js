@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-const {ProfilingController} = require('./profiling-controller');
+const { ProfilingController } = require('./profiling-controller');
 const hooks = require('./hooks');
 
 module.exports = function() {

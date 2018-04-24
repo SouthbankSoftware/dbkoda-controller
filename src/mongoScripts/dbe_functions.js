@@ -29,12 +29,11 @@
 /*  eslint object-shorthand: 0 */
 /*  eslint vars-on-top: 0 */
 
-
 var dbe = {};
 
 dbe.version = function() {
   // Get the vers
-  return (db.version().split('.')); // eslint-disable-line
+  return db.version().split('.'); // eslint-disable-line
 };
 
 dbe.round = function(num) {
@@ -44,7 +43,7 @@ dbe.round = function(num) {
 dbe.majorVersion = function() {
   var version = dbe.version();
   var intversion = Number(version[0] + '.' + version[1]);
-  return (intversion);
+  return intversion;
 };
 
 dbe.sampleCollection = function(dbName, collectionName) {
@@ -59,17 +58,29 @@ dbe.sampleCollection = function(dbName, collectionName) {
   var docarray;
   var results;
   if (dbe.majorVersion > 3.0) {
-    data = mydb.getSiblingDB(dbName).getCollection(collectionName)
-      .aggregate([{
-        $sample: {
-          size: 20
+    data = mydb
+      .getSiblingDB(dbName)
+      .getCollection(collectionName)
+      .aggregate([
+        {
+          $sample: {
+            size: 20
+          }
         }
-      }]).toArray();
+      ])
+      .toArray();
   } else {
-    data = mydb.getSiblingDB(dbName).getCollection(collectionName)
-      .find({}, {
-        _id: 0
-      }).limit(20).toArray();
+    data = mydb
+      .getSiblingDB(dbName)
+      .getCollection(collectionName)
+      .find(
+        {},
+        {
+          _id: 0
+        }
+      )
+      .limit(20)
+      .toArray();
   }
 
   data.forEach(function(doc) {
@@ -90,8 +101,7 @@ dbe.sampleCollection = function(dbName, collectionName) {
             attributes[key + '.' + nestedKey] = typeof obj[nestedKey];
           });
         }
-      } else
-      if (keytype === 'array') {
+      } else if (keytype === 'array') {
         docarray = doc[key];
         docarray.forEach(function(nestedDoc) {
           var obj = nestedDoc;
@@ -117,38 +127,38 @@ dbe.profileLevels = function(dbName) {
     dbeSpl.mongos = true;
   }
   dbeSpl.dbName = dbName;
-  return (dbeSpl);
+  return dbeSpl;
 };
 
 dbe.aggregationArgs = function() {
   var out = [];
   out.push({
-    'StepName': '$sample',
-    'StepValue': '{size:N}'
+    StepName: '$sample',
+    StepValue: '{size:N}'
   });
   out.push({
-    'StepName': '$match',
-    'StepValue': '{"attribute":"value"}'
+    StepName: '$match',
+    StepValue: '{"attribute":"value"}'
   });
   out.push({
-    'StepName': '$project',
-    'StepValue': '{"attribute":1,"attribute":0}'
+    StepName: '$project',
+    StepValue: '{"attribute":1,"attribute":0}'
   });
   out.push({
-    'StepName': '$group',
-    'StepValue': '{"_id":{alias:"$attribute",alias:"$attribute"}'
+    StepName: '$group',
+    StepValue: '{"_id":{alias:"$attribute",alias:"$attribute"}'
   });
   out.push({
-    'StepName': '$sort',
-    'StepValue': '{"alias":1}'
+    StepName: '$sort',
+    StepValue: '{"alias":1}'
   });
   out.push({
-    'StepName': '$lookup',
-    'StepValue': '{from : "collection", as : "alias", localField : "attribute", foreignField : "_id"}'
+    StepName: '$lookup',
+    StepValue: '{from : "collection", as : "alias", localField : "attribute", foreignField : "_id"}'
   });
   out.push({
-    'StepName': '$unwind',
-    'StepValue': '$alias'
+    StepName: '$unwind',
+    StepValue: '$alias'
   });
   return out;
 };
@@ -158,11 +168,11 @@ dbe.aggregationPreFill = function(dbName, collectionName) {
   ddOut.Database = dbName;
   ddOut.CollectionName = collectionName;
   ddOut.PipeLine = dbe.aggregationArgs();
-  return (ddOut);
+  return ddOut;
 };
 
 dbe.Top = function() {
-  var mydb = db // eslint-disable-line
+  var mydb = db; // eslint-disable-line
   var result = {};
   var topData;
   var colData;
@@ -178,11 +188,12 @@ dbe.Top = function() {
     });
   } else {
     topData = mydb.getSiblingDB('admin').runCommand({
-      'top': 1
+      top: 1
     });
     Object.keys(topData.totals).forEach(function(col) {
       // printjson(topData.totals[col]);
-      if (topData.totals[col].hasOwnProperty('total')) { // eslint-disable-line
+      if (topData.totals[col].hasOwnProperty('total')) {
+        // eslint-disable-line
         colData = topData.totals[col];
         // printjson(colData);
         colrow = {};
@@ -194,20 +205,20 @@ dbe.Top = function() {
         colrow.count = colData.total.count;
         colrow.readPct = 0;
         if (colrow.sortTime > 0) {
-          colrow.readPct = dbe.round(((colData.readLock.time) * 100) / colrow.sortTime);
+          colrow.readPct = dbe.round(colData.readLock.time * 100 / colrow.sortTime);
         }
         colrow.readPct = colrow.readPct.toFixed(2);
         result.top.push(colrow);
       }
     });
     result.top.sort(function(a, b) {
-      return (b.sortTime - a.sortTime);
+      return b.sortTime - a.sortTime;
     });
     for (i = 0; i < result.top.length; i += 1) {
-      result.top[i].pctTotal = dbe.round((result.top[i].sortTime * 100) / totalTime);
+      result.top[i].pctTotal = dbe.round(result.top[i].sortTime * 100 / totalTime);
     }
   }
-  return (result);
+  return result;
 };
 
 dbe.lpad = function(str, padString, length) {
@@ -225,15 +236,18 @@ dbe.rpad = function(str, padString, length) {
 };
 
 dbe.formatNumber = function(num) {
-  return num.toFixed(2).toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+  return num
+    .toFixed(2)
+    .toString()
+    .replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
 };
 
 dbe.printNumber = function(num) {
-  return (dbe.lpad(dbe.formatNumber(dbe.round(num)), ' ', 20));
+  return dbe.lpad(dbe.formatNumber(dbe.round(num)), ' ', 20);
 };
 
 dbe.databaseStorage = function() {
-  var mydb = db.getSiblingDB("admin"); // eslint-disable-line
+  var mydb = db.getSiblingDB('admin'); // eslint-disable-line
   var shardData = {};
   var output = {};
   var dbList = mydb.adminCommand({
@@ -263,7 +277,7 @@ dbe.databaseStorage = function() {
 };
 
 dbe.storageAnalysis = function() {
-  var mydb = db.getSiblingDB("admin"); // eslint-disable-line
+  var mydb = db.getSiblingDB('admin'); // eslint-disable-line
   var output = {};
   var dbList = mydb.adminCommand({
     listDatabases: 1
@@ -287,7 +301,7 @@ dbe.storageAnalysis = function() {
           return;
         }
         var collData = {
-          name: cname,
+          name: cname
         };
         collData.children = [];
         var indexes = [];
@@ -318,7 +332,7 @@ dbe.storageAnalysis = function() {
 };
 
 dbe.collectionStorageAnalysis = function(dbName, collectionName, sampleSize) {
-  return (dbk_Cs.collectionSize(dbName, collectionName, sampleSize)); // eslint-disable-line
+  return dbk_Cs.collectionSize(dbName, collectionName, sampleSize); // eslint-disable-line
 };
 
 //
@@ -372,4 +386,3 @@ dbe.sizeEstimateArray = function(sample, sampleSize, collectionDocCount, adjustm
   });
   return children;
 };
-

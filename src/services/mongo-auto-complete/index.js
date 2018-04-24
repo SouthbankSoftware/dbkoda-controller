@@ -33,7 +33,7 @@ class AutoCompleteService {
     this.docs = {
       description: 'A service to create mongo shell and execute command',
       find: {
-        description: 'Get all opening shells',
+        description: 'Get all opening shells'
       },
       get: {
         description: 'Execute auto complete on mongo-shell',
@@ -42,22 +42,22 @@ class AutoCompleteService {
             in: 'query',
             required: true,
             name: 'id',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             required: true,
             name: 'shellId',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             required: true,
             name: 'command',
-            type: 'string',
-          },
-        ],
-      },
+            type: 'string'
+          }
+        ]
+      }
     };
   }
 

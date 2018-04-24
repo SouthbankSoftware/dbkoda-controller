@@ -43,135 +43,135 @@ dbk_agg.resultSize = 20; // Maximum rows held in result cache
 dbk_agg.debug = false;
 
 dbk_agg.setSampleSize = function(aggId) {
-    if (dbk_agg.sampleSize > 0) {
-        // If version is above 3.2
-        if (
-            db.version().match(/^([012]|3.0|3.1).*/gim) || // eslint-disable-line
-            version().match(/^([012]|3.0|3.1).*/gim) // eslint-disable-line
-        ) {
-            dbk_agg.aggregates[aggId].steps[0] = {
-                $limit: dbk_agg.sampleSize
-            };
-        } else {
-            dbk_agg.aggregates[aggId].steps[0] = {
-                $sample: {
-                    size: dbk_agg.sampleSize
-                }
-            };
-        }
+  if (dbk_agg.sampleSize > 0) {
+    // If version is above 3.2
+    if (
+      db.version().match(/^([012]|3.0|3.1).*/gim) || // eslint-disable-line
+      version().match(/^([012]|3.0|3.1).*/gim) // eslint-disable-line
+    ) {
+      dbk_agg.aggregates[aggId].steps[0] = {
+        $limit: dbk_agg.sampleSize
+      };
     } else {
-        // TODO: This is a total kludge to avoid not having to deal with
-        //  variable number of steps (eg, so we can always be sure that step 0)
-        // is a "sample" step.  This $match will return all rows and will still allow
-        // an index lookup on a subsequent $match.
-        dbk_agg.aggregates[aggId].steps[0] = {
-            $match: {
-                _id: {
-                    $ne: ''
-                }
-            } // Eg, match everything
-        };
+      dbk_agg.aggregates[aggId].steps[0] = {
+        $sample: {
+          size: dbk_agg.sampleSize
+        }
+      };
     }
-    if (dbk_agg.debug) {
-        printjson(dbk_agg.aggregates[aggId].steps[0]);
-    }
+  } else {
+    // TODO: This is a total kludge to avoid not having to deal with
+    //  variable number of steps (eg, so we can always be sure that step 0)
+    // is a "sample" step.  This $match will return all rows and will still allow
+    // an index lookup on a subsequent $match.
+    dbk_agg.aggregates[aggId].steps[0] = {
+      $match: {
+        _id: {
+          $ne: ''
+        }
+      } // Eg, match everything
+    };
+  }
+  if (dbk_agg.debug) {
+    printjson(dbk_agg.aggregates[aggId].steps[0]);
+  }
 };
 // Returns a new identifier for the aggregate builder
 dbk_agg.newAggBuilder = function(dbName, collectionName) {
-    dbk_agg.aggId += 1;
-    var newAgg = {};
-    newAgg.dbName = dbName;
-    newAgg.collectionName = collectionName;
-    newAgg.steps = [];
-    newAgg.stepResults = [];
-    newAgg.stepAttributes = [];
-    newAgg.stepCodes = [0];
-    newAgg.sampleSize = dbk_agg.sampleSize;
-    dbk_agg.aggregates[dbk_agg.aggId] = newAgg;
-    dbk_agg.setSampleSize(dbk_agg.aggId);
-    dbk_agg.getAttributes(dbk_agg.aggId, 0, true);
-    if (dbk_agg.debug) print('nagb aggId=' + dbk_agg.aggId); // eslint-disable-line
-    return {
-        id: dbk_agg.aggId
-    };
+  dbk_agg.aggId += 1;
+  var newAgg = {};
+  newAgg.dbName = dbName;
+  newAgg.collectionName = collectionName;
+  newAgg.steps = [];
+  newAgg.stepResults = [];
+  newAgg.stepAttributes = [];
+  newAgg.stepCodes = [0];
+  newAgg.sampleSize = dbk_agg.sampleSize;
+  dbk_agg.aggregates[dbk_agg.aggId] = newAgg;
+  dbk_agg.setSampleSize(dbk_agg.aggId);
+  dbk_agg.getAttributes(dbk_agg.aggId, 0, true);
+  if (dbk_agg.debug) print('nagb aggId=' + dbk_agg.aggId); // eslint-disable-line
+  return {
+    id: dbk_agg.aggId
+  };
 };
 
 dbk_agg.getAggStatus = function(aggId) {
-    var output = {};
-    var agg = dbk_agg.aggregates[aggId];
-    output.stepCodes = agg.stepCodes;
-    output.steps = agg.steps;
-    output.stepAttributes = agg.stepAttributes;
-    return output;
+  var output = {};
+  var agg = dbk_agg.aggregates[aggId];
+  output.stepCodes = agg.stepCodes;
+  output.steps = agg.steps;
+  output.stepAttributes = agg.stepAttributes;
+  return output;
 };
 // add a new step
 dbk_agg.addStep = function(aggId, stepJson) {
-    dbk_agg.aggregates[aggId].steps.push(stepJson);
-    var stepId = dbk_agg.aggregates[aggId].steps.length;
-    dbk_agg.getAttributes(aggId, stepId, true);
+  dbk_agg.aggregates[aggId].steps.push(stepJson);
+  var stepId = dbk_agg.aggregates[aggId].steps.length;
+  dbk_agg.getAttributes(aggId, stepId, true);
 };
 
 // Delete a step and move all steps above down
 dbk_agg.removeStep = function(aggId, stepId) {
-    var agg = dbk_agg.aggregates[aggId];
-    var steps = agg.steps;
-    var nsteps = steps.length;
-    for (var step = stepId; step <= steps.length; step += 1) {
-        if (step < nsteps - 1) steps[step] = steps[step + 1];
-    }
-    steps = steps.slice(0, -1);
-    agg.stepResults = agg.stepResults.slice(0, -1);
-    agg.stepAttributes = agg.stepAttributes.slice(0, -1);
-    agg.stepCodes = agg.stepCodes.slice(0, -1);
-    dbk_agg.aggregates[aggId].steps = steps;
-    return steps;
+  var agg = dbk_agg.aggregates[aggId];
+  var steps = agg.steps;
+  var nsteps = steps.length;
+  for (var step = stepId; step <= steps.length; step += 1) {
+    if (step < nsteps - 1) steps[step] = steps[step + 1];
+  }
+  steps = steps.slice(0, -1);
+  agg.stepResults = agg.stepResults.slice(0, -1);
+  agg.stepAttributes = agg.stepAttributes.slice(0, -1);
+  agg.stepCodes = agg.stepCodes.slice(0, -1);
+  dbk_agg.aggregates[aggId].steps = steps;
+  return steps;
 };
 // return current status of all steps
 dbk_agg.getStep = function(aggId, stepId) {
-    return dbk_agg.aggregates[aggId].steps[stepId];
+  return dbk_agg.aggregates[aggId].steps[stepId];
 };
 // Set/Replace all steps
 // If preserve is set to true, then we don't delete any existing steps
 dbk_agg.setAllSteps = function(aggId, stepArray, preserve) {
-    if (preserve === 'undefined') {
-        preserve = false;
+  if (preserve === 'undefined') {
+    preserve = false;
+  }
+  dbk_agg.setSampleSize(aggId);
+  var oldLen = dbk_agg.aggregates[aggId].steps.length - 1;
+  var newLen = stepArray.length;
+  var ind;
+  var oldStep;
+  if (dbk_agg.debug) print('oldLen=' + oldLen + ' newLen=' + newLen);
+  // Replace existing steps
+  for (var stepId = 1; stepId <= newLen; stepId += 1) {
+    if (dbk_agg.debug) print('step ' + stepId);
+    ind = stepId - 1; // incomming array does not include first hidden step
+    oldStep = dbk_agg.aggregates[aggId].steps[stepId];
+    if (dbk_agg.debug) print('oldStep=' + oldStep);
+    var newStep = stepArray[ind];
+    if (oldStep !== newStep) {
+      if (dbk_agg.debug) print('step has changed');
+      dbk_agg.aggregates[aggId].steps[stepId] = newStep;
+      dbk_agg.getAttributes(aggId, stepId, true);
     }
-    dbk_agg.setSampleSize(aggId);
-    var oldLen = dbk_agg.aggregates[aggId].steps.length - 1;
-    var newLen = stepArray.length;
-    var ind;
-    var oldStep;
-    if (dbk_agg.debug) print('oldLen=' + oldLen + ' newLen=' + newLen);
-    // Replace existing steps
-    for (var stepId = 1; stepId <= newLen; stepId += 1) {
-        if (dbk_agg.debug) print('step ' + stepId);
-        ind = stepId - 1; // incomming array does not include first hidden step
-        oldStep = dbk_agg.aggregates[aggId].steps[stepId];
-        if (dbk_agg.debug) print('oldStep=' + oldStep);
-        var newStep = stepArray[ind];
-        if (oldStep !== newStep) {
-            if (dbk_agg.debug) print('step has changed');
-            dbk_agg.aggregates[aggId].steps[stepId] = newStep;
-            dbk_agg.getAttributes(aggId, stepId, true);
-        }
+  }
+  if (dbk_agg.debug) print('done');
+  // Trim any other steps
+  if (!preserve) {
+    if (newLen < oldLen) {
+      for (var indx = oldLen; indx > newLen; indx -= 1) {
+        if (dbk_agg.debug) print('removing redunant step ' + indx);
+        dbk_agg.removeStep(aggId, indx);
+      }
     }
-    if (dbk_agg.debug) print('done');
-    // Trim any other steps
-    if (!preserve) {
-        if (newLen < oldLen) {
-            for (var indx = oldLen; indx > newLen; indx -= 1) {
-                if (dbk_agg.debug) print('removing redunant step ' + indx);
-                dbk_agg.removeStep(aggId, indx);
-            }
-        }
-    }
+  }
 };
 
 // Is the step a valid BSON object?
 dbk_agg.validateStep = function(step) {
-    var returnval = {};
-    returnval.type = typeof step;
-    return returnval;
+  var returnval = {};
+  returnval.type = typeof step;
+  return returnval;
 };
 
 // get the results for all steps up to an including the
@@ -182,87 +182,87 @@ dbk_agg.validateStep = function(step) {
 //
 
 dbk_agg.getResults = function(aggId, stepId, reset) {
-    dbk_agg.setSampleSize(aggId);
-    var agg = dbk_agg.aggregates[aggId];
-    var results = [];
-    var error = 0;
-    if (reset === true || stepId === 0 || stepId === '0') {
-        if (dbk_agg.debug) print('reseting results');
-        var partialPipeline = agg.steps.slice(0, stepId + 1);
-        if (dbk_agg.debug) printjson(partialPipeline); // eslint-disable-line
-        mydb = db.getSiblingDB(agg.dbName); // eslint-disable-line
-        try {
-            results = [];
-            var returnCount = 0;
-            var stepCursor=mydb // eslint-disable-line
-                .getCollection(agg.collectionName)
-                .aggregate(partialPipeline);
-            while (stepCursor.hasNext() && returnCount++ <= dbk_agg.resultSize) {
-              results.push(stepCursor.next());
-            }
-        } catch (err) {
-            error = err.code;
-        }
-        // var subset = results.slice(0, 10);
+  dbk_agg.setSampleSize(aggId);
+  var agg = dbk_agg.aggregates[aggId];
+  var results = [];
+  var error = 0;
+  if (reset === true || stepId === 0 || stepId === '0') {
+    if (dbk_agg.debug) print('reseting results');
+    var partialPipeline = agg.steps.slice(0, stepId + 1);
+    if (dbk_agg.debug) printjson(partialPipeline); // eslint-disable-line
+    mydb = db.getSiblingDB(agg.dbName); // eslint-disable-line
+    try {
+      results = [];
+      var returnCount = 0;
+      var stepCursor = mydb // eslint-disable-line
+        .getCollection(agg.collectionName)
+        .aggregate(partialPipeline);
+      while (stepCursor.hasNext() && returnCount++ <= dbk_agg.resultSize) {
+        results.push(stepCursor.next());
+      }
+    } catch (err) {
+      error = err.code;
+    }
+    // var subset = results.slice(0, 10);
 
-        dbk_agg.aggregates[aggId].stepResults[stepId] = results;
-        if (dbk_agg.debug) {
-            print('result len', dbk_agg.aggregates[aggId].stepResults[stepId].length);
-        }
-
-        dbk_agg.aggregates[aggId].stepCodes[stepId] = error;
-    } else {
-        results = dbk_agg.aggregates[aggId].stepResults[stepId];
+    dbk_agg.aggregates[aggId].stepResults[stepId] = results;
+    if (dbk_agg.debug) {
+      print('result len', dbk_agg.aggregates[aggId].stepResults[stepId].length);
     }
 
-    return results;
+    dbk_agg.aggregates[aggId].stepCodes[stepId] = error;
+  } else {
+    results = dbk_agg.aggregates[aggId].stepResults[stepId];
+  }
+
+  return results;
 };
 
 dbk_agg.attributesFromArray = function(data) {
-    //
-    // Quick sampling of a collection to return attribute names
-    // TODO: Support deeper nesting
-    //
-    var attributes = {};
-    var obj;
-    var docarray;
-    var results;
+  //
+  // Quick sampling of a collection to return attribute names
+  // TODO: Support deeper nesting
+  //
+  var attributes = {};
+  var obj;
+  var docarray;
+  var results;
 
-    data.forEach(function(doc) {
-        Object.keys(doc).forEach(function(key) {
-            var keytype = typeof doc[key];
-            // print(key);
-            // print(keytype);
-            // print(doc[key]);
-            if (doc[key]) {
-                if (doc[key].constructor === Array) {
-                    keytype = 'array';
-                }
-            }
-            attributes[key] = keytype;
-            if (keytype == 'object') {
-                obj = doc[key];
-                if (obj) {
-                    Object.keys(obj).forEach(function(nestedKey) {
-                        attributes[key + '.' + nestedKey] = typeof obj[nestedKey];
-                    });
-                }
-            } else if (keytype === 'array') {
-                docarray = doc[key];
-                docarray.forEach(function(nestedDoc) {
-                    var obj = nestedDoc;
-                    Object.keys(obj).forEach(function(nestedKey) {
-                        attributes[key + '.' + nestedKey] = typeof obj[nestedKey];
-                    });
-                });
-            }
+  data.forEach(function(doc) {
+    Object.keys(doc).forEach(function(key) {
+      var keytype = typeof doc[key];
+      // print(key);
+      // print(keytype);
+      // print(doc[key]);
+      if (doc[key]) {
+        if (doc[key].constructor === Array) {
+          keytype = 'array';
+        }
+      }
+      attributes[key] = keytype;
+      if (keytype == 'object') {
+        obj = doc[key];
+        if (obj) {
+          Object.keys(obj).forEach(function(nestedKey) {
+            attributes[key + '.' + nestedKey] = typeof obj[nestedKey];
+          });
+        }
+      } else if (keytype === 'array') {
+        docarray = doc[key];
+        docarray.forEach(function(nestedDoc) {
+          var obj = nestedDoc;
+          Object.keys(obj).forEach(function(nestedKey) {
+            attributes[key + '.' + nestedKey] = typeof obj[nestedKey];
+          });
         });
+      }
     });
-    // printjson(attributes);
-    results = Object.keys(attributes);
-    // printjson(results);
-    // console.log('listAttributes returning ' + results.length);
-    return results.sort();
+  });
+  // printjson(attributes);
+  results = Object.keys(attributes);
+  // printjson(results);
+  // console.log('listAttributes returning ' + results.length);
+  return results.sort();
 };
 
 // Get the attributes for a given step
@@ -270,226 +270,231 @@ dbk_agg.attributesFromArray = function(data) {
 // TODO: During execution, save any errors into a sturcutre
 //       that the front end can read
 dbk_agg.getAttributes = function(aggId, stepId, reset) {
-    var attributes;
-    if (reset || stepId === 0 || stepId === '0') {
-        var inputData = dbk_agg.getResults(aggId, stepId, reset);
-        if (dbk_agg.sampleSize > 0) {
-          dbk_agg.aggregates[aggId].stepResults[stepId] = inputData.slice(0, dbk_agg.sampleSize); // Limit max documents here
-        } else {
-          dbk_agg.aggregates[aggId].stepResults[stepId] = inputData.slice(0, 100); // Don't blow up the output
-        }
-        if (dbk_agg.debug) printjson(inputData[0]); // eslint-disable-line
-        attributes = dbk_agg.attributesFromArray(inputData);
-        dbk_agg.aggregates[aggId].stepAttributes[stepId] = attributes;
+  var attributes;
+  if (reset || stepId === 0 || stepId === '0') {
+    var inputData = dbk_agg.getResults(aggId, stepId, reset);
+    if (dbk_agg.sampleSize > 0) {
+      dbk_agg.aggregates[aggId].stepResults[stepId] = inputData.slice(0, dbk_agg.sampleSize); // Limit max documents here
     } else {
-        attributes = dbk_agg.aggregates[aggId].stepAttributes[stepId];
+      dbk_agg.aggregates[aggId].stepResults[stepId] = inputData.slice(0, 100); // Don't blow up the output
     }
-    return attributes;
+    if (dbk_agg.debug) printjson(inputData[0]); // eslint-disable-line
+    attributes = dbk_agg.attributesFromArray(inputData);
+    dbk_agg.aggregates[aggId].stepAttributes[stepId] = attributes;
+  } else {
+    attributes = dbk_agg.aggregates[aggId].stepAttributes[stepId];
+  }
+  return attributes;
 };
 
 //
 //  Create Some test data
 //
 dbk_agg.testData = function() {
-    print('starting');
-    var myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films').id;
-    print('aggId=' + myAgg);
-    var steps1 = [{
-            $match: {
-                Rating: 'R'
-            }
+  print('starting');
+  var myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films').id;
+  print('aggId=' + myAgg);
+  var steps1 = [
+    {
+      $match: {
+        Rating: 'R'
+      }
+    },
+    {
+      $group: {
+        _id: {
+          Category: '$Category'
         },
-        {
-            $group: {
-                _id: {
-                    Category: '$Category'
-                },
-                count: {
-                    $sum: 1
-                },
-                'Length-sum': {
-                    $sum: '$Length'
-                }
-            }
+        count: {
+          $sum: 1
         },
-        {
-            $sort: {
-                'Length-sum': -1
-            }
+        'Length-sum': {
+          $sum: '$Length'
         }
-    ];
-    dbk_agg.setAllSteps(myAgg, steps1);
-    myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films').id;
-    var steps2 = [{
-        $unwind: '$Actors'
-    }];
-    dbk_agg.setAllSteps(myAgg, steps2);
+      }
+    },
+    {
+      $sort: {
+        'Length-sum': -1
+      }
+    }
+  ];
+  dbk_agg.setAllSteps(myAgg, steps1);
+  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films').id;
+  var steps2 = [
+    {
+      $unwind: '$Actors'
+    }
+  ];
+  dbk_agg.setAllSteps(myAgg, steps2);
 
-    var bigSteps = [
-        // eslint-disable-line
-        {
-            $match: {
-                orderStatus: 'C'
-            }
+  var bigSteps = [
+    // eslint-disable-line
+    {
+      $match: {
+        orderStatus: 'C'
+      }
+    },
+    {
+      $project: {
+        CustId: 1,
+        lineItems: 1
+      }
+    },
+    {
+      $unwind: '$lineItems'
+    },
+    {
+      $group: {
+        _id: {
+          CustId: '$CustId',
+          ProdId: '$lineItems.prodId'
         },
-        {
-            $project: {
-                CustId: 1,
-                lineItems: 1
-            }
+        prodCount: {
+          $sum: '$lineItems.prodCount'
         },
-        {
-            $unwind: '$lineItems'
-        },
-        {
-            $group: {
-                _id: {
-                    CustId: '$CustId',
-                    ProdId: '$lineItems.prodId'
-                },
-                prodCount: {
-                    $sum: '$lineItems.prodCount'
-                },
-                prodCost: {
-                    $sum: '$lineItems.Cost'
-                }
-            }
-        },
-        {
-            $sort: {
-                prodCost: -1
-            }
-        },
-        {
-            $limit: 10
-        },
-        {
-            $lookup: {
-                from: 'DBEnvyLoad_customers',
-                as: 'c',
-                localField: '_id.CustId',
-                foreignField: '_id'
-            }
-        },
-        {
-            $lookup: {
-                from: 'DBEnvyLoad_products',
-                as: 'p',
-                localField: '_id.ProdId',
-                foreignField: '_id'
-            }
-        },
-        {
-            $unwind: '$p'
-        },
-        {
-            $unwind: '$c'
-        }, // Get rid of single element arrays
-        {
-            $project: {
-                Customer: '$c.CustomerName',
-                Product: '$p.ProductName',
-                prodCount: 1,
-                prodCost: 1,
-                _id: 0
-            }
+        prodCost: {
+          $sum: '$lineItems.Cost'
         }
-    ];
-    var smallSteps = [
-        // eslint-disable-line
-        {
-            $match: {
-                Rating: 'R'
-            }
+      }
+    },
+    {
+      $sort: {
+        prodCost: -1
+      }
+    },
+    {
+      $limit: 10
+    },
+    {
+      $lookup: {
+        from: 'DBEnvyLoad_customers',
+        as: 'c',
+        localField: '_id.CustId',
+        foreignField: '_id'
+      }
+    },
+    {
+      $lookup: {
+        from: 'DBEnvyLoad_products',
+        as: 'p',
+        localField: '_id.ProdId',
+        foreignField: '_id'
+      }
+    },
+    {
+      $unwind: '$p'
+    },
+    {
+      $unwind: '$c'
+    }, // Get rid of single element arrays
+    {
+      $project: {
+        Customer: '$c.CustomerName',
+        Product: '$p.ProductName',
+        prodCount: 1,
+        prodCost: 1,
+        _id: 0
+      }
+    }
+  ];
+  var smallSteps = [
+    // eslint-disable-line
+    {
+      $match: {
+        Rating: 'R'
+      }
+    },
+    {
+      $group: {
+        _id: {
+          Category: '$Category'
         },
-        {
-            $group: {
-                _id: {
-                    Category: '$Category'
-                },
-                count: {
-                    $sum: 1
-                }
-            }
+        count: {
+          $sum: 1
         }
-    ];
-    print('setall 1');
-    dbk_agg.setAllSteps(myAgg, bigSteps);
-    print('setall 2');
-    myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders').id;
-    dbk_agg.setAllSteps(myAgg, smallSteps);
-    print('after smallSteps count=' + dbk_agg.aggregates[myAgg].steps.length);
-    print('smallSteps=' + smallSteps.length);
-    dbk_agg.setAllSteps(myAgg, bigSteps);
+      }
+    }
+  ];
+  print('setall 1');
+  dbk_agg.setAllSteps(myAgg, bigSteps);
+  print('setall 2');
+  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders').id;
+  dbk_agg.setAllSteps(myAgg, smallSteps);
+  print('after smallSteps count=' + dbk_agg.aggregates[myAgg].steps.length);
+  print('smallSteps=' + smallSteps.length);
+  dbk_agg.setAllSteps(myAgg, bigSteps);
 
-    print('setall 3');
-    myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders').id;
-    // dbk_agg.setAllSteps(myAgg, bigSteps);
-    // dbk_agg.setAllSteps(myAgg, smallSteps);
-    var badSteps = [{
-            $batch: {
-                Rating: 'R'
-            }
+  print('setall 3');
+  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders').id;
+  // dbk_agg.setAllSteps(myAgg, bigSteps);
+  // dbk_agg.setAllSteps(myAgg, smallSteps);
+  var badSteps = [
+    {
+      $batch: {
+        Rating: 'R'
+      }
+    },
+    {
+      $group: {
+        _id: {
+          Category: '$Category'
         },
-        {
-            $group: {
-                _id: {
-                    Category: '$Category'
-                },
-                count: {
-                    $sum: 1
-                }
-            }
+        count: {
+          $sum: 1
         }
-    ];
-    myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders').id;
-    dbk_agg.setAllSteps(myAgg, badSteps);
-    myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films').id;
-    steps2 = [{
-            $sample: {
-                size: 100
-            }
+      }
+    }
+  ];
+  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders').id;
+  dbk_agg.setAllSteps(myAgg, badSteps);
+  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'Sakila_films').id;
+  steps2 = [
+    {
+      $sample: {
+        size: 100
+      }
+    },
+    {
+      $group: {
+        _id: {
+          Rating: '$Rating'
         },
-        {
-            $group: {
-                _id: {
-                    Rating: '$Rating'
-                },
-                count: {
-                    $sum: 1
-                },
-                'Length-sum': {
-                    $sum: '$Length'
-                }
-            }
+        count: {
+          $sum: 1
+        },
+        'Length-sum': {
+          $sum: '$Length'
         }
-    ];
-    dbk_agg.setAllSteps(myAgg, steps2);
-    print(myAgg);
-    myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders').id;
-    dbk_agg.setAllSteps(myAgg, smallSteps);
+      }
+    }
+  ];
+  dbk_agg.setAllSteps(myAgg, steps2);
+  print(myAgg);
+  myAgg = dbk_agg.newAggBuilder('SampleCollections', 'DBEnvyLoad_orders').id;
+  dbk_agg.setAllSteps(myAgg, smallSteps);
 
-    assert(
-        dbk_agg.aggregates[myAgg].steps.length === smallSteps.length + 1,
-        'steps should be equal to smallsteps'
-    ); // eslint-disable-line
-    dbk_agg.setAllSteps(myAgg, bigSteps);
-    assert(
-        dbk_agg.aggregates[myAgg].steps.length === bigSteps.length + 1,
-        'steps should be equal to smallsteps'
-    ); // eslint-disable-line
-    dbk_agg.setAllSteps(myAgg, smallSteps);
-    assert(
-        dbk_agg.aggregates[myAgg].steps.length === smallSteps.length + 1,
-        'steps should be equal to smallsteps'
-    ); // eslint-disable-line
-    dbk_agg.setAllSteps(myAgg, bigSteps);
-    dbk_agg.setAllSteps(myAgg, smallSteps, true);
-    assert(
-        dbk_agg.aggregates[myAgg].steps.length === bigSteps.length + 1,
-        'steps should be equal to bigsteps'
-    ); // eslint-disable-line
-    var bigAgg = [{$match:{1:1}}];
-    myAgg = dbk_agg.newAggBuilder('enron', 'messages').id;
-    dbk_agg.setAllSteps(myAgg, bigAgg);
+  assert(
+    dbk_agg.aggregates[myAgg].steps.length === smallSteps.length + 1,
+    'steps should be equal to smallsteps'
+  ); // eslint-disable-line
+  dbk_agg.setAllSteps(myAgg, bigSteps);
+  assert(
+    dbk_agg.aggregates[myAgg].steps.length === bigSteps.length + 1,
+    'steps should be equal to smallsteps'
+  ); // eslint-disable-line
+  dbk_agg.setAllSteps(myAgg, smallSteps);
+  assert(
+    dbk_agg.aggregates[myAgg].steps.length === smallSteps.length + 1,
+    'steps should be equal to smallsteps'
+  ); // eslint-disable-line
+  dbk_agg.setAllSteps(myAgg, bigSteps);
+  dbk_agg.setAllSteps(myAgg, smallSteps, true);
+  assert(
+    dbk_agg.aggregates[myAgg].steps.length === bigSteps.length + 1,
+    'steps should be equal to bigsteps'
+  ); // eslint-disable-line
+  var bigAgg = [{ $match: { 1: 1 } }];
+  myAgg = dbk_agg.newAggBuilder('enron', 'messages').id;
+  dbk_agg.setAllSteps(myAgg, bigAgg);
 };
