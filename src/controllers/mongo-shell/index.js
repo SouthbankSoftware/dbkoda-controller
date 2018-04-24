@@ -257,10 +257,10 @@ class MongoShell extends EventEmitter {
   }
 
   readParserOutput(data) {
-    if (data.indexOf('// ingore_emit_begin ') >= 0) {
+    if (data.indexOf('// ignore_emit_begin ') >= 0) {
       this.ignoreEmit = true;
     }
-    if (data.indexOf('// ingore_emit_ended ') >= 0) {
+    if (data.indexOf('// ignore_emit_ended ') >= 0) {
       this.ignoreEmit = false;
       return;
     }
@@ -297,9 +297,9 @@ class MongoShell extends EventEmitter {
   readScriptsFileIntoShell() {
     const fileBuffer = fs.readFileSync(path.join(this.mongoScriptPath + '/all-in-one.js'));
     const fileContent = fileBuffer.toString('utf8');
-    this.write('// ingore_emit_begin ' + MongoShell.enter);
+    this.write('// ignore_emit_begin ' + MongoShell.enter);
     this.write(fileContent + MongoShell.enter);
-    this.write('// ingore_emit_ended ' + MongoShell.enter);
+    this.write('// ignore_emit_ended ' + MongoShell.enter);
   }
 
   /**
