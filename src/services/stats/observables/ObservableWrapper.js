@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:50:05+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-02-20T11:49:44+11:00
+ * @Last modified time: 2018-04-24T16:24:23+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -33,7 +33,8 @@ export type ObservaleValue = {
   profileId: UUID,
   timestamp: number,
   stats?: { [string]: any },
-  value: { [string]: any }
+  value: { [string]: any },
+  ignoreStats?: boolean
 };
 
 export interface ObservableWrapper {

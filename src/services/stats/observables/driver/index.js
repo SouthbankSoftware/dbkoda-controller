@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-15T15:20:58+11:00
+ * @Last modified time: 2018-04-24T16:27:52+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,15 +21,15 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {Observable, Observer} from 'rxjs';
+import { Observable, Observer } from 'rxjs';
 import _ from 'lodash';
 
-import type {ObservaleValue} from '../ObservableWrapper';
-import {ObservableWrapper} from '../ObservableWrapper';
-import {driverItems, getKnowledgeBaseRules} from '../../knowledgeBase/driver';
-import {ErrorCodes} from '../../../../errors/Errors';
+import type { ObservaleValue } from '../ObservableWrapper';
+import { ObservableWrapper } from '../ObservableWrapper';
+import { driverItems, getKnowledgeBaseRules } from '../../knowledgeBase/driver';
+import { ErrorCodes } from '../../../../errors/Errors';
 import ConnectionListener, {
-  EVENT_NAME,
+  EVENT_NAME
 } from '../../../../controllers/mongo-connection/connection-listener';
 import Status from '../../../../controllers/mongo-connection/status';
 
@@ -51,7 +51,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
   storageIntervalId: number;
   startProfilingId: number;
   historyData: Object = {};
-  commandStatus: Object = {db_storage: true, others: true};
+  commandStatus: Object = { db_storage: true, others: true };
   listener: Object;
   profileCtr: Object;
   driver: Object;
@@ -60,7 +60,11 @@ export default class MongoNativeDriver implements ObservableWrapper {
     this.mongoConnection = options.mongoConnection;
 
     // pre-check
-    const {connectionParameters: {mongoType}, db, driver} = this.mongoConnection;
+    const {
+      connectionParameters: { mongoType },
+      db,
+      driver
+    } = this.mongoConnection;
     this.db = db;
     this.driver = driver;
 
@@ -70,7 +74,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
     if (mongoType === 'Mongos') {
       this.emitError(
         // 'Creating Performance Panel on mongos and only minimal statistics is available',
-        {code: ErrorCodes.PERFORMANCE_LIMIT_MONGOS},
+        { code: ErrorCodes.PERFORMANCE_LIMIT_MONGOS },
         'warn'
       );
     } else {
@@ -86,7 +90,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
               this.emitError(
                 {
                   code: ErrorCodes.PERFORMANCE_LIMIT_ENGINE,
-                  message: storageEngine,
+                  message: storageEngine
                 },
                 // `Creating Performance Panel on storage engine \`${storageEngine}\`. At the moment, only diagnostics on \`wiredTiger\` is supported`,
                 'warn'
@@ -98,18 +102,16 @@ export default class MongoNativeDriver implements ObservableWrapper {
           });
     }
 
-    this.rxObservable = Observable.create(
-      (observer: Observer<ObservaleValue>) => {
-        this.observer = observer;
-        this.commandStatus.others = true;
-        this.commandStatus.db_storage = true;
-        this.commandStatus.profiling = true;
-        this.start(this.db);
-        return () => {
-          this.pause();
-        };
-      }
-    );
+    this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
+      this.observer = observer;
+      this.commandStatus.others = true;
+      this.commandStatus.db_storage = true;
+      this.commandStatus.profiling = true;
+      this.start(this.db);
+      return () => {
+        this.pause();
+      };
+    });
     return Promise.resolve();
   }
 
@@ -122,7 +124,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
         this.commandStatus.others = true;
         this.commandStatus.db_storage = true;
         this.start(this.db, false);
-        this.emitError({code: ErrorCodes.MONGO_RECONNECT_SUCCESS}, 'warn');
+        this.emitError({ code: ErrorCodes.MONGO_RECONNECT_SUCCESS }, 'warn');
         break;
       case Status.CLOSED:
         l.debug('mongod connection is closed, pause stats.');
@@ -130,7 +132,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
         break;
       case Status.RETRY_FAILED:
         l.error('mongo retry connection failed.');
-        this.emitError({code: ErrorCodes.MONGO_CONNECTION_CLOSED}, 'warn');
+        this.emitError({ code: ErrorCodes.MONGO_CONNECTION_CLOSED }, 'warn');
         break;
       default:
     }
@@ -148,10 +150,7 @@ export default class MongoNativeDriver implements ObservableWrapper {
       this.startServerStatus(db);
       this.startDBStorage(this.driver, this.db);
     }
-    this.statsIntervalId = setInterval(
-      () => this.startServerStatus(db),
-      this.samplingRate
-    );
+    this.statsIntervalId = setInterval(() => this.startServerStatus(db), this.samplingRate);
     this.storageIntervalId = setInterval(
       () => this.startDBStorage(this.driver, this.db),
       this.samplingRate * 3
@@ -160,14 +159,14 @@ export default class MongoNativeDriver implements ObservableWrapper {
 
   startServerStatus(db) {
     if (this.commandStatus.others) {
-      db.command({serverStatus: 1}, {}, (err, data) => {
+      db.command({ serverStatus: 1 }, {}, (err, data) => {
         if (!err) {
           this.knowledgeBase = getKnowledgeBaseRules({
             version: data.version,
-            release: data.process,
+            release: data.process
           });
           if (!this.knowledgeBase) {
-            return Promise.reject('Cant find knowledge base');
+            return Promise.reject(new Error('Cant find knowledge base'));
           }
           this.postProcess(data, 'others');
         } else {
@@ -180,17 +179,20 @@ export default class MongoNativeDriver implements ObservableWrapper {
 
   startProfiling() {
     if (this.commandStatus.profiling) {
-      this.profileCtr.profile(this.samplingRate).then(data => {
-        this.observer.next({
-          profileId: this.profileId,
-          timestamp: new Date().getTime(),
-          value: data,
-          ignoreStats: true,
+      this.profileCtr
+        .profile(this.samplingRate)
+        .then(data => {
+          this.observer.next({
+            profileId: this.profileId,
+            timestamp: new Date().getTime(),
+            value: data,
+            ignoreStats: true
+          });
+        })
+        .catch(err => {
+          // this.commandStatus.profiling = false;
+          l.error(err);
         });
-      }).catch(err => {
-        // this.commandStatus.profiling = false;
-        l.error(err);
-      });
     }
   }
 
@@ -239,15 +241,12 @@ export default class MongoNativeDriver implements ObservableWrapper {
     }
     this.historyData[key].push(value);
     if (this.historyData[key].length > MAX_HISTORY_SIZE) {
-      this.historyData[key].splice(
-        0,
-        MAX_HISTORY_SIZE - this.historyData[key].length + 1
-      );
+      this.historyData[key].splice(0, MAX_HISTORY_SIZE - this.historyData[key].length + 1);
     }
     this.observer.next({
       profileId: this.profileId,
       timestamp: new Date().getTime(),
-      value,
+      value
     });
   }
 
