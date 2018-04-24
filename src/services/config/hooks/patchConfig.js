@@ -38,6 +38,7 @@ import os from 'os';
 import path from 'path';
 import { execSync } from 'child_process';
 import { configDefaults } from '../configSchema';
+import { isDockerCommand } from '../../../controllers/docker';
 
 const SIBLING_MONGO_CMD = ['mongodumpCmd', 'mongorestoreCmd', 'mongoimportCmd', 'mongoexportCmd'];
 
@@ -60,10 +61,14 @@ const getMongoCmd = () => {
   return mongoCmd;
 };
 
-const updateMongoCmd = mongoCmd => {
+const updateMongoCmd = (mongoCmd, nextConfig) => {
   if (!mongoCmd) return;
 
-  global.config.mongoVersionCmd = `"${mongoCmd}" --version`;
+  if (isDockerCommand(mongoCmd)) {
+    global.config.mongoVersionCmd = nextConfig.mongoVersionCmd;
+  } else {
+    global.config.mongoVersionCmd = `"${mongoCmd}" --version`;
+  }
 
   const dir = path.dirname(mongoCmd);
   const ext = os.platform() === 'win32' ? '.exe' : '';
@@ -141,7 +146,7 @@ export default () =>
 
     if (hasChanges) {
       if (changed.mongoCmd) {
-        updateMongoCmd(changed.mongoCmd.new);
+        updateMongoCmd(changed.mongoCmd.new, nextConfig);
       }
 
       // emit changed event

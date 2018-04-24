@@ -30,12 +30,14 @@
 import Ajv from 'ajv';
 import ajv from '~/helpers/ajv';
 import app from '~/app';
+import { isDockerCommand } from '../../controllers/docker';
 
 // [IMPORTANT] please keep `configDefaults` and `configSchema` consistent
 export const configDefaults = {
   mongoCmd: null, // this should always be `null` by default, and controller will figure it out
   drillCmd: null, // ui will figure this out
   drillControllerCmd: null, // ui will figure this out
+  mongoVersionCmd: null,
   telemetryEnabled: true,
   showNewFeaturesDialogOnStart: true,
   tableOutputDefault: false,
@@ -60,6 +62,9 @@ const configSchema = {
     mongoCmd: {
       type: ['string', 'null'],
       validMongoCmd: null
+    },
+    mongoVersionCmd: {
+      type: ['string', 'null'],
     },
     drillCmd: {
       type: ['string', 'null']
@@ -126,7 +131,9 @@ ajv.addKeyword('validMongoCmd', {
   async: true,
   type: 'string',
   validate: (schema, path) => {
-    if (path === null) return true;
+    if (path === null) return Promise.resolve(true);
+
+    if (isDockerCommand(path)) return Promise.resolve(true);
 
     const mongoCmdValidatorService = app.service('mongo-cmd-validator');
 
