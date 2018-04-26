@@ -38,6 +38,10 @@ export const configDefaults = {
   drillCmd: null, // ui will figure this out
   drillControllerCmd: null, // ui will figure this out
   mongoVersionCmd: null,
+  mongoexportCmd: null,
+  mongoimportCmd: null,
+  mongodumpCmd: null,
+  mongorestoreCmd: null,
   telemetryEnabled: true,
   showNewFeaturesDialogOnStart: true,
   tableOutputDefault: false,
@@ -64,6 +68,18 @@ const configSchema = {
       validMongoCmd: null
     },
     mongoVersionCmd: {
+      type: ['string', 'null']
+    },
+    mongoexportCmd: {
+      type: ['string', 'null']
+    },
+    mongoimportCmd: {
+      type: ['string', 'null']
+    },
+    mongodumpCmd: {
+      type: ['string', 'null']
+    },
+    mongorestoreCmd: {
       type: ['string', 'null']
     },
     drillCmd: {

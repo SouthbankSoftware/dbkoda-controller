@@ -314,7 +314,7 @@ class MongoConnectionController {
         shellIds.push(key);
         value.status = Status.CLOSING;
         l.info(`shell ${key} is closed ${value.shell.status}`);
-        value.shell.destroy();
+        value.killProcess();
       });
       driver.close();
 
@@ -345,7 +345,7 @@ class MongoConnectionController {
         if (shellId === key) {
           l.info('remove shell connection ', key);
           value.status = Status.CLOSING;
-          value.shell && value.shell.kill();
+          value.shell && value.killProcess();
         }
       });
       delete shells[shellId];

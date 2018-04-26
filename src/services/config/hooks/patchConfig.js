@@ -66,15 +66,16 @@ const updateMongoCmd = (mongoCmd, nextConfig) => {
 
   if (isDockerCommand(mongoCmd)) {
     global.config.mongoVersionCmd = nextConfig.mongoVersionCmd;
+    for (const cmd of SIBLING_MONGO_CMD) {
+      global.config[cmd] = nextConfig[cmd];
+    }
   } else {
     global.config.mongoVersionCmd = `"${mongoCmd}" --version`;
-  }
-
-  const dir = path.dirname(mongoCmd);
-  const ext = os.platform() === 'win32' ? '.exe' : '';
-
-  for (const cmd of SIBLING_MONGO_CMD) {
-    global.config[cmd] = path.join(dir, `${cmd.slice(0, -3)}${ext}`);
+    const dir = path.dirname(mongoCmd);
+    const ext = os.platform() === 'win32' ? '.exe' : '';
+    for (const cmd of SIBLING_MONGO_CMD) {
+      global.config[cmd] = path.join(dir, `${cmd.slice(0, -3)}${ext}`);
+    }
   }
 };
 
