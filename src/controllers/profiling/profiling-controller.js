@@ -181,7 +181,9 @@ class ProfilingController extends EventEmitter {
               new Promise((r, j) =>
                 this.getDatabaseProfileConfiguration(driver, d.name)
                   .then(v => r({ [d.name]: v }))
-                  .catch(err => j(err))
+                  .catch(() => {
+                    r({ [d.name]: { was: 0 } });
+                  })
               )
           );
           return Promise.all(proms);
@@ -213,13 +215,6 @@ class ProfilingController extends EventEmitter {
 
   getSystemProfileStats(driver, dbNames) {
     const promises = dbNames.map(name => {
-      // return driver
-      //   .db(name)
-      //   .collection(systemProfileCollectionName)
-      //   .stats()
-      //   .then(stats => {
-      //     return {dbName: name, stats};
-      //   });
       return this.getSingleSystemProfileStats(driver, name);
     });
     return Promise.all(promises);
