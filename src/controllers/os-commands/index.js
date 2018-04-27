@@ -22,23 +22,24 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { spawn } from 'child_process';
-import { EventEmitter } from 'events';
-import { escapeDoubleQuotes } from './processDoubleQuotes';
+import {spawn} from 'child_process';
+import {EventEmitter} from 'events';
+import {escapeDoubleQuotes} from './processDoubleQuotes';
 import tokeniseCmdString from './tokeniseCmdString';
+import { isDockerCommand } from '../docker';
 
 class OSCommandsController extends EventEmitter {
-  constructor() {
+  constructor () {
     super();
     this.requestQueue = [];
     this.currentProcess = null;
   }
 
-  runCommand(connect, commands, shellId) {
+  runCommand (connect, commands, shellId) {
     const cmds = commands.split('\n');
     log.info('run os command ', cmds);
     if (cmds) {
-      cmds.map(c => c && this.requestQueue.push({ connect, cmd: c, shellId }));
+      cmds.map(c => c && this.requestQueue.push({connect, cmd: c, shellId}));
     }
     try {
       this.runCommandFromQueue();
@@ -48,32 +49,43 @@ class OSCommandsController extends EventEmitter {
     return Promise.resolve({});
   }
 
-  runCommandFromQueue() {
+  runCommandFromQueue () {
     const configObj = global.config; // should be read-only
     log.info('Mongo Cmd:', configObj);
     if (this.requestQueue.length <= 0) {
       return;
     }
-    const { connect, shellId } = this.requestQueue[0];
-    let { cmd } = this.requestQueue[0];
-    const { id } = connect;
-    const { username, password } = connect;
+    const {connect, shellId} = this.requestQueue[0];
+    let {cmd} = this.requestQueue[0];
+    const {id} = connect;
+    const {username, password} = connect;
     this.requestQueue.shift();
     if (username && password) {
       cmd = cmd.replace('-p ******', `-p "${escapeDoubleQuotes(password)}"`);
     }
-    const params = tokeniseCmdString(cmd);
-    const mongoCmd = configObj[params[0] + 'Cmd'] ? configObj[params[0] + 'Cmd'] : params[0];
+    let params = tokeniseCmdString(cmd);
+    let mongoCmd = configObj[params[0] + 'Cmd']
+      ? configObj[params[0] + 'Cmd']
+      : params[0];
     params.splice(0, 1);
+
+    if (isDockerCommand(mongoCmd)) {
+      const tmp = mongoCmd.split(' ');
+      mongoCmd = tmp[0];
+      tmp.splice(0, 1);
+      params = tmp.concat(params);
+    }
+
     try {
+      l.info(mongoCmd, params);
       const p = spawn(mongoCmd, params);
-      this.currentProcess = { process: p, cmd };
+      this.currentProcess = {process: p, cmd};
       p.stdout.on('data', data => {
         log.debug(`stdout: ${data}`);
         this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, {
           id,
           shellId,
-          output: data.toString('utf8')
+          output: data.toString('utf8'),
         });
       });
 
@@ -82,7 +94,7 @@ class OSCommandsController extends EventEmitter {
         this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, {
           id,
           shellId,
-          output: data.toString('utf8')
+          output: data.toString('utf8'),
         });
       });
 
@@ -98,18 +110,22 @@ class OSCommandsController extends EventEmitter {
             shellId,
             output: `child process exited with code ${code}\n\r`,
             cmd,
-            code
+            code,
           });
         }
         this.runCommandFromQueue();
       });
     } catch (err) {
       log.error(err);
-      this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, { id, shellId, output: err.message });
+      this.emit(OSCommandsController.COMMAND_OUTPUT_EVENT, {
+        id,
+        shellId,
+        output: err.message,
+      });
     }
   }
 
-  killCurrentProcess() {
+  killCurrentProcess () {
     this.requestQueue = [];
     if (this.currentProcess) {
       this.currentProcess.process.kill();
