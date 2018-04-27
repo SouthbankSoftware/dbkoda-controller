@@ -178,7 +178,7 @@ class ProfilingController extends EventEmitter {
         .then(dbs => {
           const proms = dbs.databases.map(
             d =>
-              new Promise((r, j) =>
+              new Promise(r =>
                 this.getDatabaseProfileConfiguration(driver, d.name)
                   .then(v => r({ [d.name]: v }))
                   .catch(() => {
