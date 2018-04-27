@@ -34,6 +34,9 @@ import { isDockerCommand } from '../../controllers/docker';
 
 // [IMPORTANT] please keep `configDefaults` and `configSchema` consistent
 export const configDefaults = {
+  user: {
+    id: null // this should always be `null` by default, and controller will figure it out
+  },
   mongoCmd: null, // this should always be `null` by default, and controller will figure it out
   drillCmd: null, // ui will figure this out
   drillControllerCmd: null, // ui will figure this out
@@ -63,6 +66,14 @@ const configSchema = {
   $async: true,
   type: 'object',
   properties: {
+    user: {
+      type: 'object',
+      properties: {
+        id: {
+          type: ['string', 'null']
+        }
+      }
+    },
     mongoCmd: {
       type: ['string', 'null'],
       validMongoCmd: null
