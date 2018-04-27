@@ -4923,6 +4923,10 @@ nan@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-1.0.0.tgz#ae24f8850818d662fcab5acf7f3b95bfaa2ccf38"
 
+nanoid@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-1.0.2.tgz#15d2b5e76b6dbfb15cac1000cb457d4bfc845bdb"
+
 nanomatch@^1.2.9:
   version "1.2.9"
   resolved "https://registry.yarnpkg.com/nanomatch/-/nanomatch-1.2.9.tgz#879f7150cb2dab7a471259066c104eee6e0fa7c2"
@@ -5152,6 +5156,10 @@ object-inspect@^1.1.0:
 object-keys@^1.0.8, object-keys@^1.0.9:
   version "1.0.11"
   resolved "https://registry.yarnpkg.com/object-keys/-/object-keys-1.0.11.tgz#c54601778ad560f1142ce0e01bcca8b56d13426d"
+
+object-to-human-string@0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/object-to-human-string/-/object-to-human-string-0.0.3.tgz#7feb121a79496248ef8daa160da23862c09e89f2"
 
 object-visit@^1.0.0:
   version "1.0.1"
@@ -5673,6 +5681,13 @@ raw-body@2.3.2:
     http-errors "1.6.2"
     iconv-lite "0.4.19"
     unpipe "1.0.0"
+
+raygun@^0.9.1:
+  version "0.9.1"
+  resolved "https://registry.yarnpkg.com/raygun/-/raygun-0.9.1.tgz#46fe59e7904d9e86dffa392206960b6097e6e8ed"
+  dependencies:
+    object-to-human-string "0.0.3"
+    stack-trace "0.0.6"
 
 rc@^1.0.1, rc@^1.1.6, rc@^1.1.7:
   version "1.2.2"
@@ -6645,6 +6660,10 @@ sshpk@^1.7.0:
     ecc-jsbn "~0.1.1"
     jsbn "~0.1.0"
     tweetnacl "~0.14.0"
+
+stack-trace@0.0.6:
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/stack-trace/-/stack-trace-0.0.6.tgz#1e719bd6a2629ff09c189e17a9ef902a94fc5db0"
 
 stack-trace@0.0.x:
   version "0.0.10"
