@@ -5,7 +5,7 @@
  * @Date:   2018-04-27T11:01:11+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-01T19:36:40+10:00
+ * @Last modified time: 2018-05-01T20:22:12+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -29,6 +29,7 @@
 // $FlowFixMe
 import raygun from 'raygun';
 import path from 'path';
+import _ from 'lodash';
 // $FlowFixMe
 import sh from 'shelljs';
 // $FlowFixMe
@@ -57,8 +58,7 @@ raygunClient.setTags(tags);
 
 export const setUser = (user: { id: string }) => {
   raygunClient.user = () => ({
-    identifier: user.id,
-    isAnonymous: true
+    identifier: user.id
   });
 };
 
@@ -92,13 +92,17 @@ console._error = console.error;
 
 export class RaygunTransport extends Transport {
   log(info: *, callback: *) {
-    const { error, customData, callback: cb, request, tags } = info;
+    const { error, customData: providedCustomData, callback: cb, request, tags, timestamp } = info;
 
     if (!error || process.env.NODE_ENV === 'test') {
       callback && callback();
       cb && cb();
       return;
     }
+
+    // as `raygun4node` doesn't support customised timestamp yet, we provide `winston` timestamp as
+    // customData
+    const customData = _.assign({ winstonTimestamp: timestamp }, providedCustomData);
 
     sendError(error, {
       customData,
