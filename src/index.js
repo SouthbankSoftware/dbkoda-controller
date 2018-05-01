@@ -23,6 +23,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
+import _ from 'lodash';
 
 import app from './app';
 
@@ -37,10 +38,20 @@ const onUncaughtException = err => {
   l.error('Unhandled error: ', err);
 };
 
+const closeConnections = () => {
+  l.info('remove connections.');
+  const ctr = app.service('mongo/connection/controller');
+  const { connections } = ctr;
+  l.info('remove connections.', connections);
+  if (connections) {
+    _.keys(connections).forEach(conn => ctr.remove(conn));
+  }
+};
+
 const handleShutdown = err => {
   process.removeListener('unhandledRejection', onUnhandledRejection);
   process.removeListener('uncaughtException', onUncaughtException);
-
+  closeConnections();
   // Exitpoint
   app
     .stop(err)
@@ -57,18 +68,22 @@ const handleShutdown = err => {
     });
 };
 
-app.once('ready', () => {
-  // register shutting down events
+const registerShutdownListeners = () => {
   process.on('SIGINT', handleShutdown);
   process.on('SIGTERM', handleShutdown);
   process.on('SIGHUP', handleShutdown);
   process.on('SIGQUIT', handleShutdown);
-
+  process.on('exit', closeConnections);
   process.on('unhandledRejection', onUnhandledRejection);
   process.on('uncaughtException', onUncaughtException);
+};
 
+app.once('ready', () => {
+  // register shutting down events
+  registerShutdownListeners();
   l.notice(`dbKoda Controller is ready at ${app.get('host')}:${port}`);
 });
+
 if (process.env.NODE_ENV !== 'production') {
   // in non-production mode, enable source map for stack tracing
   require('source-map-support/register');
