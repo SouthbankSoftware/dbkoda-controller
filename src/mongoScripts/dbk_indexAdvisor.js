@@ -81,15 +81,7 @@ dbkInx.quick_explain = function(explainPlan) {
         keys.push(skey);
       });
     }
-    output +=
-      stepNo++ +
-      ' ' +
-      printSpaces(depth) +
-      ' ' +
-      step.stage +
-      ' ' +
-      keys +
-      '\n';
+    output += stepNo++ + ' ' + printSpaces(depth) + ' ' + step.stage + ' ' + keys + '\n';
   };
 
   printInputStage(explainPlan, 1);
@@ -97,20 +89,20 @@ dbkInx.quick_explain = function(explainPlan) {
 };
 
 dbkInx.findNamespace = function(object) {
-   return (dbkInx.findKeyValue('namespace', object));
+  return dbkInx.findKeyValue('namespace', object);
 };
 
 dbkInx.findKeyValue = function(key, object) {
   // Find namespace within the plan (for instnace if this is a sharded plan)
-    if (object.hasOwnProperty(key)) {
-        return (object[key]);
-    }
+  if (object.hasOwnProperty(key)) {
+    return object[key];
+  }
 
-    for (var i = 0; i < Object.keys(object).length; i++) {
-        if (typeof object[Object.keys(object)[i]] == 'object') {
-            return dbkInx.findKeyValue(key, object[Object.keys(object)[i]]);
-        }
+  for (var i = 0; i < Object.keys(object).length; i++) {
+    if (typeof object[Object.keys(object)[i]] == 'object') {
+      return dbkInx.findKeyValue(key, object[Object.keys(object)[i]]);
     }
+  }
 };
 
 dbkInx.adviseAllCachedPlans = function() {
@@ -148,9 +140,12 @@ dbkInx.createKeys = function(collection, indexes) {
   });
   if (dbkInx.debug) {
     print('..... Allindexes');
-    db.getCollection(collection).getIndexes().forEach(function(indx) {
-      printjson(indx.key);
-    });
+    db
+      .getCollection(collection)
+      .getIndexes()
+      .forEach(function(indx) {
+        printjson(indx.key);
+      });
   }
 };
 
@@ -158,41 +153,36 @@ dbkInx.testPlans = function() {
   db.Sakila_films.dropIndexes(); // eslint-disable-line
   for (var i = 1; i <= 1; i++) {
     if (dbkInx.debug) print(1);
-    var explain = db.Sakila_films.
-      explain().
-      find({ Category: 'Documentary', Rating: 'PG' }).
-      sort({ Length: 1 }).
-      next();
-    dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
+    var explain = db.Sakila_films.explain()
+      .find({ Category: 'Documentary', Rating: 'PG' })
+      .sort({ Length: 1 })
+      .next();
+    dbkInx.createKeys('Sakila_films', dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
 
     db.Sakila_films.createIndex({ Category: 1 }); // eslint-disable-line
     if (dbkInx.debug) print(2);
-    explain = db.Sakila_films.
-      explain().
-      find({ Category: 'Documentary', Rating: 'PG' }).
-      sort({ Length: 1 }).
-      next();
-    dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
+    explain = db.Sakila_films.explain()
+      .find({ Category: 'Documentary', Rating: 'PG' })
+      .sort({ Length: 1 })
+      .next();
+    dbkInx.createKeys('Sakila_films', dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
 
     db.Sakila_films.createIndex({ Rating: 1 }); // eslint-disable-line
     if (dbkInx.debug) print(3);
-    explain = db.Sakila_films.
-      explain().
-      find({ Category: 'Documentary', Rating: 'PG' }).
-      sort({ Length: 1 }).
-      next();
-    dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
+    explain = db.Sakila_films.explain()
+      .find({ Category: 'Documentary', Rating: 'PG' })
+      .sort({ Length: 1 })
+      .next();
+    dbkInx.createKeys('Sakila_films', dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
     // print('ITERATING THROUGH ALL PLANS');
 
-    explain = db.Sakila_films.
-      explain().
-      find({ Category: 'Documentary', Rating: 'PG' }).
-      next();
+    explain = db.Sakila_films.explain()
+      .find({ Category: 'Documentary', Rating: 'PG' })
+      .next();
     // printjson(dbkInx.suggestIndexKeys(explain.queryPlanner.winningPlan)); //
     // eslint-disable-line
-    explain = db.Sakila_films.
-      explain().
-      find({
+    explain = db.Sakila_films.explain()
+      .find({
         $or: [
           {
             Rating: 'PG'
@@ -201,15 +191,14 @@ dbkInx.testPlans = function() {
             Category: 'Family'
           }
         ]
-      }).
-      next();
-    dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
+      })
+      .next();
+    dbkInx.createKeys('Sakila_films', dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
     db.Sakila_films.createIndex({ Rating: 1 }); // eslint-disable-line
     db.Sakila_films.createIndex({ Category: 1 }); // eslint-disable-line
     if (dbkInx.debug) print(5);
-    explain = db.Sakila_films.
-      explain().
-      find({
+    explain = db.Sakila_films.explain()
+      .find({
         $or: [
           {
             Rating: 'PG',
@@ -220,15 +209,14 @@ dbkInx.testPlans = function() {
             'Rental Duration': '6'
           }
         ]
-      }).
-      sort({ Length: 1 }).
-      next();
+      })
+      .sort({ Length: 1 })
+      .next();
     // printjson(explain); // eslint-disable-line
     // printjson(explain.queryPlanner.winningPlan);
-    dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
-    explain = db.Sakila_films.
-      explain().
-      find({
+    dbkInx.createKeys('Sakila_films', dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
+    explain = db.Sakila_films.explain()
+      .find({
         $or: [
           {
             Rating: 'PG',
@@ -239,22 +227,30 @@ dbkInx.testPlans = function() {
             'Rental Duration': '6'
           }
         ]
-      }).
-      sort({ Length: -1, Rating: 1 }).
-      next();
+      })
+      .sort({ Length: -1, Rating: 1 })
+      .next();
     // printjson(explain); // eslint-disable-lin e
     // printjson(explain.queryPlanner.winningPlan);
-    dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
+    dbkInx.createKeys('Sakila_films', dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
     // Second time through there should be no better index available.
-    dbkInx.createKeys("Sakila_films", dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
+    dbkInx.createKeys('Sakila_films', dbkInx.suggestIndexKeys(explain)); // eslint-disable-line
 
-   var x = db.getSiblingDB('SampleCollections').getCollection('Sakila_films').find(
-    { '$and':[
-         { 'Title':{ $eq:'FRED' } },
-         { 'Actors.Firstname':{ $eq:'JOE' } },
-         { 'Category':{ $eq:'G' } }
-        ] },
-     { 'Title':1 }).sort({ 'Category':-1 }).explain();
+    var x = db
+      .getSiblingDB('SampleCollections')
+      .getCollection('Sakila_films')
+      .find(
+        {
+          $and: [
+            { Title: { $eq: 'FRED' } },
+            { 'Actors.Firstname': { $eq: 'JOE' } },
+            { Category: { $eq: 'G' } }
+          ]
+        },
+        { Title: 1 }
+      )
+      .sort({ Category: -1 })
+      .explain();
   }
   // db.Sakila_films.dropIndexes(); // eslint-disable-line
 };
@@ -323,7 +319,7 @@ dbkInx.suggestIndexKeys = function(explainPlan) {
       });
     }
     if ('shards' in step) {
-       if (dbkInx.debug) print('Processing only first shard');
+      if (dbkInx.debug) print('Processing only first shard');
       checkInputStage(step.shards[0].winningPlan, depth + 1);
     }
     //
@@ -406,20 +402,24 @@ dbkInx.existingIndexes = function(explainPlan) {
   var collectionName;
   var namespace;
   // Work out the dbName and the collectionName
-  if ('namespace' in explainPlan.queryPlanner) { namespace = explainPlan.queryPlanner.namespace; } else { namespace = dbkInx.findNamespace(explainPlan); }
+  if ('namespace' in explainPlan.queryPlanner) {
+    namespace = explainPlan.queryPlanner.namespace;
+  } else {
+    namespace = dbkInx.findNamespace(explainPlan);
+  }
   if (namespace) {
-        dbName = namespace.split('.')[0];
-        collectionName = namespace.split('.')[1];
-      var indexes = db.
-    getSiblingDB(dbName).
-    getCollection(collectionName).
-    getIndexes();
+    dbName = namespace.split('.')[0];
+    collectionName = namespace.split('.')[1];
+    var indexes = db
+      .getSiblingDB(dbName)
+      .getCollection(collectionName)
+      .getIndexes();
   }
   if (dbkInx.debug) {
     print('dbName', dbName);
     print('collectionName', collectionName);
   }
-  return (indexes);
+  return indexes;
 };
 //
 // Function to check for an existing index or a index with the same leading keys
@@ -495,7 +495,7 @@ dbkInx.existingRedundantIndexes = function(existingIndexes) {
             becauseIndex: index2.name,
             becauseKeys: JSON.stringify(index2.key)
           });
-          return (true);
+          return true;
         }
       }
     });
@@ -505,24 +505,30 @@ dbkInx.existingRedundantIndexes = function(existingIndexes) {
 
 dbkInx.redundantDbIndexes = function(dbName) {
   var indexList = [];
-  db.getSiblingDB(dbName).getCollectionNames().forEach(function(collection) {
-    // print(collection);
-    indexes = db.getSiblingDB(dbName).getCollection(collection).getIndexes();
-    var redundant = dbkInx.existingRedundantIndexes(indexes);
-    if (redundant.length > 0) {
-      redundant.forEach(function(r) {
-        var redundantIndex = {
-          dbName: dbName,
-          collection: collection,
-          indexName: r.indexName,
-          key: r.key,
-          becauseIndex: r.becauseIndex,
-          becauseKeys: r.becauseKeys
-        };
-        indexList.push(redundantIndex);
-      });
-    }
-  });
+  db
+    .getSiblingDB(dbName)
+    .getCollectionNames()
+    .forEach(function(collection) {
+      // print(collection);
+      indexes = db
+        .getSiblingDB(dbName)
+        .getCollection(collection)
+        .getIndexes();
+      var redundant = dbkInx.existingRedundantIndexes(indexes);
+      if (redundant.length > 0) {
+        redundant.forEach(function(r) {
+          var redundantIndex = {
+            dbName: dbName,
+            collection: collection,
+            indexName: r.indexName,
+            key: r.key,
+            becauseIndex: r.becauseIndex,
+            becauseKeys: r.becauseKeys
+          };
+          indexList.push(redundantIndex);
+        });
+      }
+    });
   return indexList;
 };
 
@@ -541,15 +547,15 @@ dbkInx.firstElements = function(object, N) {
 // This function is a combination of suggestIndexes and proposedRedundantIndexes
 //
 dbkInx.suggestIndexesAndRedundants = function(explainPlan) {
-    // Check for existing indexes
+  // Check for existing indexes
 
   // See if we can find existing indexes
   var existIndexes = dbkInx.existingIndexes(explainPlan);
 
   var newIndexes = dbkInx.suggestIndexKeys(explainPlan);
   var redundantIndexes = dbkInx.proposedRedundantIndexes(existIndexes, newIndexes);
-  return ({
-      newIndexes:newIndexes,
-      redundantIndexes:redundantIndexes
-  });
+  return {
+    newIndexes: newIndexes,
+    redundantIndexes: redundantIndexes
+  };
 };

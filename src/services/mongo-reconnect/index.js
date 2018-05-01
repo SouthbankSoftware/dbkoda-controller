@@ -34,35 +34,35 @@ class ReconnectionService {
           {
             in: 'query',
             name: 'url',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             name: 'test',
-            type: 'bool',
+            type: 'bool'
           },
           {
             in: 'query',
             name: 'database',
-            type: 'string',
+            type: 'string'
           },
           {
             in: 'query',
             name: 'discoverMembers',
-            type: 'bool',
+            type: 'bool'
           },
           {
             in: 'query',
             name: 'id',
-            type: 'int',
+            type: 'int'
           },
           {
             in: 'query',
             name: 'shellId',
-            type: 'int',
-          },
-        ],
-      },
+            type: 'int'
+          }
+        ]
+      }
     };
   }
 

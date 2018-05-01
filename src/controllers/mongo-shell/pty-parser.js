@@ -25,7 +25,12 @@
 const _ = require('lodash');
 const { EventEmitter } = require('events');
 const ParseState = require('./parser-state');
-const {escapedStateHandler, csiStateHandler, csiStateParameterHandler, normalStateHandler} = require('./input-handler');
+const {
+  escapedStateHandler,
+  csiStateHandler,
+  csiStateParameterHandler,
+  normalStateHandler
+} = require('./input-handler');
 const Buffer = require('./buffer');
 
 /* eslint no-fallthrough : 0 */
@@ -69,7 +74,7 @@ class Parser extends EventEmitter {
         return;
       }
       cached = this.buffers.pop();
-      this.buffers.map((buffer) => {
+      this.buffers.map(buffer => {
         l.debug('emit output data ', buffer.data);
         this.emit('data', buffer.data);
       });
@@ -159,18 +164,19 @@ class Parser extends EventEmitter {
     if (this.bufferY < this.buffers.length && !this.buffers[this.bufferY].data) {
       this.buffers[this.bufferY].data = ' ';
     }
-    const diff = (this.bufferX - this.buffers[this.bufferY].data.length) + 1;
+    const diff = this.bufferX - this.buffers[this.bufferY].data.length + 1;
     if (diff > 0) {
-      _.times(diff, this.buffers[this.bufferY].data += ' ');
+      _.times(diff, (this.buffers[this.bufferY].data += ' '));
     }
     const tmp = this.buffers[this.bufferY].data;
     // this.buffers[this.bufferY].write(ch, this.bufferX);
     // this.buffers[this.bufferY].data = buffer.toString();
 
-      // if (this.bufferX >= tmp.length - 1) {
+    // if (this.bufferX >= tmp.length - 1) {
     //   this.buffers[this.bufferY].data = tmp + ch;
     // } else {
-      this.buffers[this.bufferY].data = tmp.substr(0, this.bufferX) + ch + tmp.substr(this.bufferX + 1);
+    this.buffers[this.bufferY].data =
+      tmp.substr(0, this.bufferX) + ch + tmp.substr(this.bufferX + 1);
     // }
     this.bufferX += 1;
   }
@@ -182,6 +188,4 @@ class Parser extends EventEmitter {
   }
 }
 
-
 module.exports = Parser;
-

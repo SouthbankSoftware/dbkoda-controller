@@ -305,7 +305,10 @@ export class Stats {
           }
 
           // log alarms
-          const { value: { alarm }, timestamp } = v;
+          const {
+            value: { alarm },
+            timestamp
+          } = v;
           alarm &&
             this.loggerService
               .patch(LOG_PATH, {

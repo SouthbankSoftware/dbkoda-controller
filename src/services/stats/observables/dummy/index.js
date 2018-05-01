@@ -5,7 +5,7 @@
  * @Date:   2017-12-12T11:23:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-31T22:47:24+11:00
+ * @Last modified time: 2018-04-24T16:27:25+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -46,10 +46,10 @@ export default class Dummy implements ObservableWrapper {
   simulateWarnAt = null;
   simulateFatalErrorAt = null;
   simulateCompletionAt = null;
-  errorTimeoutId: ?number;
-  warnTimeoutId: ?number;
-  fatalErrorTimeoutId: ?number;
-  completionTimeoutId: ?number;
+  errorTimeoutId: ?TimeoutID;
+  warnTimeoutId: ?TimeoutID;
+  fatalErrorTimeoutId: ?TimeoutID;
+  completionTimeoutId: ?TimeoutID;
 
   _getRandomNumberInInterval = (min: number, max: number) => {
     return Math.random() * (max - min) + min;
@@ -131,8 +131,8 @@ export default class Dummy implements ObservableWrapper {
                   acc[v] = this._getRandomNumberInInterval(0, 100);
                   return acc;
                 },
-                {},
-              ),
+                {}
+              )
             });
           }, this._simulateSamplingDelay());
 
@@ -167,13 +167,13 @@ export default class Dummy implements ObservableWrapper {
     // IMPORTANT
     this.rxObservable = null;
 
-    clearTimeout(this.errorTimeoutId);
+    this.errorTimeoutId && clearTimeout(this.errorTimeoutId);
     this.errorTimeoutId = null;
-    clearTimeout(this.warnTimeoutId);
+    this.warnTimeoutId && clearTimeout(this.warnTimeoutId);
     this.warnTimeoutId = null;
-    clearTimeout(this.fatalErrorTimeoutId);
+    this.fatalErrorTimeoutId && clearTimeout(this.fatalErrorTimeoutId);
     this.fatalErrorTimeoutId = null;
-    clearTimeout(this.completionTimeoutId);
+    this.completionTimeoutId && clearTimeout(this.completionTimeoutId);
     this.completionTimeoutId = null;
 
     return new Promise(resolve => {

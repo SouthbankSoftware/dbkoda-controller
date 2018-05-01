@@ -24,7 +24,7 @@
 import winston from 'winston';
 
 const commonOptions = {
-  colorize: 'all',
+  colorize: 'all'
 };
 
 const transports = [new winston.transports.Console(commonOptions)];
@@ -51,7 +51,7 @@ global.log = global.l;
 log.debug('create shell');
 const MongoShell = require('./index').MongoShell;
 
-const shell = new MongoShell({url:'mongodb://localhost'});
+const shell = new MongoShell({ url: 'mongodb://localhost' });
 shell.getShellVersion();
 shell.createShell();
 
@@ -59,12 +59,12 @@ shell.on(MongoShell.INITIALIZED, () => {
   process.stdout.write('INITIALIZED', 'utf8');
 });
 
-shell.on(MongoShell.OUTPUT_EVENT, (data) => {
+shell.on(MongoShell.OUTPUT_EVENT, data => {
   // process.stdout.write(data, 'utf8');
   console.log(data);
 });
 
-shell.on(MongoShell.AUTO_COMPLETE_END, (data) => {
+shell.on(MongoShell.AUTO_COMPLETE_END, data => {
   process.stdout.write('AUTO_COMPLETE_END:' + data);
 });
 
@@ -72,11 +72,11 @@ shell.on(MongoShell.EXECUTE_END, () => {
   process.stdout.write('command execution ended.');
 });
 
-shell.on(MongoShell.SYNC_OUTPUT_EVENT, (data) => {
+shell.on(MongoShell.SYNC_OUTPUT_EVENT, data => {
   console.log('sync output:' + data);
 });
 
-shell.on(MongoShell.SYNC_EXECUTE_END, (data) => {
+shell.on(MongoShell.SYNC_EXECUTE_END, data => {
   process.stdout.write('SYNC_EXECUTE_END:' + data);
 });
 

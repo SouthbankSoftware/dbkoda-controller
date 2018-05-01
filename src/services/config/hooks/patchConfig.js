@@ -37,7 +37,9 @@ import diff from 'deep-diff';
 import os from 'os';
 import path from 'path';
 import { execSync } from 'child_process';
+import nanoid from 'nanoid';
 import { configDefaults } from '../configSchema';
+import { isDockerCommand } from '../../../controllers/docker';
 
 const SIBLING_MONGO_CMD = ['mongodumpCmd', 'mongorestoreCmd', 'mongoimportCmd', 'mongoexportCmd'];
 
@@ -48,7 +50,9 @@ const getMongoCmd = () => {
     if (os.platform() === 'win32') {
       mongoCmd = 'mongo.exe';
     } else {
-      mongoCmd = execSync("bash -lc 'which mongo'", { encoding: 'utf8' }).trim();
+      mongoCmd = execSync("bash -lc 'which mongo'", {
+        encoding: 'utf8'
+      }).trim();
       const tmp = mongoCmd.split('\n');
       if (tmp.length > 0) {
         mongoCmd = tmp[tmp.length - 1];
@@ -63,13 +67,13 @@ const getMongoCmd = () => {
 const updateMongoCmd = mongoCmd => {
   if (!mongoCmd) return;
 
-  global.config.mongoVersionCmd = `"${mongoCmd}" --version`;
-
-  const dir = path.dirname(mongoCmd);
-  const ext = os.platform() === 'win32' ? '.exe' : '';
-
-  for (const cmd of SIBLING_MONGO_CMD) {
-    global.config[cmd] = path.join(dir, `${cmd.slice(0, -3)}${ext}`);
+  if (!isDockerCommand(mongoCmd)) {
+    global.config.mongoVersionCmd = `"${mongoCmd}" --version`;
+    const dir = path.dirname(mongoCmd);
+    const ext = os.platform() === 'win32' ? '.exe' : '';
+    for (const cmd of SIBLING_MONGO_CMD) {
+      global.config[cmd] = path.join(dir, `${cmd.slice(0, -3)}${ext}`);
+    }
   }
 };
 
@@ -103,6 +107,10 @@ const checkHistoryConfig = (currentConfig, nextConfig) => {
   }
 };
 
+const generateUserId = () => {
+  return nanoid();
+};
+
 export default () =>
   processItems((context, item) => {
     const { config: nextConfig, emitChangedEvent, forceSave, fromConfigYml } = item;
@@ -111,11 +119,18 @@ export default () =>
     // `ajv` should guard most of the correctness by now, but some post checkings are also necessary
     checkHistoryConfig(global.config, nextConfig);
 
+    // check and get default `mongoCmd`
     if (
       (global.config.mongoCmd == null && nextConfig.mongoCmd === undefined) ||
       nextConfig.mongoCmd === null
     ) {
       nextConfig.mongoCmd = getMongoCmd();
+    }
+
+    // check and get default `user.id`
+    const nextUserId = _.get(nextConfig, 'user.id');
+    if ((global.config.user.id == null && nextUserId === undefined) || nextUserId === null) {
+      _.set(nextConfig, 'user.id', generateUserId());
     }
 
     const changed = {};

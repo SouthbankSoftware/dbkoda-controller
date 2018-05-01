@@ -30,13 +30,25 @@
 import Ajv from 'ajv';
 import ajv from '~/helpers/ajv';
 import app from '~/app';
+import { isDockerCommand } from '../../controllers/docker';
 
 // [IMPORTANT] please keep `configDefaults` and `configSchema` consistent
 export const configDefaults = {
+  user: {
+    id: null // this should always be `null` by default, and controller will figure it out
+  },
   mongoCmd: null, // this should always be `null` by default, and controller will figure it out
   drillCmd: null, // ui will figure this out
   drillControllerCmd: null, // ui will figure this out
+  mongoVersionCmd: null,
+  mongoexportCmd: null,
+  mongoimportCmd: null,
+  mongodumpCmd: null,
+  mongorestoreCmd: null,
   telemetryEnabled: true,
+  showNewFeaturesDialogOnStart: true,
+  tableOutputDefault: false,
+  automaticAutoComplete: true,
   showWelcomePageAtStart: true,
   passwordStoreEnabled: false,
   performancePanel: {
@@ -54,9 +66,32 @@ const configSchema = {
   $async: true,
   type: 'object',
   properties: {
+    user: {
+      type: 'object',
+      properties: {
+        id: {
+          type: ['string', 'null']
+        }
+      }
+    },
     mongoCmd: {
       type: ['string', 'null'],
       validMongoCmd: null
+    },
+    mongoVersionCmd: {
+      type: ['string', 'null']
+    },
+    mongoexportCmd: {
+      type: ['string', 'null']
+    },
+    mongoimportCmd: {
+      type: ['string', 'null']
+    },
+    mongodumpCmd: {
+      type: ['string', 'null']
+    },
+    mongorestoreCmd: {
+      type: ['string', 'null']
     },
     drillCmd: {
       type: ['string', 'null']
@@ -64,10 +99,19 @@ const configSchema = {
     drillControllerCmd: {
       type: ['string', 'null']
     },
+    showWelcomePageAtStart: {
+      type: 'boolean'
+    },
     telemetryEnabled: {
       type: 'boolean'
     },
-    showWelcomePageAtStart: {
+    showNewFeaturesDialogOnStart: {
+      type: 'boolean'
+    },
+    tableOutputDefault: {
+      type: 'boolean'
+    },
+    automaticAutoComplete: {
       type: 'boolean'
     },
     passwordStoreEnabled: {
@@ -114,7 +158,9 @@ ajv.addKeyword('validMongoCmd', {
   async: true,
   type: 'string',
   validate: (schema, path) => {
-    if (path === null) return true;
+    if (path === null) return Promise.resolve(true);
+
+    if (isDockerCommand(path)) return Promise.resolve(true);
 
     const mongoCmdValidatorService = app.service('mongo-cmd-validator');
 

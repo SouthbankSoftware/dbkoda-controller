@@ -1,7 +1,4 @@
 /**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-11-23T16:54:53+11:00
- *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -36,12 +33,12 @@ class MongoDBMonitor extends EventEmitter {
     l.info('start mongodb monitor.');
     const that = this;
     this.heartbeat.start();
-    this.heartbeat.on('error', (err) => {
+    this.heartbeat.on('error', err => {
       l.error('heartbeat error ', err);
       that.emit('error', err);
     });
 
-    this.heartbeat.on('heartbeat', (data) => {
+    this.heartbeat.on('heartbeat', data => {
       l.debug('heartbeat ', data);
     });
   }

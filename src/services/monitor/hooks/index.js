@@ -18,8 +18,6 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 exports.before = {
   all: [],
   find: [],

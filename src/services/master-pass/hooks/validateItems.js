@@ -30,38 +30,38 @@ import { validateSchema } from 'feathers-hooks-common';
 const getSchema = {
   properties: {
     _id: {
-      type: 'string',
-    },
+      type: 'string'
+    }
   },
   required: ['_id'],
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const createSchema = {
   properties: {
     masterPassword: {
-      type: 'string',
+      type: 'string'
     },
     profileIds: {
-      type: 'array',
-    },
+      type: 'array'
+    }
   },
   required: ['masterPassword'],
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const patchSchema = {
   properties: {
     password: {
-      type: 'string',
-    },
+      type: 'string'
+    }
   },
   required: ['password'],
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const removeSchema = {
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const schema = {
@@ -70,7 +70,7 @@ const schema = {
   create: createSchema,
   update: {},
   patch: patchSchema,
-  remove: removeSchema,
+  remove: removeSchema
 };
 
 const validators = _.reduce(
@@ -79,7 +79,7 @@ const validators = _.reduce(
     acc[k] = validateSchema(v, ajv);
     return acc;
   },
-  {},
+  {}
 );
 
 export default _options => hook => validators[hook.method](hook);

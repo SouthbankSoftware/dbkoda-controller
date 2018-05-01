@@ -20,10 +20,10 @@
 
 /* List of indentifiers/keys for items to be observed */
 import _ from 'lodash';
-import {findRules} from '../utils';
-import {getAllItemKeys, parseData} from './rule_parser';
+import { findRules } from '../utils';
+import { getAllItemKeys, parseData } from './rule_parser';
 
-export const driverItems = [...getAllItemKeys(), 'db_storage'];
+export const driverItems = [...getAllItemKeys(), 'db_storage', 'db_profile'];
 
 /**
  * define the mongo stats knowledgebase rules.
@@ -32,36 +32,41 @@ export const driverItems = [...getAllItemKeys(), 'db_storage'];
  */
 export const rules = {
   // all match all os types
-  'all': [{
-    release: 'mongos',
-    version: 'all',
-    parse: (newData, previous, dbVersion, samplingRate, key) => { // define the parse command output logic
-      if (key === 'db_storage') {
-        return {
-          db_storage: newData.map((dbStats) => {
-            if (!_.isEmpty(dbStats.raw)) {
-              const db = _.values(dbStats.raw)[0].db;
-              return {dbName: db, dataSize: dbStats.dataSize};
-            }
-          })
-        };
+  all: [
+    {
+      release: 'mongos',
+      version: 'all',
+      parse: (newData, previous, dbVersion, samplingRate, key) => {
+        // define the parse command output logic
+        if (key === 'db_storage') {
+          return {
+            db_storage: newData.map(dbStats => {
+              if (!_.isEmpty(dbStats.raw)) {
+                const db = _.values(dbStats.raw)[0].db;
+                return { dbName: db, dataSize: dbStats.dataSize };
+              }
+            })
+          };
+        }
+        return parseData(newData, previous, dbVersion, samplingRate);
       }
-      return parseData(newData, previous, dbVersion, samplingRate);
-    }
-  }, {
-    release: 'all', // mongod, mongos, etc.
-    version: 'all', // 3.2, 3.0, etc.
-    parse: (newData, previous, dbVersion, samplingRate, key) => { // define the parse command output logic
-      if (key === 'db_storage') {
-        return {
-          db_storage: newData.map(stat => {
-            return {dbName: stat.db, dataSize: stat.dataSize};
-          })
-        };
+    },
+    {
+      release: 'all', // mongod, mongos, etc.
+      version: 'all', // 3.2, 3.0, etc.
+      parse: (newData, previous, dbVersion, samplingRate, key) => {
+        // define the parse command output logic
+        if (key === 'db_storage') {
+          return {
+            db_storage: newData.map(stat => {
+              return { dbName: stat.db, dataSize: stat.dataSize };
+            })
+          };
+        }
+        return parseData(newData, previous, dbVersion, samplingRate);
       }
-      return parseData(newData, previous, dbVersion, samplingRate);
     }
-  }]
+  ]
 };
 
 /**
@@ -71,7 +76,7 @@ export const rules = {
  * @param version   the mongo server version
  * @returns {*}
  */
-export const getKnowledgeBaseRules = ({release, version}) => {
-  const rule = findRules({osType: 'all', release, version}, rules);
-  return {...rule};
+export const getKnowledgeBaseRules = ({ release, version }) => {
+  const rule = findRules({ osType: 'all', release, version }, rules);
+  return { ...rule };
 };

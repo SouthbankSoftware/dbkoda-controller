@@ -40,7 +40,6 @@
 /* eslint block-scoped-var: 0 */
 /* eslint guard-for-in: 0 */
 
-
 var dbk_Cs = {};
 
 // Increment the totals for a specific element
@@ -90,15 +89,14 @@ dbk_Cs.collectionSize = function(dbName, collectionName, sampleSize) {
   if (dbe.majorVersion() < 3.2) {
     sampleClause = { $limit: sampleSize };
   }
-  var sample = collection.aggregate([sampleClause], {allowDiskUse: true});
+  var sample = collection.aggregate([sampleClause], { allowDiskUse: true });
 
   var sampleArray = sample.toArray();
 
   if (sampleArray.length === 0) {
-    return [{name: 'Other', size: totalSize}];
+    return [{ name: 'Other', size: totalSize }];
   }
-    dbk_Cs.sizeSample(sampleArray, ['total']);
-
+  dbk_Cs.sizeSample(sampleArray, ['total']);
 
   output = dbk_Cs.sizes;
   var sampleTotal = output.total;

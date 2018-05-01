@@ -55,21 +55,21 @@ class RemoteExecController {
           client.shell(
             false,
             {
-              pty: true,
+              pty: true
             },
             (err, stream) => {
               if (err) {
                 return reject(err);
               }
               stream.setEncoding('utf8');
-              stream.on('data', (data) => {
+              stream.on('data', data => {
                 console.log('Stream :: data :', data);
                 that.processData(id, data);
               });
               stream.on('finish', () => {
                 console.log('Stream :: finish');
               });
-              stream.stderr.on('data', (data) => {
+              stream.stderr.on('data', data => {
                 console.log('Stream :: strerr :: Data :', data);
                 that.processData(id, data);
               });
@@ -81,10 +81,10 @@ class RemoteExecController {
               });
               this.connections[id].stream = stream;
               resolve({ status: 'SUCCESS', id });
-            },
+            }
           );
         })
-        .on('error', (err) => {
+        .on('error', err => {
           reject(new errors.BadRequest('Client Error: ' + err.message));
         })
         .connect(_.omit(params, 'cwd'));
@@ -179,7 +179,7 @@ module.exports = function() {
     remove: hooks.disallow('external'),
     update: hooks.disallow('external'),
     find: hooks.disallow('external'),
-    get: hooks.disallow('external'),
+    get: hooks.disallow('external')
   });
 
   // Set up our after hooks

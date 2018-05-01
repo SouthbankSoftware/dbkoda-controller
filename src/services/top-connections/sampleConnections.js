@@ -40,8 +40,8 @@ export default (options: {
   connection: *
 }) => {
   const { profileId, n, samplingTime, samplingRate, dev, service, connection } = options;
-  const { driver } = connection;
-  const adminDb = driver.admin();
+  const { db } = connection;
+  const adminDb = db.admin();
   let startTime;
   let intervalId;
   let timeoutId;
@@ -131,6 +131,7 @@ export default (options: {
               return;
             }
 
+            // @Mike TODO: Maybe convert this to a flag in the service call, so users can confgigure option on front end.
             // uncomment this if we don't want our `command({ currentOp: 1 })`s themselves in the
             // results
             // if (op === 'command' && _.isEqual(query, { currentOp: 1 })) {

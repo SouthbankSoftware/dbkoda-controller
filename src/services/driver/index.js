@@ -31,12 +31,14 @@ class DriverService {
     this.docs = {
       put: {
         description: 'Run script through mongodb driver',
-        parameters: [{
-          in: 'query',
-          name: 'commands',
-          type: 'string',
-        }]
-      },
+        parameters: [
+          {
+            in: 'query',
+            name: 'commands',
+            type: 'string'
+          }
+        ]
+      }
     };
   }
 
@@ -50,8 +52,8 @@ class DriverService {
     const connect = this.connection.connections[id];
     const shellId = data.shellId;
     const driver = new Driver(connect);
-    driver.on(Driver.OUTPUT, (o) => {
-      this.shellService.emit('shell-output', {output: o + '\r', id, shellId});
+    driver.on(Driver.OUTPUT, o => {
+      this.shellService.emit('shell-output', { output: o + '\r', id, shellId });
     });
     try {
       return driver.runCommands(data.commands);
@@ -62,7 +64,7 @@ class DriverService {
   }
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires

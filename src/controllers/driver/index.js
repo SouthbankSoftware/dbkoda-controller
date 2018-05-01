@@ -40,11 +40,11 @@ export default class Driver extends EventEmitter {
     // console.oldlog = console.log;
     log.debug(`run ${driverCmds} on driver`);
     // console.olderror = console.error;
-    const evalLog = (value) => {
+    const evalLog = value => {
       log.debug('emit output', value);
       this.emit(Driver.OUTPUT, value);
     };
-    const dbkodaConsole = {log: evalLog, error: evalLog};  // eslint-disable-line
+    const dbkodaConsole = { log: evalLog, error: evalLog }; // eslint-disable-line
     // console.log = evalLog;
     // console.error = evalLog;
     try {

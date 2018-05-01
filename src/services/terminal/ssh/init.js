@@ -38,7 +38,7 @@ export default async (context, item) => {
     passphrase,
     profileId,
     usePasswordStore,
-    size,
+    size
   } = item;
   const { service } = context;
   const { passwordService } = service;
@@ -74,8 +74,8 @@ export default async (context, item) => {
         { ...size, term: 'xterm' },
         {
           env: {
-            LANG: 'en_AU.UTF-8',
-          },
+            LANG: 'en_AU.UTF-8'
+          }
         },
         (err, stream) => {
           if (err) {
@@ -85,7 +85,7 @@ export default async (context, item) => {
           }
 
           const terminal = service.terminals.get(_id);
-          const onData = (payload) => {
+          const onData = payload => {
             if (terminal && terminal.debug) {
               l.debug(`SSH Terminal ${_id}: ${JSON.stringify(payload)}`);
             }
@@ -107,16 +107,16 @@ export default async (context, item) => {
             })
             .on('data', onData)
             .stderr.on('data', onData)
-            .on('error', (error) => {
+            .on('error', error => {
               l.error(`SSH Terminal ${_id} stream error`, error);
               service.emitError(_id, error.message);
             });
 
           terminal.stream = stream;
-        },
+        }
       );
     })
-    .on('error', (error) => {
+    .on('error', error => {
       l.error(`SSH Terminal ${_id} error`, error);
       service.emitError(_id, error.message);
     })
@@ -126,7 +126,7 @@ export default async (context, item) => {
       host,
       port,
       privateKey,
-      passphrase,
+      passphrase
     });
 
   return { client };

@@ -30,17 +30,17 @@ const Buffer = require('./buffer');
 
 const normalStateHandler = {};
 
-normalStateHandler[escapeSequence.CR] = (parser) => {
+normalStateHandler[escapeSequence.CR] = parser => {
   parser.bufferX = 0;
 };
 
-normalStateHandler[escapeSequence.LF] = (parser) => {
+normalStateHandler[escapeSequence.LF] = parser => {
   parser.bufferX = 0;
   parser.bufferY += 1;
   parser.buffers.push(new Buffer()); // eslint-disable-line no-buffer-constructor
 };
 
-normalStateHandler[escapeSequence.ESC] = (parser) => {
+normalStateHandler[escapeSequence.ESC] = parser => {
   parser.state = ParserState.ESCAPED;
 };
 
@@ -48,16 +48,16 @@ normalStateHandler[escapeSequence.ESC] = (parser) => {
  * check escape character. set the related parser state for each character
  */
 const escapedStateHandler = {
-  '[': (parser) => {
+  '[': parser => {
     parser.params = [];
     parser.currentParam = 0;
     parser.state = ParserState.CSI_PARAM;
-  },
+  }
 };
 
 const csiNumberParamHandler = (parser, param) => {
   const i = parseInt(param, 10);
-  parser.currentParam = (parser.currentParam * 10) + i;
+  parser.currentParam = parser.currentParam * 10 + i;
 };
 
 /**
@@ -74,14 +74,14 @@ const csiStateParameterHandler = {
   '7': parser => csiNumberParamHandler(parser, 7),
   '8': parser => csiNumberParamHandler(parser, 8),
   '9': parser => csiNumberParamHandler(parser, 9),
-  '?': parser => parser.prefix = '?',
-  '>': parser => parser.prefix = '>',
-  '!': parser => parser.prefix = '!',
-  '$': parser => parser.postfix = '$',
-  '"': parser => parser.postfix = '"',
-  ' ': parser => parser.postfix = ' ',
-  '\'': parser => parser.postfix = '\'',
-  ';': parser => parser.finalizeParam(),
+  '?': parser => (parser.prefix = '?'),
+  '>': parser => (parser.prefix = '>'),
+  '!': parser => (parser.prefix = '!'),
+  $: parser => (parser.postfix = '$'),
+  '"': parser => (parser.postfix = '"'),
+  ' ': parser => (parser.postfix = ' '),
+  "'": parser => (parser.postfix = "'"),
+  ';': parser => parser.finalizeParam()
 };
 
 const cursorCharAbsolute = (parser, params) => {
@@ -149,28 +149,31 @@ const eraseInLine = (parser, params) => {
 };
 
 const csiStateHandler = {
-  'G': (parser, params) => {
+  G: (parser, params) => {
     cursorCharAbsolute(parser, params);
   },
-  'H': (parser, params) => {
+  H: (parser, params) => {
     cursorCharAbsolute(parser, params); // cursorPosition
   },
-  'J': (parser, params) => {
+  J: (parser, params) => {
     eraseInDisplay(parser, params);
   },
-  'K': (parser, params) => {
+  K: (parser, params) => {
     eraseInLine(parser, params);
   },
-  'h': () => { // set mode
+  h: () => {
+    // set mode
     l.debug('unhandled character h');
   },
-  'm': () => { // set color
+  m: () => {
+    // set color
     l.debug('unhandled character m');
   },
-  'l': () => {
+  l: () => {
     l.debug('unhandled character l');
   }, // reset mode
-  'A': (parser, params) => { // cursor up
+  A: (parser, params) => {
+    // cursor up
     let num = 0;
     if (params && params.length > 0) {
       num = params[0];
@@ -183,45 +186,50 @@ const csiStateHandler = {
       parser.buffers = parser.buffers.splice(parser.bufferY, num);
     }
   },
-  'B': () => {
+  B: () => {
     l.debug('unhandled character B');
   }, // cursor down
-  'C': () => {
+  C: () => {
     l.debug('unhandled character C');
   }, // cursorForward
-  'D': () => {
+  D: () => {
     l.debug('unhandled character D');
   }, // cursorBackward
-  'E': () => {
+  E: () => {
     l.debug('unhandled character E');
   }, // cursorNextLine
-  'F': () => {
+  F: () => {
     l.debug('unhandled character F');
   }, // cursorPrecedingLine
-  'I': () => {
+  I: () => {
     l.debug('unhandled character I');
   }, // cursorForwardTab
-  'L': () => {
+  L: () => {
     l.debug('unhandled character L');
   }, // insert line
-  'M': () => {
+  M: () => {
     l.debug('unhandled character M');
   }, // delete line
-  'P': () => {
+  P: () => {
     l.debug('unhandled character P');
   }, // delete char
-  'S': () => {
+  S: () => {
     l.debug('unhandled character S');
   }, // scroll up
-  'T': () => {
+  T: () => {
     l.debug('unhandled character T');
   }, // scroll down
-  'X': () => {
+  X: () => {
     l.debug('unhandled character X');
   }, // eraseChars
-  'Z': () => {
+  Z: () => {
     l.debug('unhandled character Z');
-  }, // cursorBackwardTab
+  } // cursorBackwardTab
 };
 
-module.exports = {escapedStateHandler, csiStateParameterHandler, csiStateHandler, normalStateHandler};
+module.exports = {
+  escapedStateHandler,
+  csiStateParameterHandler,
+  csiStateHandler,
+  normalStateHandler
+};

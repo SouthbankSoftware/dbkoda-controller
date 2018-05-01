@@ -66,8 +66,8 @@ dbeSS.flattenServerStatus = function(dbServerStatus) {
     Object.getOwnPropertyNames(serverStatus).forEach(function(key) {
       if (key !== '_mongo') {
         var value = serverStatus[key];
-        if (value.constructor === NumberLong) { // eslint-disable-line
-          // eslint-disable-line
+        // eslint-disable-next-line
+        if (value.constructor === NumberLong) {
           value = value.toNumber();
         }
         var valtype = typeof value;
@@ -204,20 +204,17 @@ dbeSS.summary = function(sample1, sample2) {
   // print(deltas['opLatencies.reads.ops']);
   if (deltas['opLatencies.reads.ops'].delta > 0) {
     data.readLatency =
-      deltas['opLatencies.reads.latency'].delta /
-      deltas['opLatencies.reads.ops'].delta;
+      deltas['opLatencies.reads.latency'].delta / deltas['opLatencies.reads.ops'].delta;
   } else data.readLatency = 0;
 
   if (deltas['opLatencies.writes.ops'].delta > 0) {
     data.writeLatency =
-      deltas['opLatencies.writes.latency'].delta /
-      deltas['opLatencies.writes.ops'].delta;
+      deltas['opLatencies.writes.latency'].delta / deltas['opLatencies.writes.ops'].delta;
   } else data.writeLatency = 0;
 
   if (deltas['opLatencies.commands.ops'].delta > 0) {
     data.cmdLatency =
-      deltas['opLatencies.commands.latency'].delta /
-      deltas['opLatencies.commands.ops'].delta;
+      deltas['opLatencies.commands.latency'].delta / deltas['opLatencies.commands.ops'].delta;
   } else data.cmdLatency = 0;
 
   data.connections = deltas['connections.current'].lastValue;

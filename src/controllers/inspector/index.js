@@ -52,36 +52,36 @@ class InspectorController {
       l.error('cant find connection with the id ', id);
       throw new errors.BadRequest('cant find connection with the id ' + id);
     }
-    const db = connection.driver;
+    const { db, driver } = connection;
 
     return new Promise((resolve, reject) => {
       db
-        .command({isMaster: 1})
-        .then((value) => {
-          if (value.configsvr || db.serverConfig.constructor == mongodb.Mongos) {
+        .command({ isMaster: 1 })
+        .then(() => {
+          if (driver.topology.constructor == mongodb.Mongos) {
             l.info('inspect mongo os');
-            const configTree = this.shardsInspector.inspect(db);
+            const configTree = this.shardsInspector.inspect(driver, db);
             return configTree;
           }
           l.info('inspect mongo instance');
-          const configTree = this.serverInspector.inspect(db);
+          const configTree = this.serverInspector.inspect(driver, db);
           return configTree;
         })
-        .then((v) => {
-          resolve({profileId: id, result: v});
+        .then(v => {
+          resolve({ profileId: id, result: v });
         })
-        .catch((err) => {
+        .catch(err => {
           l.error('failed to run is master ', err);
           reject(err);
         });
-    }).catch((err) => {
+    }).catch(err => {
       l.error('failed to inspect mongo server ', err);
       return new errors.BadRequest(err);
     });
   }
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires
@@ -93,7 +93,7 @@ module.exports = function () {
     remove: hooks.disallow('external'),
     update: hooks.disallow('external'),
     find: hooks.disallow('external'),
-    get: hooks.disallow('external'),
+    get: hooks.disallow('external')
   });
   app.service('mongo/inspector/controller').after({
     // Users can not be created by external access
@@ -101,7 +101,7 @@ module.exports = function () {
     remove: hooks.disallow('external'),
     update: hooks.disallow('external'),
     find: hooks.disallow('external'),
-    get: hooks.disallow('external'),
+    get: hooks.disallow('external')
   });
   return service;
 };

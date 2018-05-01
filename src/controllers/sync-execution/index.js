@@ -36,9 +36,7 @@ class SyncExecutionController {
   setup(app) {
     this.emitter = new EventEmitter();
     this.requestQueue = [];
-    this
-      .emitter
-      .on('command::finished', this.commandFinished.bind(this));
+    this.emitter.on('command::finished', this.commandFinished.bind(this));
     this.app = app;
     this.mongoController = app.service('mongo/connection/controller');
   }
@@ -48,9 +46,7 @@ class SyncExecutionController {
    */
   writeSyncCommand(id, shellId, commands, responseType = 'json') {
     // this.output = '';
-    const shell = this
-      .mongoController
-      .getMongoShell(id, shellId);
+    const shell = this.mongoController.getMongoShell(id, shellId);
     const newCmd = commands.replace(/\r/g, '');
     // if (shell.isShellBusy()) {
     //   log.debug('shell is busy, put command in queue');
@@ -62,9 +58,7 @@ class SyncExecutionController {
     //   });
     // }
     return new Promise((resolve, reject) => {
-      this
-        .requestQueue
-        .push({ shell, commands: newCmd, resolve, reject, responseType });
+      this.requestQueue.push({ shell, commands: newCmd, resolve, reject, responseType });
       this.runSyncCommandFromQueue();
     });
   }
@@ -93,9 +87,10 @@ class SyncExecutionController {
     this.requestQueue = newQueue;
   }
 
-  formatCommand(commands) { // eslint-disable-line
+  // eslint-disable-next-line
+  formatCommand(commands) {
     if (commands.indexOf('\n') >= 0) {
-      const formatted = commands.split('\n').map((cmd) => {
+      const formatted = commands.split('\n').map(cmd => {
         return cmd.replace(/\/\/.*/, '');
       });
       return formatted.join(' ');
@@ -108,12 +103,12 @@ class SyncExecutionController {
     const formatetedCmds = this.formatCommand(commands);
     const shellOutputs = [];
     shell.on(MongoShell.SYNC_OUTPUT_EVENT, this.outputListener.bind(this, shellOutputs));
-    const syncExecutEnd = (data) => {
+    const syncExecutEnd = data => {
       log.debug('execution ended ', shellOutputs.join('\n'));
       shell.removeAllListeners(MongoShell.SYNC_OUTPUT_EVENT);
       shell.removeAllListeners(MongoShell.SYNC_EXECUTE_END);
-      const filterThreeDot = shellOutputs.map((o) => {
-        return o.replace(/^[\s]*[\.]*/, '');  // eslint-disable-line
+      const filterThreeDot = shellOutputs.map(o => {
+        return o.replace(/^[\s]*[\.]*/, ''); // eslint-disable-line
       });
       let output = filterThreeDot.join('\n') + data;
       log.debug('all sync output ', output);
@@ -146,9 +141,7 @@ class SyncExecutionController {
       } else {
         resolve(shellOutputs.join('\n') + data);
       }
-      this
-        .emitter
-        .emit('command::finished', formatetedCmds);
+      this.emitter.emit('command::finished', formatetedCmds);
     };
     shell.on(MongoShell.SYNC_EXECUTE_END, syncExecutEnd.bind(this));
     this.currentCommand = { shell, formatetedCmds, resolve, responseType };
@@ -158,17 +151,25 @@ class SyncExecutionController {
   /**
    * Execute the command to change the shellID to the new Profile connection.
    */
-  swapProfile(id, shellId, newProfile) { //eslint-disable-line
+  swapProfile(id, shellId, newProfile) {
+    //eslint-disable-line
     const url = this.mongoController.connections[newProfile].url;
     const pw = this.mongoController.connections[newProfile].password;
     const username = this.mongoController.connections[newProfile].username;
     let commands = 'var db = ';
-    if (this.mongoController.connections[newProfile].shellVersion.match(/^3.0.*/gi) ||
+    if (
+      this.mongoController.connections[newProfile].shellVersion.match(/^3.0.*/gi) ||
       this.mongoController.connections[newProfile].shellVersion.match(/^3.1.*/gi) ||
-      this.mongoController.connections[newProfile].shellVersion.match(/^3.2.*/gi)) {
-      l.info('!! WARNING: Running on outdated version of MongoShell, connection must be assigned to a variable. !!');
+      this.mongoController.connections[newProfile].shellVersion.match(/^3.2.*/gi)
+    ) {
+      l.info(
+        '!! WARNING: Running on outdated version of MongoShell, connection must be assigned to a variable. !!'
+      );
     } else {
-      l.info('Old shell version not detected, version detected: ', this.mongoController.connections[newProfile].shellVersion);
+      l.info(
+        'Old shell version not detected, version detected: ',
+        this.mongoController.connections[newProfile].shellVersion
+      );
     }
     if (username && pw) {
       commands += 'connect("' + url + '", "' + username + '", "' + pw + '")';
@@ -189,45 +190,38 @@ class SyncExecutionController {
       }
       throw new errors.BadRequest('Connection does not exist');
     } else {
-      shell = this
-        .mongoController
-        .getMongoShell(id, shellId);
+      shell = this.mongoController.getMongoShell(id, shellId);
     }
     if (shell.isShellBusy()) {
-      return new Promise((resolve) => {
-        this
-          .requestQueue
-          .push({ shell, commands, resolve });
+      return new Promise(resolve => {
+        this.requestQueue.push({ shell, commands, resolve });
       });
     }
-    return new Promise((resolve) => {
-      this
-        .requestQueue
-        .push({ shell, commands, resolve });
+    return new Promise(resolve => {
+      this.requestQueue.push({ shell, commands, resolve });
       this.runSyncCommandFromQueue();
     });
   }
 
-  outputListener(shellOutputs, data) { // eslint-disable-line
+  // eslint-disable-next-line
+  outputListener(shellOutputs, data) {
     shellOutputs.push(data);
   }
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
   // Initialize our service with any options it requires
   const service = new SyncExecutionController();
   app.use('mongo/sync-execution/controller', service);
-  app
-    .service('mongo/sync-execution/controller')
-    .before({
-      // Users can not be created by external access
-      create: hooks.disallow('external'),
-      remove: hooks.disallow('external'),
-      update: hooks.disallow('external'),
-      find: hooks.disallow('external'),
-      get: hooks.disallow('external')
-    });
+  app.service('mongo/sync-execution/controller').before({
+    // Users can not be created by external access
+    create: hooks.disallow('external'),
+    remove: hooks.disallow('external'),
+    update: hooks.disallow('external'),
+    find: hooks.disallow('external'),
+    get: hooks.disallow('external')
+  });
   return service;
 };
 

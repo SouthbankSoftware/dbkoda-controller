@@ -183,11 +183,12 @@ export default class StatsCalculator extends Transformer {
   };
 
   transform = (value: ObservaleValue): ObservaleValue => {
-    this._calculateNextStats(this._statsManifest, value.value);
+    if (!value.ignoreStats) {
+      this._calculateNextStats(this._statsManifest, value.value);
 
-    // $FlowFixMe
-    value.stats = this._statsManifest;
-
+      // $FlowFixMe
+      value.stats = this._statsManifest;
+    }
     return value;
   };
 }

@@ -28,7 +28,7 @@ import _ from 'lodash';
  *
  * @returns {*}
  */
-export const findRules = ({osType, release, version}, rules) => {
+export const findRules = ({ osType, release, version }, rules) => {
   let matchedOs = [];
   _.forOwn(rules, (value, key) => {
     if (key === osType.toLowerCase()) {
@@ -43,7 +43,7 @@ export const findRules = ({osType, release, version}, rules) => {
     return matchedOs[0];
   }
   const matchedRelease = [];
-  matchedOs.forEach((mos) => {
+  matchedOs.forEach(mos => {
     if (mos.release.toLowerCase().indexOf(release.toLowerCase()) >= 0 || mos.release === 'all') {
       matchedRelease.push(mos);
     }
@@ -60,8 +60,8 @@ export const findRules = ({osType, release, version}, rules) => {
     return matchedRelease[0];
   }
   const matchedVersion = [];
-  matchedRelease.forEach((rel) => {
-    if (rel.version && rel.version.indexOf(version) >= 0 || rel.version === 'all') {
+  matchedRelease.forEach(rel => {
+    if ((rel.version && rel.version.indexOf(version) >= 0) || rel.version === 'all') {
       matchedVersion.push(rel);
     }
     // if (rel.version === 'all') {
@@ -84,7 +84,7 @@ export const findRules = ({osType, release, version}, rules) => {
  *  counter: 10
  * }
  */
-export const buildCommand = (obj) => {
+export const buildCommand = obj => {
   if (!obj || !obj.cmd) {
     return null;
   }
@@ -92,7 +92,7 @@ export const buildCommand = (obj) => {
   const match = obj.cmd.match(/\$[^\s]*/g);
   const replaceMap = {};
   if (match && match.length > 0) {
-    match.forEach((str) => {
+    match.forEach(str => {
       const cmd = str.replace('$', '');
       if (obj[cmd]) {
         replaceMap[str] = obj[cmd];
@@ -107,10 +107,10 @@ export const buildCommand = (obj) => {
   return command;
 };
 
-export const buildCommands = (knowledgebase) => {
+export const buildCommands = knowledgebase => {
   const cmds = {};
   _.forOwn(knowledgebase.cmds, (v, k) => {
-    cmds[k] = buildCommand({cmd: v});
+    cmds[k] = buildCommand({ cmd: v });
   });
   return cmds;
 };

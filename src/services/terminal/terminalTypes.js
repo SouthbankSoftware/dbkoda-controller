@@ -26,5 +26,5 @@
 
 export default {
   local: 'local',
-  ssh: 'ssh',
+  ssh: 'ssh'
 };

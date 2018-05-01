@@ -3,7 +3,7 @@
  * @Date:   2017-10-31T09:22:47+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-12T22:12:32+11:00
+ * @Last modified time: 2018-05-01T17:13:33+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -23,23 +23,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+import _ from 'lodash';
 import app from './app';
+import { toggleRaygun, setUser, setExitOnUnhandledError } from './helpers/raygun';
 
 const _port = parseInt(process.env.CONTROLLER_PORT, 10);
 const port = !Number.isNaN(_port) ? _port : app.get('port');
 
-const onUnhandledRejection = reason => {
-  l.error('Unhandled rejection: ', reason);
-};
-
-const onUncaughtException = err => {
-  l.error('Unhandled error: ', err);
+const closeConnections = () => {
+  l.info('remove connections.');
+  const ctr = app.service('mongo/connection/controller');
+  const { connections } = ctr;
+  l.info('remove connections.', connections);
+  if (connections) {
+    _.keys(connections).forEach(conn => ctr.remove(conn));
+  }
 };
 
 const handleShutdown = err => {
-  process.removeListener('unhandledRejection', onUnhandledRejection);
-  process.removeListener('uncaughtException', onUncaughtException);
+  // crash controller if unhandled error happens during shutting down phase
+  setExitOnUnhandledError(true);
+  closeConnections();
 
   // Exitpoint
   app
@@ -58,17 +62,34 @@ const handleShutdown = err => {
 };
 
 app.once('ready', () => {
+  // don't crash controller if unhandled error happens during runtime
+  setExitOnUnhandledError(false);
+
+  setUser(_.get(global.config, 'user'));
+  // BUG: it has to be toggled off first, then it can toggle freely; otherwise, toggle on will throw
+  // an exception
+  toggleRaygun(false);
+  toggleRaygun(_.get(global.config, 'telemetryEnabled'));
+
+  app.service('config').on('changed', changed => {
+    if (_.has(changed, 'user.id')) {
+      setUser(_.get(global.config, 'user'));
+    }
+
+    if (_.has(changed, 'telemetryEnabled')) {
+      toggleRaygun(_.get(global.config, 'telemetryEnabled'));
+    }
+  });
+
   // register shutting down events
   process.on('SIGINT', handleShutdown);
   process.on('SIGTERM', handleShutdown);
   process.on('SIGHUP', handleShutdown);
   process.on('SIGQUIT', handleShutdown);
 
-  process.on('unhandledRejection', onUnhandledRejection);
-  process.on('uncaughtException', onUncaughtException);
-
   l.notice(`dbKoda Controller is ready at ${app.get('host')}:${port}`);
 });
+
 if (process.env.NODE_ENV !== 'production') {
   // in non-production mode, enable source map for stack tracing
   require('source-map-support/register');

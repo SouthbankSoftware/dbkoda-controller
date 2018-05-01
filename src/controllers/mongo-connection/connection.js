@@ -39,6 +39,7 @@ class MongoConnection {
     this.hosts = conn.hosts;
     this.options = conn.options;
     this.database = conn.database;
+    this.db = driver.db(this.database);
     this.connectionParameters = conn;
     this.requireSlaveOk = conn.requireSlaveOk;
     this.authenticationDatabase = conn.authenticationDatabase;

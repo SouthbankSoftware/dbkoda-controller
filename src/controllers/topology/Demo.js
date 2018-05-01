@@ -22,11 +22,10 @@
  */
 /* eslint-disable */
 
-
 global.log = {
   info: msg => console.log(msg),
   error: msg => console.error(msg),
-  debug: msg => console.debug(msg),
+  debug: msg => console.debug(msg)
 };
 global.l = global.log;
 
@@ -39,9 +38,6 @@ MongoClient.connect(url, function(err, db) {
   if (err) throw err;
 
   const monitor = new TopologyMonitor();
-  monitor.init({mongoConnection: {driver: db, dbVersion: '3.6'}});
-  monitor.rxObservable.subscribe(
-    x => console.log('get sub ', x),
-    (e) => console.log('error ',e)
-  )
+  monitor.init({ mongoConnection: { driver: db, dbVersion: '3.6' } });
+  monitor.rxObservable.subscribe(x => console.log('get sub ', x), e => console.log('error ', e));
 });

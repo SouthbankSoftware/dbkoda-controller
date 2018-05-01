@@ -88,14 +88,16 @@ dbkTopConnections.sample = function(sampleTime, sleepTime) {
         host: ip.host,
         appName: ip.appName,
         client: ip.client,
-        lastCommand:null,
-        lastns:null,
-        planSummary:null,
+        lastCommand: null,
+        lastns: null,
+        planSummary: null,
         ops: {}
       };
     }
-    if (ip.opid in connections[ip.connectionId].ops) { // we've seen this op already
-      if (connections[ip.connectionId].ops[ip.opid].us < ip.us_running) { // update time elasped
+    if (ip.opid in connections[ip.connectionId].ops) {
+      // we've seen this op already
+      if (connections[ip.connectionId].ops[ip.opid].us < ip.us_running) {
+        // update time elasped
         connections[ip.connectionId].ops[ip.opid].us = ip.us_running;
         connections[ip.connectionId].ops[ip.opid].currentOpTime = ip.currentOpTime;
       }
@@ -133,39 +135,44 @@ dbkTopConnections.sample = function(sampleTime, sleepTime) {
 
   // Then sort by using the keys to lookup the values in the original object:
   var connectionsByUs = connectionIds.sort(function(a, b) {
-    return (connections[b].us - connections[a].us);
+    return connections[b].us - connections[a].us;
   });
 
-   dbkTopConnections.dbkCurrentSample = {
-    connections:connections,
-    connectionsByUs:connectionsByUs
+  dbkTopConnections.dbkCurrentSample = {
+    connections: connections,
+    connectionsByUs: connectionsByUs
   };
-  return (dbkTopConnections.dbkCurrentSample);
+  return dbkTopConnections.dbkCurrentSample;
 };
 
 dbkTopConnections.top5 = function(sampleTime, sleepTime) {
-   dbkTopConnections.sample(sampleTime, sleepTime);
-    dbkTopConnections.dbkCurrentSample.connectionsByUs.slice(0, 5).forEach(function(c) {
-          var connection = dbkTopConnections.dbkCurrentSample.connections[c];
-          print (connection.client,connection.lastOp,connection.planSummary,connection.lastns,JSON.stringify(connection.lastCommand).substring(0,30),connection.us); // eslint-disable-line
-     });
+  dbkTopConnections.sample(sampleTime, sleepTime);
+  dbkTopConnections.dbkCurrentSample.connectionsByUs.slice(0, 5).forEach(function(c) {
+    var connection = dbkTopConnections.dbkCurrentSample.connections[c];
+    // eslint-disable-next-line
+    print(
+      connection.client,
+      connection.lastOp,
+      connection.planSummary,
+      connection.lastns,
+      JSON.stringify(connection.lastCommand).substring(0, 30),
+      connection.us
+    );
+  });
 };
 
-dbkTopConnections.toCollection = function( ) {
- 
+dbkTopConnections.toCollection = function() {
   db.topConnections.drop();
-  var connections=[];
-  Object.keys(dbkTopConnections.dbkCurrentSample.connections).forEach(function(c){
-    var data=dbkTopConnections.dbkCurrentSample.connections[c];
-    //if ('$db' in data.lastCommand) delete data.lastCommand['$db'];
+  Object.keys(dbkTopConnections.dbkCurrentSample.connections).forEach(function(c) {
+    var data = dbkTopConnections.dbkCurrentSample.connections[c];
+    // if ('$db' in data.lastCommand) delete data.lastCommand['$db'];
     Object.keys(data.ops).forEach(function(op) {
-      //printjson(data.ops[op].command); 
-      //if ('$db' in data.ops[op].command) delete data.ops[op].command['$db'];
-      data.ops[op].command='find';
+      // printjson(data.ops[op].command);
+      // if ('$db' in data.ops[op].command) delete data.ops[op].command['$db'];
+      data.ops[op].command = 'find';
     });
-    data.lastCommand='find';
-    //printjson(data);
+    data.lastCommand = 'find';
+    // printjson(data);
     db.topConnections.insert(data);
   });
-}
- 
+};

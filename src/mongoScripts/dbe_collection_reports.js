@@ -27,87 +27,95 @@
 
 var dbeCR = {};
 
-dbeCR.getCache = function (dbName, collectionName) {
-    // Get out all the plan cache entries for a query
-    var mydb = db.getSiblingDB(dbName); // eslint-disable-line
-    var planCache = [];
-    var plans;
-    var collection = mydb.getSiblingDB(dbName).getCollection(collectionName); // eslint-
-    collection.getPlanCache().listQueryShapes().forEach(function(qs) {
-        var planCacheEntry = {};
-        planCacheEntry.queryShape = qs;
-         plans = collection.getPlanCache()
-        .getPlansByQuery(qs.query, qs.sort, qs.projection);
-        plans.sort(function(a, b) {
-            return b.reason.score - a.reason.score;
-        });
-        planCacheEntry.winningPlan = plans[0];
-        planCache.push(planCacheEntry);
+dbeCR.getCache = function(dbName, collectionName) {
+  // Get out all the plan cache entries for a query
+  var mydb = db.getSiblingDB(dbName); // eslint-disable-line
+  var planCache = [];
+  var plans;
+  var collection = mydb.getSiblingDB(dbName).getCollection(collectionName); // eslint-
+  collection
+    .getPlanCache()
+    .listQueryShapes()
+    .forEach(function(qs) {
+      var planCacheEntry = {};
+      planCacheEntry.queryShape = qs;
+      plans = collection.getPlanCache().getPlansByQuery(qs.query, qs.sort, qs.projection);
+      plans.sort(function(a, b) {
+        return b.reason.score - a.reason.score;
+      });
+      planCacheEntry.winningPlan = plans[0];
+      planCache.push(planCacheEntry);
     });
-    return planCache;
+  return planCache;
 };
 
 dbeCR.getStats = function(dbName, collectionName) {
-    var mydb = db.getSiblingDB(dbName); // eslint-disable-line
-    var collection = mydb.getSiblingDB(dbName).getCollection(collectionName);
-    return (collection.stats());
+  var mydb = db.getSiblingDB(dbName); // eslint-disable-line
+  var collection = mydb.getSiblingDB(dbName).getCollection(collectionName);
+  return collection.stats();
 };
 
 dbeCR.getProfileData = function(dbName, collectionName) {
-        var mydb = db.getSiblingDB(dbName); // eslint-disable-line
-    var ns = dbName + '.' + collectionName;
-    var profileData = mydb.getSiblingDB(dbName).getCollection('system.profile').aggregate([{
-            $match: {
-                'ns': ns,
-                'op': 'query'
-            }
-        },
-        {
-            $group: {
-                _id: {
-                    'filter': '$query.filter'
-                },
-                'count': {
-                    $sum: 1
-                },
-                'millis-sum': {
-                    $sum: '$millis'
-                },
-                'nreturned-sum': {
-                    $sum: '$nreturned'
-                },
-                'planSummary-first': {
-                    $first: '$planSummary'
-                },
-                'docsExamined-sum': {
-                    $sum: '$docsExamined'
-                }
-            }
-        },
-        {
-            $sort: {
-                'millis-sum': -1
-            }
+  var mydb = db.getSiblingDB(dbName); // eslint-disable-line
+  var ns = dbName + '.' + collectionName;
+  var profileData = mydb
+    .getSiblingDB(dbName)
+    .getCollection('system.profile')
+    .aggregate([
+      {
+        $match: {
+          ns: ns,
+          op: 'query'
         }
+      },
+      {
+        $group: {
+          _id: {
+            filter: '$query.filter'
+          },
+          count: {
+            $sum: 1
+          },
+          'millis-sum': {
+            $sum: '$millis'
+          },
+          'nreturned-sum': {
+            $sum: '$nreturned'
+          },
+          'planSummary-first': {
+            $first: '$planSummary'
+          },
+          'docsExamined-sum': {
+            $sum: '$docsExamined'
+          }
+        }
+      },
+      {
+        $sort: {
+          'millis-sum': -1
+        }
+      }
     ]);
-    return (profileData);
+  return profileData;
 };
 
-dbeCR.collStats = function (dbName) {
+dbeCR.collStats = function(dbName) {
   var myDB = db.getSiblingDB(dbName); // eslint-disable-line
   var collArr = [];
   var result = {};
   myDB.getCollectionNames().forEach(function(cname) {
     var stats = myDB.getCollection(cname).stats();
-   // printjson(stats);
+    // printjson(stats);
     collArr.push({
-      'ns':stats.ns,
-      'count':stats.count,
-      'storageSizeMB':stats.storageSize / 1048576,
-      'totalIndexSizeMB':stats.totalIndexSize / 1048576
+      ns: stats.ns,
+      count: stats.count,
+      storageSizeMB: stats.storageSize / 1048576,
+      totalIndexSizeMB: stats.totalIndexSize / 1048576
     });
   });
-  collArr.sort(function (a, b) { return (b.storageSizeMB - a.storageSizeMB); });
+  collArr.sort(function(a, b) {
+    return b.storageSizeMB - a.storageSizeMB;
+  });
   result.collStats = collArr;
-  return (result);
+  return result;
 };

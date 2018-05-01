@@ -1,6 +1,11 @@
 /**
+ * @flow
+ *
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2018-04-27T11:25:23+10:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-13T22:39:30+11:00
+ * @Last modified time: 2018-04-27T11:27:26+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,23 +26,5 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const configObj = global.config; // should be read-only
-const JDBC = require('jdbc');
-const jinst = require('jdbc/lib/jinst');
-
-if (!jinst.isJvmCreated()) {
-  const drillJdbcClassPath = configObj.drillCmd +
-    '/jars/jdbc-driver/drill-jdbc-all-1.11.0.jar';
-  jinst.addOption('-Xrs');
-  jinst.setupClasspath([drillJdbcClassPath]);
-}
-
-exports.getJdbcInstance = function(conf, callback) {
-  const drill = new JDBC(conf);
-  drill.initialize((err) => {
-    if (err) {
-      return callback(err);
-    }
-    return callback(null, drill);
-  });
-};
+// $FlowFixMe
+require('pkginfo')(module, 'version', 'apiKey');

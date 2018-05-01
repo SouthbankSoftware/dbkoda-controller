@@ -44,8 +44,8 @@ class AutoCompleteController {
     const shell = this.mongoController.getMongoShell(id, shellId);
     shell.writeAutoComplete("shellAutocomplete('" + command + "');__autocomplete__\n");
 
-    return new Promise((resolve) => {
-      const listener = (data) => {
+    return new Promise(resolve => {
+      const listener = data => {
         const output = data.replace('[', '').replace(']', '');
         let array = output.split(',');
         array = array.map(a => a.trim().replace(/"/g, ''));
@@ -102,7 +102,7 @@ module.exports = function() {
     remove: hooks.disallow('external'),
     update: hooks.disallow('external'),
     find: hooks.disallow('external'),
-    get: hooks.disallow('external'),
+    get: hooks.disallow('external')
   });
   return service;
 };

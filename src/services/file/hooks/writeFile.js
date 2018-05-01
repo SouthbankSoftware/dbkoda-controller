@@ -32,13 +32,15 @@ import path from 'path';
 
 const ENCODING = 'utf8';
 
-export default _options => (hook) => {
-  const { service: { watcher } } = hook;
+export default _options => hook => {
+  const {
+    service: { watcher }
+  } = hook;
   let items = getItems(hook);
   const isArray = Array.isArray(items);
   items = isArray ? items : [items];
 
-  const processItem = (item) => {
+  const processItem = item => {
     const { _id, content } = item;
 
     if (item.watching === undefined) {
@@ -54,7 +56,7 @@ export default _options => (hook) => {
 
     watcher.unwatch(_id);
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       try {
         fs.writeFile(
           _id,
@@ -62,7 +64,7 @@ export default _options => (hook) => {
           {
             encoding: ENCODING
           },
-          (err) => {
+          err => {
             if (err) {
               return resolve(
                 new errors.Unprocessable(err.message, {
@@ -83,7 +85,7 @@ export default _options => (hook) => {
     });
   };
 
-  return Promise.all(items.map(processItem)).then((results) => {
+  return Promise.all(items.map(processItem)).then(results => {
     if (isArray && results.length > 1) {
       hook.result = results;
     } else {

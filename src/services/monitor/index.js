@@ -35,7 +35,7 @@ collectDefaultMetrics({ register });
 class Monitor {
   find(_) {
     const metrics = prom.register.metrics();
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       resolve({ text: metrics });
     });
   }
@@ -50,7 +50,7 @@ module.exports = function() {
     res.format({
       'text/plain': function() {
         res.end(`${res.data.text}`);
-      },
+      }
     });
   });
 

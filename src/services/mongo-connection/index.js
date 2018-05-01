@@ -33,31 +33,38 @@ class ConnectionService {
     this.docs = {
       create: {
         description: 'Create a new connection',
-        parameters: [{
-          in: 'query',
-          name: 'url',
-          type: 'string',
-        }, {
-          in: 'query',
-          name: 'test',
-          type: 'bool'
-        }, {
-          in: 'query',
-          name: 'database',
-          type: 'string'
-        }, {
-          in: 'query',
-          name: 'discoverMembers',
-          type: 'bool'
-        }]
+        parameters: [
+          {
+            in: 'query',
+            name: 'url',
+            type: 'string'
+          },
+          {
+            in: 'query',
+            name: 'test',
+            type: 'bool'
+          },
+          {
+            in: 'query',
+            name: 'database',
+            type: 'string'
+          },
+          {
+            in: 'query',
+            name: 'discoverMembers',
+            type: 'bool'
+          }
+        ]
       },
       remove: {
         description: 'Remove a connection',
-        parameters: [{
-          in: 'query',
-          name: 'id',
-          type: 'int',
-        }]
+        parameters: [
+          {
+            in: 'query',
+            name: 'id',
+            type: 'int'
+          }
+        ]
       }
     };
   }
@@ -82,7 +89,7 @@ class ConnectionService {
     } catch (err) {
       l.error('got errors.');
       l.error(err);
-      return {id, error: err.message};
+      return { id, error: err.message };
     }
   }
 
@@ -92,14 +99,16 @@ class ConnectionService {
   find() {
     l.info('query connection');
     const connects = this.controller.connections;
-    return new Promise((resolve) => {
-      resolve(_.keys(connects).map((key) => {
-        const con = connects[key];
-        const shells = _.keys(con.shells).map((shellKey) => {
-          return {shellId: shellKey};
-        });
-        return {id: con.id, status: con.status, shells};
-      }));
+    return new Promise(resolve => {
+      resolve(
+        _.keys(connects).map(key => {
+          const con = connects[key];
+          const shells = _.keys(con.shells).map(shellKey => {
+            return { shellId: shellKey };
+          });
+          return { id: con.id, status: con.status, shells };
+        })
+      );
     });
   }
 
@@ -110,9 +119,9 @@ class ConnectionService {
   get(id) {
     const connect = this.controller.connections[id];
     if (connect) {
-      return new Promise((resolve) => {
-        const shells = _.keys(connect.shells).map((key) => {
-          return {shellId: key};
+      return new Promise(resolve => {
+        const shells = _.keys(connect.shells).map(key => {
+          return { shellId: key };
         });
         resolve(shells);
       });
@@ -125,7 +134,7 @@ class ConnectionService {
   }
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires

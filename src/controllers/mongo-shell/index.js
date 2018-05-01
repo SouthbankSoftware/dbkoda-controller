@@ -26,17 +26,19 @@
 /* eslint-disable class-methods-use-this */
 
 import _ from 'lodash';
-import { spawn } from 'node-pty';
-import { execSync } from 'child_process';
-import { EventEmitter } from 'events';
+import {spawn} from 'node-pty';
+import {execSync} from 'child_process';
+import {EventEmitter} from 'events';
 import os from 'os';
 import path from 'path';
+import fs from 'fs';
 import Status from '../mongo-connection/status';
 import Parser from './pty-parser';
 import PtyOptions from './pty-options';
+import {isDockerCommand} from '../docker';
 
 class MongoShell extends EventEmitter {
-  constructor(connection, mongoScriptPath) {
+  constructor (connection, mongoScriptPath) {
     super();
     this.changePromptCmd = 'var prompt="' + MongoShell.prompt + '";\n';
     this.emitter = new EventEmitter();
@@ -52,10 +54,11 @@ class MongoShell extends EventEmitter {
     this.autoComplete = false;
     this.shellVersion = this.getShellVersion();
     this.commandQueue = [];
+    this.mongoCmd = '';
     l.debug(`Shell version: ${this.shellVersion}`);
   }
 
-  getShellVersion() {
+  getShellVersion () {
     try {
       const configObj = global.config; // should be read-only
       log.info('Mongo Version Cmd:', configObj);
@@ -65,7 +68,7 @@ class MongoShell extends EventEmitter {
         return 'UNKNOWN';
       }
 
-      const output = execSync(configObj.mongoVersionCmd, { encoding: 'utf8' });
+      const output = execSync(configObj.mongoVersionCmd, {encoding: 'utf8'});
       const mongoVStr = output.split('\n');
       if (mongoVStr && mongoVStr.length > 0) {
         if (mongoVStr[0].indexOf('MongoDB shell version v') >= 0) {
@@ -82,18 +85,17 @@ class MongoShell extends EventEmitter {
     }
   }
 
-  createMongoShellParameters() {
-    const ver = this.shellVersion
-      .trim()
-      .substring(0, 6)
-      .trim();
+  createMongoShellParameters () {
+    const ver = this.shellVersion.trim().substring(0, 6).trim();
     const mongo30 = ver.indexOf('3.0') >= 0;
-    const { connection } = this;
+    const {connection} = this;
     let params = [];
     if (mongo30) {
       params.push('--host');
       if (connection.options && connection.options.replicaSet) {
-        params = params.concat([connection.options.replicaSet + '/' + connection.hosts]);
+        params = params.concat([
+          connection.options.replicaSet + '/' + connection.hosts,
+        ]);
       } else {
         params = params.concat([connection.hosts]);
       }
@@ -103,7 +105,9 @@ class MongoShell extends EventEmitter {
       params.push(connection.database);
     } else {
       if (connection.url && connection.url.indexOf('ssl=') > 0) {
-        const url = connection.url.replace(/.ssl=true/, '').replace(/.ssl=false/, '');
+        const url = connection.url
+          .replace(/.ssl=true/, '')
+          .replace(/.ssl=false/, '');
         params.push(url);
       } else {
         params.push(connection.url);
@@ -115,7 +119,7 @@ class MongoShell extends EventEmitter {
         }
       }
     }
-    const { username, password } = connection;
+    const {username, password} = connection;
     if (username) {
       params = params.concat(['--username', username]);
       if (password) {
@@ -123,7 +127,10 @@ class MongoShell extends EventEmitter {
       }
     }
     if (connection.authenticationDatabase) {
-      params = params.concat(['--authenticationDatabase', connection.authenticationDatabase]);
+      params = params.concat([
+        '--authenticationDatabase',
+        connection.authenticationDatabase,
+      ]);
     }
     return params;
   }
@@ -131,7 +138,7 @@ class MongoShell extends EventEmitter {
   /**
    * create a shell with pty
    */
-  createShell() {
+  createShell () {
     const configObj = global.config; // should be read-only
     log.info('Mongo Cmd:', configObj);
 
@@ -152,16 +159,19 @@ class MongoShell extends EventEmitter {
       const err = new Error(
         'Mongo Binary Version (' +
           this.shellVersion +
-          ') is not supported, please upgrade to a Mongo Binary version of at least 3.0',
+          ') is not supported, please upgrade to a Mongo Binary version of at least 3.0'
       );
       err.responseCode = 'MONGO_BINARY_INVALID_VERSION';
       throw err;
     }
 
-    const { mongoCmd } = configObj;
+    const {mongoCmd} = configObj;
 
     let mongoCmdArray;
-    if (mongoCmd.indexOf('"') === 0) {
+
+    if (isDockerCommand(mongoCmd)) {
+      mongoCmdArray = mongoCmd.split(' ');
+    } else if (mongoCmd.indexOf('"') === 0) {
       mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
       mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/, '$1');
     } else {
@@ -178,7 +188,12 @@ class MongoShell extends EventEmitter {
     const parameters = this.createMongoShellParameters();
 
     try {
-      this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], PtyOptions);
+      this.mongoCmd = mongoCmdArray[0];
+      this.shell = spawn(
+        mongoCmdArray[0],
+        [...mongoCmdArray.slice(1), ...parameters],
+        PtyOptions
+      );
     } catch (error) {
       l.error(error);
       throw error;
@@ -199,19 +214,26 @@ class MongoShell extends EventEmitter {
     this.shell.on('data', this.parser.onRead.bind(this.parser));
     this.parser.on('data', this.readParserOutput.bind(this));
     this.parser.on('command-ended', this.commandEnded.bind(this));
-    this.parser.on('incomplete-command-ended', this.incompleteCommandEnded.bind(this));
+    this.parser.on(
+      'incomplete-command-ended',
+      this.incompleteCommandEnded.bind(this)
+    );
 
     // handle shell output
     if (this.connection.requireSlaveOk) {
       this.writeToShell('rs.slaveOk()' + MongoShell.enter);
     }
-    this.loadScriptsIntoShell();
+    if (isDockerCommand(mongoCmdArray[0])) {
+      this.readScriptsFileIntoShell();
+    } else {
+      this.loadScriptsIntoShell();
+    }
     this.on(MongoShell.AUTO_COMPLETE_END, () => {
       this.finishAutoComplete();
     });
   }
 
-  commandEnded() {
+  commandEnded () {
     if (!this.initialized) {
       this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt + MongoShell.enter);
       this.emit(MongoShell.INITIALIZED);
@@ -238,7 +260,7 @@ class MongoShell extends EventEmitter {
     }
   }
 
-  incompleteCommandEnded(data) {
+  incompleteCommandEnded (data) {
     if (!this.executing) {
       this.previousOutput = data;
       this.emitOutput(data + MongoShell.enter);
@@ -255,7 +277,17 @@ class MongoShell extends EventEmitter {
     }
   }
 
-  readParserOutput(data) {
+  readParserOutput (data) {
+    if (data.indexOf('// ignore_emit_begin ') >= 0) {
+      this.ignoreEmit = true;
+    }
+    if (data.indexOf('// ignore_emit_ended ') >= 0) {
+      this.ignoreEmit = false;
+      return;
+    }
+    if (this.ignoreEmit) {
+      return;
+    }
     if (!this.initialized && data.indexOf('shell') >= 0) {
       this.writeToShell(`${this.changePromptCmd}`);
     }
@@ -267,13 +299,16 @@ class MongoShell extends EventEmitter {
       this.autoCompleteOutput += data.trim();
     } else if (this.syncExecution && data !== MongoShell.prompt) {
       this.emit(MongoShell.SYNC_OUTPUT_EVENT, data);
-    } else if (!(data === this.previousOutput && this.previousOutput === MongoShell.prompt)) {
+    } else if (
+      !(data === this.previousOutput &&
+        this.previousOutput === MongoShell.prompt)
+    ) {
       this.emitOutput(data + MongoShell.enter);
     }
     this.previousOutput = data;
   }
 
-  loadScriptsIntoShell() {
+  loadScriptsIntoShell () {
     const scriptPath = path.join(this.mongoScriptPath + '/all-in-one.js');
     let command = `load("${scriptPath}");`;
     if (os.platform() === 'win32') {
@@ -283,11 +318,21 @@ class MongoShell extends EventEmitter {
     this.writeToShell(command + MongoShell.enter);
   }
 
+  readScriptsFileIntoShell () {
+    const fileBuffer = fs.readFileSync(
+      path.join(this.mongoScriptPath + '/all-in-one.js')
+    );
+    const fileContent = fileBuffer.toString('utf8');
+    this.write('// ignore_emit_begin ' + MongoShell.enter);
+    this.write(fileContent + MongoShell.enter);
+    this.write('// ignore_emit_ended ' + MongoShell.enter);
+  }
+
   /**
    * whether the shell is executing any commands
    * @returns {boolean}
    */
-  isShellBusy() {
+  isShellBusy () {
     return this.executing || this.syncExecution;
   }
 
@@ -296,7 +341,7 @@ class MongoShell extends EventEmitter {
    *
    * @param output
    */
-  emitOutput(output) {
+  emitOutput (output) {
     if (!this.executing || !this.initialized) {
       this.outputQueue.push(output);
       this.emitBufferedOutput();
@@ -312,7 +357,7 @@ class MongoShell extends EventEmitter {
     }
   }
 
-  emitBufferedOutput() {
+  emitBufferedOutput () {
     this.prevExecutionTime = new Date().getTime();
     let allData = '';
     this.outputQueue.map(o => {
@@ -328,7 +373,7 @@ class MongoShell extends EventEmitter {
    * write the command to shell
    * @param data
    */
-  writeToShell(data) {
+  writeToShell (data) {
     if (!data) {
       return;
     }
@@ -343,7 +388,7 @@ class MongoShell extends EventEmitter {
    *
    * @param command
    */
-  writeAutoComplete(command) {
+  writeAutoComplete (command) {
     if (this.autoComplete) {
       // ignore if there is already a auto complete in execution
       return;
@@ -356,7 +401,7 @@ class MongoShell extends EventEmitter {
   /**
    * called when auto complete execution is finished.
    */
-  finishAutoComplete() {
+  finishAutoComplete () {
     this.autoComplete = false;
     this.autoCompleteOutput = '';
   }
@@ -364,14 +409,14 @@ class MongoShell extends EventEmitter {
   /**
    * send command to shell and gether the output message
    */
-  writeSyncCommand(data) {
+  writeSyncCommand (data) {
     l.info('write sync command ', data);
     this.syncExecution = true;
     this.prevExecutionTime = new Date().getTime();
     this.write(data + MongoShell.enter);
   }
 
-  write(data) {
+  write (data) {
     this.commandQueue = [];
     if (!data) {
       // got an empty command request
@@ -419,7 +464,7 @@ class MongoShell extends EventEmitter {
     }
   }
 
-  runCommandFromQueue() {
+  runCommandFromQueue () {
     const cmd = this.commandQueue.shift();
     if (cmd) {
       this.writeToShell(cmd);
@@ -433,7 +478,7 @@ class MongoShell extends EventEmitter {
    *
    * @param data
    */
-  filterOutput(data) {
+  filterOutput (data) {
     let output = data.toString();
     if (output.indexOf('var prompt=') >= 0) {
       return;
@@ -454,6 +499,14 @@ class MongoShell extends EventEmitter {
       }
     }
     return output;
+  }
+
+  killProcess () {
+    if (isDockerCommand(this.mongoCmd)) {
+      this.writeToShell('exit\n');
+    } else {
+      this.shell.kill();
+    }
   }
 }
 

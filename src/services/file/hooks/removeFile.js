@@ -29,20 +29,20 @@ import errors from 'feathers-errors';
 import { getItems } from 'feathers-hooks-common';
 import fs from 'fs';
 
-export default _options => (hook) => {
+export default _options => hook => {
   let items = getItems(hook);
   const isArray = Array.isArray(items);
   items = isArray ? items : [items];
   const watcher = hook.service.watcher;
 
-  const processItem = (item) => {
+  const processItem = item => {
     const { _id } = item;
 
     watcher.unwatch(_id);
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       try {
-        fs.unlink(_id, (err) => {
+        fs.unlink(_id, err => {
           if (err) {
             return resolve(
               new errors.Unprocessable(err.message, {
@@ -62,7 +62,7 @@ export default _options => (hook) => {
     });
   };
 
-  return Promise.all(items.map(processItem)).then((results) => {
+  return Promise.all(items.map(processItem)).then(results => {
     if (isArray && results.length > 1) {
       hook.result = results;
     } else {

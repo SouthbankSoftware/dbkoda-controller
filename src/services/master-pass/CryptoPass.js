@@ -1,8 +1,8 @@
 /**
  * @flow
  *
- * @Last modified by:   christrott
- * @Last modified time: 2017-01-30T15:17:54+11:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-05-01T19:33:19+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -45,11 +45,10 @@ export default class CryptoPass {
   }
 
   getVerifyHash(): Promise<string> {
-    return bcrypt.hash(this._masterPassword, 10)
-        .then((verifyHash) => {
-          this._verifyHash = verifyHash;
-          return Promise.resolve(verifyHash);
-        });
+    return bcrypt.hash(this._masterPassword, 10).then(verifyHash => {
+      this._verifyHash = verifyHash;
+      return Promise.resolve(verifyHash);
+    });
   }
 
   compareVerifyHash(masterHash: string, verifyHash: ?string): Promise<boolean> {
@@ -60,6 +59,7 @@ export default class CryptoPass {
   }
 
   encrypt(text: string): string {
+    // FIXME: vulnerability https://github.com/nodejs/node/issues/16746
     const cipher = crypto.createCipher(this.algorithm, this.masterPassword);
     let encrypted: string = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -67,6 +67,7 @@ export default class CryptoPass {
   }
 
   decrypt(text: string): string {
+    // FIXME: vulnerability https://github.com/nodejs/node/issues/16746
     const decipher = crypto.createDecipher(this.algorithm, this.masterPassword);
     let decrypted: string = decipher.update(text, 'hex', 'utf8');
     decrypted += decipher.final('utf8');

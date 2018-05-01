@@ -30,7 +30,8 @@ class BlogService {
       get: {
         description: 'Get blog posts',
         parameters: [
-          { in: 'path',
+          {
+            in: 'path',
             required: false,
             name: 'number',
             type: 'integer'
@@ -46,8 +47,9 @@ class BlogService {
     return Promise.resolve(resp);
   }
 
-  parse(resp) { //eslint-disable-line
-    return new Promise((resolve) => {
+  // eslint-disable-next-line
+  parse(resp) {
+    return new Promise(resolve => {
       parser.parseString(resp, (err, parsed) => {
         resolve(parsed);
       });
@@ -55,7 +57,7 @@ class BlogService {
   }
 }
 
-module.exports = function () {
+module.exports = function() {
   const app = this;
 
   // Initialize our service with any options it requires

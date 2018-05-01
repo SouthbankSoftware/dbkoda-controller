@@ -40,13 +40,13 @@ import { ObservableWrapper } from './observables/ObservableWrapper';
  */
 export const constructors = {
   ssh: {
-    path: 'ssh',
+    path: 'ssh'
   },
   topology: {
-    path: 'topology',
+    path: 'topology'
   },
   driver: {
-    path: 'driver',
+    path: 'driver'
   },
   dummy1: {
     path: 'dummy',
@@ -54,14 +54,14 @@ export const constructors = {
     constructor: (wrapper: ObservableWrapper) => {
       wrapper.displayName = 'Dummy 1';
       wrapper.items = ['item-1', 'item-2', 'item-3'];
-    },
+    }
   },
   dummy2: {
     path: 'dummy',
     constructor: (wrapper: ObservableWrapper) => {
       wrapper.displayName = 'Dummy 2';
       wrapper.items = ['item-4', 'item-5'];
-    },
+    }
   },
   dummy3: {
     path: 'dummy',
@@ -74,14 +74,14 @@ export const constructors = {
       // $FlowFixMe
       // wrapper.simulateFatalErrorAt = 60000;
       wrapper.items = ['item-6'];
-    },
+    }
   },
   dummy4: {
     path: 'dummy',
     constructor: (wrapper: ObservableWrapper) => {
       wrapper.displayName = 'Dummy 4';
       wrapper.items = ['item-7', 'item-8', 'item-9', 'item-10'];
-    },
+    }
   },
   dummy5: {
     path: 'dummy',
@@ -90,8 +90,8 @@ export const constructors = {
       // $FlowFixMe
       wrapper.simulateCompletionAt = 40000;
       wrapper.items = ['item-10'];
-    },
-  },
+    }
+  }
 };
 
 export default _.reduce(
@@ -100,5 +100,5 @@ export default _.reduce(
     acc[k] = k;
     return acc;
   },
-  {},
+  {}
 );

@@ -37,15 +37,15 @@ class TopologyMonitor {
     if (!this.db.topology) {
       return;
     }
-    this.db.admin().command({ replSetGetStatus: 1 }, (err) => {
+    this.db.admin().command({ replSetGetStatus: 1 }, err => {
       if (!err) {
         console.log('start listening');
-        this.db.topology.on('serverDescriptionChanged', (event) => {
+        this.db.topology.on('serverDescriptionChanged', event => {
           console.log('received serverDescriptionChanged');
           console.log(event);
           if (event && event.newDescription && event.newDescription.type !== 'Unknown') {
             // select a new primary
-            this.queryMemberStatus().then((members) => {
+            this.queryMemberStatus().then(members => {
               console.log('new memebers:', members);
               const primary = _.find(members, { state: 1 });
               console.log('primary:', primary);
@@ -59,7 +59,7 @@ class TopologyMonitor {
   }
 
   queryMemberStatus() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       this.db.admin().command({ replSetGetStatus: 1 }, (err, result) => {
         if (!result) {
           resolve(null);
@@ -67,7 +67,7 @@ class TopologyMonitor {
         }
         resolve(result.members);
       });
-    }).catch((err) => {
+    }).catch(err => {
       l.error('failed to get replica set ', err);
     });
   }

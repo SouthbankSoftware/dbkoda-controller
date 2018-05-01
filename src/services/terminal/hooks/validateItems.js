@@ -32,52 +32,52 @@ const sizeSchema = {
   type: 'object',
   properties: {
     cols: {
-      type: 'number',
+      type: 'number'
     },
     rows: {
-      type: 'number',
-    },
+      type: 'number'
+    }
   },
-  required: ['cols', 'rows'],
+  required: ['cols', 'rows']
 };
 
 const createSchema = {
   properties: {
     _id: {
-      type: 'string',
+      type: 'string'
     },
     type: {
-      enum: _.keys(terminalTypes),
+      enum: _.keys(terminalTypes)
     },
     debug: {
       type: 'boolean',
-      default: false,
+      default: false
     },
     username: {
-      type: 'string',
+      type: 'string'
     },
     password: {
-      type: 'string',
+      type: 'string'
     },
     host: {
-      type: 'string',
+      type: 'string'
     },
     port: {
-      type: 'number',
+      type: 'number'
     },
     privateKey: {
-      type: 'string',
+      type: 'string'
     },
     passphrase: {
-      type: 'string',
+      type: 'string'
     },
     profileId: {
-      type: 'string',
+      type: 'string'
     },
     usePasswordStore: {
-      type: 'boolean',
+      type: 'boolean'
     },
-    size: sizeSchema,
+    size: sizeSchema
   },
   required: ['_id', 'type'],
   additionalProperties: false,
@@ -85,41 +85,41 @@ const createSchema = {
     {
       if: {
         properties: {
-          type: { const: terminalTypes.ssh },
-        },
+          type: { const: terminalTypes.ssh }
+        }
       },
       then: {
-        required: ['username', 'host', 'port'],
-      },
-    },
-  ],
+        required: ['username', 'host', 'port']
+      }
+    }
+  ]
 };
 
 const patchSchema = {
   properties: {
     _id: {
-      type: 'string',
+      type: 'string'
     },
     cmd: {
-      type: 'string',
+      type: 'string'
     },
     size: sizeSchema,
     debug: {
-      type: 'boolean',
-    },
+      type: 'boolean'
+    }
   },
   required: ['_id'],
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const removeSchema = {
   properties: {
     _id: {
-      type: 'string',
-    },
+      type: 'string'
+    }
   },
   required: ['_id'],
-  additionalProperties: false,
+  additionalProperties: false
 };
 
 const schema = {
@@ -128,7 +128,7 @@ const schema = {
   create: createSchema,
   update: {},
   patch: patchSchema,
-  remove: removeSchema,
+  remove: removeSchema
 };
 
 const validators = _.reduce(
@@ -137,7 +137,7 @@ const validators = _.reduce(
     acc[k] = validateSchema(v, ajv);
     return acc;
   },
-  {},
+  {}
 );
 
 export default _options => hook => validators[hook.method](hook);

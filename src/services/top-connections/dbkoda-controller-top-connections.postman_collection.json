@@ -1,54 +1,50 @@
 {
-	"info": {
-		"name": "dbkoda-controller-top-connections",
-		"_postman_id": "1b33ecfa-442f-4728-b0bd-4c678e5fe694",
-		"description": "",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "getTopConnections",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"body": {},
-				"url": {
-					"raw": "http://localhost:3030/top-connections/cc0f6590-1a7f-11e8-adf7-8302f9ae9bfc?n=5&samplingTime=5000&samplingRate=100&dev=true",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3030",
-					"path": [
-						"top-connections",
-						"cc0f6590-1a7f-11e8-adf7-8302f9ae9bfc"
-					],
-					"query": [
-						{
-							"key": "n",
-							"value": "5",
-							"equals": true
-						},
-						{
-							"key": "samplingTime",
-							"value": "5000",
-							"equals": true
-						},
-						{
-							"key": "samplingRate",
-							"value": "100",
-							"equals": true
-						},
-						{
-							"key": "dev",
-							"value": "true",
-							"equals": true
-						}
-					]
-				},
-				"description": null
-			},
-			"response": []
-		}
-	]
+  "info": {
+    "name": "dbkoda-controller-top-connections",
+    "_postman_id": "1b33ecfa-442f-4728-b0bd-4c678e5fe694",
+    "description": "",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "getTopConnections",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {},
+        "url": {
+          "raw":
+            "http://localhost:3030/top-connections/cc0f6590-1a7f-11e8-adf7-8302f9ae9bfc?n=5&samplingTime=5000&samplingRate=100&dev=true",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3030",
+          "path": ["top-connections", "cc0f6590-1a7f-11e8-adf7-8302f9ae9bfc"],
+          "query": [
+            {
+              "key": "n",
+              "value": "5",
+              "equals": true
+            },
+            {
+              "key": "samplingTime",
+              "value": "5000",
+              "equals": true
+            },
+            {
+              "key": "samplingRate",
+              "value": "100",
+              "equals": true
+            },
+            {
+              "key": "dev",
+              "value": "true",
+              "equals": true
+            }
+          ]
+        },
+        "description": null
+      },
+      "response": []
+    }
+  ]
 }

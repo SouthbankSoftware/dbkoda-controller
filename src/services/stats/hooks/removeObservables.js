@@ -54,7 +54,7 @@ export default () =>
         service.stopObservableManifest(observableManifest);
 
         p = Promise.all(
-          activeWrappers.map((wrapper) => {
+          activeWrappers.map(wrapper => {
             l.debug(`Removing observable ${wrapper.displayName} of profile ${profileId}...`);
 
             return service.destroyObservableWrapper(wrapper);

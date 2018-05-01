@@ -32,23 +32,23 @@ const _ = require('lodash');
 const treeNodeTypes = require('./tree_node_types').TreeNodeType;
 
 class MongoServerInspector {
-  inspect(db) {
+  inspect(driver, db) {
     return new Promise((resolve, reject) => {
       Promise.all([
-        this.inspectDatabases(db),
-        this.inspectUsers(db),
-        this.inspectAllRoles(db),
-        this.inspectReplicaMembers(db),
+        this.inspectDatabases(driver, db),
+        this.inspectUsers(driver),
+        this.inspectAllRoles(driver, db),
+        this.inspectReplicaMembers(db)
       ])
-        .then((value) => {
+        .then(value => {
           l.debug('generate tree topology ', value);
           resolve(
-            value.filter((v) => {
+            value.filter(v => {
               return v !== null && v !== undefined;
             })
           );
         })
-        .catch((err) => {
+        .catch(err => {
           reject(err);
         });
     });
@@ -57,37 +57,36 @@ class MongoServerInspector {
   /**
    * discover all databases in a mongodb instance
    */
-  inspectDatabases(db) {
+  inspectDatabases(driver, currentDb) {
     return new Promise((resolve, _reject) => {
-      const adminDb = db.admin();
-      const inspectResult = {text: 'Databases', children: []};
+      const adminDb = currentDb.admin();
+      const inspectResult = { text: 'Databases', children: [] };
       adminDb
         .listDatabases()
-        .then((dbs) => {
+        .then(dbs => {
           const promises = [];
           // inspect into each database
-          dbs.databases.map((database) => {
-            promises.push(this.inspectDatabase(db, database.name));
+          dbs.databases.map(database => {
+            promises.push(this.inspectDatabase(driver, database.name));
           });
           Promise.all(promises)
-            .then((values) => {
+            .then(values => {
               inspectResult.children = _.sortBy(values, 'text');
               // inspectResult = _.sortBy(inspectResult, 'text');
               resolve(inspectResult);
             })
-            .catch((err) => {
+            .catch(err => {
               l.error('failed to inspect database ', err);
             });
         })
-        .catch((err) => {
+        .catch(err => {
           log.warn(err.message);
-          this.inspectDatabase(db, db.databaseName)
-            .then((value) => {
-              inspectResult.children = [value];
-              resolve(inspectResult);
-            });
+          this.inspectDatabase(driver, currentDb.databaseName).then(value => {
+            inspectResult.children = [value];
+            resolve(inspectResult);
+          });
         });
-    }).catch((err) => {
+    }).catch(err => {
       l.error('get error ', err);
       return new errors.BadRequest(err);
     });
@@ -101,27 +100,27 @@ class MongoServerInspector {
    * @returns {Promise} resolve the databse json object
    */
   inspectDatabase(db, name) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       db
         .db(name)
         .collections()
-        .then((collections) => {
-          const dbData = {text: name, type: treeNodeTypes.DATABASE};
-          dbData.children = _.map(collections, (col) => {
+        .then(collections => {
+          const dbData = { text: name, type: treeNodeTypes.DATABASE };
+          dbData.children = _.map(collections, col => {
             return {
               text: col.collectionName,
-              type: treeNodeTypes.COLLECTION,
+              type: treeNodeTypes.COLLECTION
             };
           });
           dbData.children = _.sortBy(dbData.children, 'text');
-          return {dbData, collections};
+          return { dbData, collections };
         })
-        .then((value) => {
+        .then(value => {
           const promises = [];
-          const {dbData} = value;
-          value.collections.map((col) => {
+          const { dbData } = value;
+          value.collections.map(col => {
             promises.push(
-              this.inspectIndex(col, _.find(dbData.children, {text: col.collectionName}))
+              this.inspectIndex(col, _.find(dbData.children, { text: col.collectionName }))
             );
           });
           return Promise.all(promises).then(() => {
@@ -138,17 +137,17 @@ class MongoServerInspector {
    * @param col the collection instance
    */
   inspectIndex(col, data) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       col.indexes((err, indexes) => {
         if (!indexes) {
           resolve();
           return;
         }
-        const idx = indexes.filter((index) => {
+        const idx = indexes.filter(index => {
           return index.name !== '_id_';
         });
-        const result = idx.map((index) => {
-          return {text: index.name, type: treeNodeTypes.INDEX};
+        const result = idx.map(index => {
+          return { text: index.name, type: treeNodeTypes.INDEX };
         });
         if (result.length === 0) {
           resolve(null);
@@ -157,7 +156,7 @@ class MongoServerInspector {
         }
         resolve();
       });
-    }).catch((err) => {
+    }).catch(err => {
       l.error('failed to get index', err);
     });
   }
@@ -167,23 +166,23 @@ class MongoServerInspector {
    *
    * @param db
    */
-  inspectUsers(db) {
-    const users = {text: 'Users', children: []};
-    return new Promise((resolve) => {
-      const userCollection = db.db('admin').collection('system.users');
+  inspectUsers(driver) {
+    const users = { text: 'Users', children: [] };
+    return new Promise(resolve => {
+      const userCollection = driver.db('admin').collection('system.users');
       if (!userCollection) {
         resolve(users);
         return;
       }
-      userCollection.find({}, {_id: 1, 'user': 1, 'db': 1}).toArray((err, items) => {
+      userCollection.find({}, { _id: 1, user: 1, db: 1 }).toArray((err, items) => {
         if (err || !items || items.length <= 0) {
           resolve(users);
           return;
         }
-        const children = items.map((item) => {
-          return {text: item._id, user: item.user, db: item.db, type: treeNodeTypes.USERS};
+        const children = items.map(item => {
+          return { text: item._id, user: item.user, db: item.db, type: treeNodeTypes.USERS };
         });
-        users.children = _.uniqBy(children, (e) => {
+        users.children = _.uniqBy(children, e => {
           return e.text;
         });
         resolve(users);
@@ -198,47 +197,52 @@ class MongoServerInspector {
       //   });
       //   resolve(users);
       // });
-    }).catch((err) => {
+    }).catch(err => {
       l.error('get error ', err);
       return users;
     });
   }
 
-  inspectAllRoles(db) {
+  inspectAllRoles(driver, db) {
     const allRoles = { text: 'Roles', children: [] };
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const promises = [];
       const adminDb = db.admin();
-      adminDb.listDatabases().then((dbs) => {
-        _.map(dbs.databases, (currentDb) => {
-          promises.push(this.inspectRoles(db, currentDb));
-        });
-        Promise.all(promises).then((values) => {
-          values = values.filter((value) => {
-            return value;
+      adminDb
+        .listDatabases()
+        .then(dbs => {
+          _.map(dbs.databases, currentDb => {
+            promises.push(this.inspectRoles(driver, currentDb));
           });
-          allRoles.children = values;
-          allRoles.children = allRoles.children.filter((roles) => {
-            return !roles.children.length <= 0;
+          Promise.all(promises).then(values => {
+            values = values.filter(value => {
+              return value;
+            });
+            allRoles.children = values;
+            allRoles.children = allRoles.children.filter(roles => {
+              return !roles.children.length <= 0;
+            });
+            resolve(allRoles);
           });
+        })
+        .catch(err => {
+          log.warn(err.message);
           resolve(allRoles);
         });
-      }).catch((err) => {
-        log.warn(err.message);
-        resolve(allRoles);
-      });
-    }).catch((err) => {
+    }).catch(err => {
       log.error('get error ', err);
       return allRoles;
     });
   }
 
-  inspectRoles(db, currentDb) {
-    return new Promise((resolve) => {
+  inspectRoles(driver, currentDb) {
+    return new Promise(resolve => {
       const dbName = currentDb.name;
-      const showBuiltin = (dbName === 'admin');
-      db.db(dbName).command({ rolesInfo: 1, showBuiltinRoles: showBuiltin })
-        .then((roleList) => {
+      const showBuiltin = dbName === 'admin';
+      driver
+        .db(dbName)
+        .command({ rolesInfo: 1, showBuiltinRoles: showBuiltin })
+        .then(roleList => {
           const roles = { text: dbName, children: [], type: treeNodeTypes.ROLES };
           if (!roleList || roleList.length <= 0) {
             resolve(roles);
@@ -247,7 +251,7 @@ class MongoServerInspector {
           if (showBuiltin) {
             roles.children[0] = { text: 'Built-In', children: [] };
           }
-          _.each(roleList.roles, (role) => {
+          _.each(roleList.roles, role => {
             if (showBuiltin && role.isBuiltin) {
               roles.children[0].children.push({
                 text: role.role,
@@ -264,11 +268,11 @@ class MongoServerInspector {
           });
           resolve(roles);
         })
-        .catch((err) => {
+        .catch(err => {
           l.error('inspectRoles error ', err);
           resolve();
         });
-      });
+    });
   }
 
   getMemberState(member) {
@@ -308,8 +312,8 @@ class MongoServerInspector {
    * @param db
    */
   inspectReplicaMembers(db) {
-    const replica = {text: 'Replica Set', children: []};
-    return new Promise((resolve) => {
+    const replica = { text: 'Replica Set', children: [] };
+    return new Promise(resolve => {
       // db.command({isMaster: 1}, (err, result) => {
       //   if (!result || !result.hosts || result.hosts.length <= 0) {
       //     resolve(null);
@@ -326,13 +330,13 @@ class MongoServerInspector {
       //   resolve(replica);
       // });
 
-      db.admin().command({replSetGetStatus: 1}, (err, result) => {
+      db.admin().command({ replSetGetStatus: 1 }, (err, result) => {
         if (!result) {
           resolve(null);
           return;
         }
         if (result && result.members && result.members.length > 0) {
-          replica.children = _.map(result.members, (member) => {
+          replica.children = _.map(result.members, member => {
             const memberState = this.getMemberState(member);
             let treeNodeType;
             switch (memberState) {
@@ -348,12 +352,12 @@ class MongoServerInspector {
               default:
                 treeNodeType = treeNodeTypes.REPLICA_MEMBER;
             }
-            return {text: member.name + ' ' + memberState, type: treeNodeType};
+            return { text: member.name + ' ' + memberState, type: treeNodeType };
           });
         }
         resolve(replica);
       });
-    }).catch((err) => {
+    }).catch(err => {
       l.error('failed to get replica set ', err);
     });
   }

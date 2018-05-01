@@ -36,7 +36,7 @@ import os from 'os';
 import type { ObservableWrapper, ObservaleValue } from '../ObservableWrapper';
 import { getKnowledgeBaseRules, items } from '../../knowledgeBase/ssh';
 import { buildCommands } from '../../knowledgeBase/utils';
-import {ErrorCodes} from '../../../../errors/Errors';
+import { ErrorCodes } from '../../../../errors/Errors';
 
 export default class SSHCounter implements ObservableWrapper {
   osType: Object = {};
@@ -55,6 +55,7 @@ export default class SSHCounter implements ObservableWrapper {
   historyData: Object = {};
   reconnectTimes: number = 0;
   sshConnectionRetryTimes = 120;
+  sshReconnectRetryDelay = 1000;
   reconnecting = false;
 
   constructor() {
@@ -67,23 +68,19 @@ export default class SSHCounter implements ObservableWrapper {
   init(options: Object): Promise<*> {
     this.mongoConnection = options.mongoConnection;
     return this.create(this.profileId).then(() => {
-      this.rxObservable = Observable.create(
-        (observer: Observer<ObservaleValue>) => {
-          this.knowledgeBase.samplingRate = this.samplingRate / 1000;
-          this.statsCmds = buildCommands(this.knowledgeBase);
-          if (!this.statsCmds || _.isEmpty(this.statsCmds)) {
-            this.emitError(
-              'Cant find command from knowledge base on ' + this.osType
-            );
-            l.error('Cant find command from knowledge base on ' + this.osType);
-          }
-          this.observer = observer;
-          this.execute();
-          return () => {
-            this.pause();
-          };
+      this.rxObservable = Observable.create((observer: Observer<ObservaleValue>) => {
+        this.knowledgeBase.samplingRate = this.samplingRate / 1000;
+        this.statsCmds = buildCommands(this.knowledgeBase);
+        if (!this.statsCmds || _.isEmpty(this.statsCmds)) {
+          this.emitError('Cant find command from knowledge base on ' + this.osType);
+          l.error('Cant find command from knowledge base on ' + this.osType);
         }
-      );
+        this.observer = observer;
+        this.execute();
+        return () => {
+          this.pause();
+        };
+      });
     });
   }
 
@@ -114,7 +111,7 @@ export default class SSHCounter implements ObservableWrapper {
       return Promise.reject(new Error(`Connection not exist ${id}`));
     }
     if (this.mongoConnection.sshOpts && !this.mongoConnection.sshOpts.host) {
-      return Promise.reject({code: ErrorCodes.SSH_NOT_ENABLED});
+      return Promise.reject({ code: ErrorCodes.SSH_NOT_ENABLED });
     }
     return this.createConnection(this.mongoConnection);
   }
@@ -168,9 +165,7 @@ export default class SSHCounter implements ObservableWrapper {
           })
           .then(release => {
             if (release) {
-              const splitted = release.split(
-                os.platform() === 'win32' ? '\n\r' : '\n'
-              );
+              const splitted = release.split(os.platform() === 'win32' ? '\n\r' : '\n');
               splitted.forEach(str => {
                 if (str.toLowerCase().match(/name=/)) {
                   this.osType.release = this.getValueFromPair(str);
@@ -183,10 +178,8 @@ export default class SSHCounter implements ObservableWrapper {
             log.info('get os type ', this.osType);
             this.knowledgeBase = getKnowledgeBaseRules(this.osType);
             if (!this.knowledgeBase) {
-              this.emitError('Unsupported Operation System', 'error');
-              return reject(
-                new Error(`Unsupported Operation System ${this.osType.os}`)
-              );
+              this.emitError({ code: ErrorCodes.UNSUPPORTED_STATS_OS }, 'error');
+              return reject(new Error('Unsupported Operation System'));
             }
             resolve();
           })
@@ -195,7 +188,9 @@ export default class SSHCounter implements ObservableWrapper {
           });
       })
       .on('error', err => {
-        this.emitError({code: ErrorCodes.SSH_CONNECTION_CLOSED});
+        if (!this.knowledgeBase) {
+          this.emitError({ code: ErrorCodes.SSH_CONNECTION_CLOSED });
+        }
         reject(new errors.BadRequest('Client Error: ' + err.message));
       })
       .connect(_.omit({ ...sshOpts, readyTimeout: 30000 }, 'cwd'));
@@ -213,6 +208,10 @@ export default class SSHCounter implements ObservableWrapper {
           if (err || !stream) {
             if (!ignoreError) {
               log.error(err);
+              if (!this.knowledgeBase) {
+                this.emitError({ code: ErrorCodes.UNSUPPORTED_STATS_OS }, 'error');
+                return reject(new Error('Unsupported Operation System'));
+              }
               return reject(new Error('Failed to run command through SSH.'));
             }
             return resolve(null);
@@ -234,7 +233,10 @@ export default class SSHCounter implements ObservableWrapper {
         // if connection is disconnected
         if (!this.reconnecting) {
           this.reconnecting = true;
-          this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), 1000);
+          this.reconnectTimeout = setTimeout(
+            () => this.reconnectSSH(),
+            this.sshReconnectRetryDelay
+          );
         }
         reject(err);
       }
@@ -252,27 +254,33 @@ export default class SSHCounter implements ObservableWrapper {
     const p = new Promise((resolve, reject) => {
       this.createSshConnection(this.mongoConnection.sshOpts, resolve, reject);
     });
-    p.then(() => {
-      // reconnect success
-      l.info('ssh reconnect successfully');
-      this.reconnectTimes = 0;
-      this.statsCmds = buildCommands(this.knowledgeBase);
-      this.emitError({code: ErrorCodes.SSH_RECONNECTION_SUCCESS}, 'warn');
-      clearTimeout(this.reconnectTimeout);
-      this.reconnecting = false;
-    }).catch(() => {
-      l.error(`reconnect ssh ${this.reconnectTimes + 1} times failed.`);
-      if (this.reconnectTimes < this.sshConnectionRetryTimes && this.reconnecting && this.rxObservable) {
-        this.reconnectTimes += 1;
-        this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), 1000);
-      } else {
-        l.error('ssh reconnect failed');
-        this.reconnecting = false;
+    p
+      .then(() => {
+        // reconnect success
+        l.info('ssh reconnect successfully');
         this.reconnectTimes = 0;
+        this.statsCmds = buildCommands(this.knowledgeBase);
+        this.emitError({ code: ErrorCodes.SSH_RECONNECTION_SUCCESS }, 'warn');
         clearTimeout(this.reconnectTimeout);
-        this.emitError({code: ErrorCodes.SSH_CONNECTION_CLOSED}, 'warn');
-      }
-    });
+        this.reconnecting = false;
+      })
+      .catch(() => {
+        l.error(`reconnect ssh ${this.reconnectTimes + 1} times failed.`);
+        if (
+          this.reconnectTimes < this.sshConnectionRetryTimes - 1 &&
+          this.reconnecting &&
+          this.rxObservable
+        ) {
+          this.reconnectTimes += 1;
+          this.reconnectTimeout = setTimeout(() => this.reconnectSSH(), 1000);
+        } else {
+          l.error('ssh reconnect failed');
+          this.reconnecting = false;
+          this.reconnectTimes = 0;
+          clearTimeout(this.reconnectTimeout);
+          this.emitError({ code: ErrorCodes.SSH_CONNECTION_CLOSED }, 'warn');
+        }
+      });
   }
 
   execute() {
@@ -327,12 +335,10 @@ export default class SSHCounter implements ObservableWrapper {
       const nextObj = _.pick(o, ['value', 'timestamp']);
       nextObj.profileId = this.profileId;
       nextObj.value = _.pick(o.value, this.items);
-      l.debug('get ssh stats', nextObj);
       _.keys(nextObj.value).forEach(key => {
         if (
           typeof nextObj.value[key] === 'number' &&
-          (!this.historyData[key].maximum ||
-            nextObj.value[key] > this.historyData[key].maximum)
+          (!this.historyData[key].maximum || nextObj.value[key] > this.historyData[key].maximum)
         ) {
           this.historyData[key].maximum = nextObj.value[key];
         }
@@ -346,12 +352,8 @@ export default class SSHCounter implements ObservableWrapper {
               nextObj.value[key][`${subKey}Delta`] = Math.abs(
                 v - this.historyData[key].previous[subKey]
               );
-              if (
-                nextObj.timestamp &&
-                this.historyData[key].previousTimestamp
-              ) {
-                const sr =
-                  nextObj.timestamp - this.historyData[key].previousTimestamp;
+              if (nextObj.timestamp && this.historyData[key].previousTimestamp) {
+                const sr = nextObj.timestamp - this.historyData[key].previousTimestamp;
                 if (sr > 0) {
                   nextObj.value[key][`${subKey}PerSec`] =
                     nextObj.value[key][`${subKey}Delta`] / (sr / 1000);
