@@ -91,7 +91,6 @@ class ProfilingController extends EventEmitter {
             .collection('system.profile')
             .find({ ns: nsFilter })
             .sort({ millis: -1 })
-            .limit(20)
             .toArray();
         })
         .then(d => resolve(aggregateResult(d)))
@@ -228,8 +227,7 @@ class ProfilingController extends EventEmitter {
       .then(stats => {
         return { dbName, stats };
       })
-      .catch(err => {
-        l.error(err);
+      .catch(() => {
         return null;
       });
   }
