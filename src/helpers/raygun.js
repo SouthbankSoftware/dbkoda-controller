@@ -5,7 +5,7 @@
  * @Date:   2018-04-27T11:01:11+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-01T18:40:19+10:00
+ * @Last modified time: 2018-05-01T19:36:40+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -48,8 +48,12 @@ export const raygunClient = new raygun.Client().init({
   }
 });
 
+const tags = ['dbkoda-controller', IS_PRODUCTION ? 'prod' : 'dev'];
+
+global.UAT && tags.push('uat');
+
 raygunClient.setVersion(version);
-raygunClient.setTags(['dbkoda-controller', IS_PRODUCTION ? 'prod' : 'dev']);
+raygunClient.setTags(tags);
 
 export const setUser = (user: { id: string }) => {
   raygunClient.user = () => ({
@@ -90,7 +94,7 @@ export class RaygunTransport extends Transport {
   log(info: *, callback: *) {
     const { error, customData, callback: cb, request, tags } = info;
 
-    if (!error) {
+    if (!error || process.env.NODE_ENV === 'test') {
       callback && callback();
       cb && cb();
       return;
@@ -121,7 +125,7 @@ export class RaygunTransport extends Transport {
 }
 
 // by default crash process
-let exitOnUnhandledError = true;
+let exitOnUnhandledError = process.env.NODE_ENV !== 'test';
 
 const onUnhandledRejection = reason => {
   l.error('Unhandled rejection: ', reason instanceof Error ? reason : new Error(String(reason)), {
