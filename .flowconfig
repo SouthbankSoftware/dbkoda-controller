@@ -18,4 +18,3 @@ suppress_comment=\\(.\\|\n\\)*\\$FlowIssue
 suppress_type=$FlowFixMe
 munge_underscores=true
 esproposal.decorators=ignore
-ignore_symbols_as_keys=true

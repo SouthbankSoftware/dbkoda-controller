@@ -5,7 +5,7 @@
  * @Date:   2018-04-27T11:01:11+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-01T17:10:06+10:00
+ * @Last modified time: 2018-05-01T18:40:19+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -31,6 +31,7 @@ import raygun from 'raygun';
 import path from 'path';
 // $FlowFixMe
 import sh from 'shelljs';
+// $FlowFixMe
 import Transport from 'winston-transport';
 // $FlowFixMe
 import { version, apiKey } from './pkginfo';
@@ -124,6 +125,7 @@ let exitOnUnhandledError = true;
 
 const onUnhandledRejection = reason => {
   l.error('Unhandled rejection: ', reason instanceof Error ? reason : new Error(String(reason)), {
+    // $FlowFixMe
     [Symbol.for('info')]: {
       tags: ['unhandled rejection'],
       callback: exitOnUnhandledError ? () => process.exit(1) : null
@@ -133,6 +135,7 @@ const onUnhandledRejection = reason => {
 
 const onUncaughtException = err => {
   l.error('Unhandled exception: ', err, {
+    // $FlowFixMe
     [Symbol.for('info')]: {
       tags: ['unhandled exception'],
       callback: exitOnUnhandledError ? () => process.exit(1) : null
