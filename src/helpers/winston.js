@@ -3,7 +3,7 @@
  * @Date:   2018-03-06T16:47:58+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-01T16:45:32+10:00
+ * @Last modified time: 2018-05-02T12:22:45+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -143,5 +143,7 @@ export const bindDbKodaLoggingApi = logger => {
     logger.error(...args, { [infoSymbol]: { raygun: false } });
   };
 
+  // finally, connect general error. Note that original `console.error` is already backed up as
+  // `console._error`
   console.error = logger.error;
 };

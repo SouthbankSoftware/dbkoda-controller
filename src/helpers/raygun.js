@@ -5,7 +5,7 @@
  * @Date:   2018-04-27T11:01:11+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-01T20:22:12+10:00
+ * @Last modified time: 2018-05-03T17:17:47+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,7 +28,6 @@
 
 // $FlowFixMe
 import raygun from 'raygun';
-import path from 'path';
 import _ from 'lodash';
 // $FlowFixMe
 import sh from 'shelljs';
@@ -37,24 +36,7 @@ import Transport from 'winston-transport';
 // $FlowFixMe
 import { version, apiKey } from './pkginfo';
 
-const cachePath = path.resolve(global.DBKODA_HOME, 'raygunCache/dbkoda-controller/');
-sh.mkdir('-p', cachePath);
-
-export const raygunClient = new raygun.Client().init({
-  apiKey,
-  isOffline: false,
-  offlineStorageOptions: {
-    cachePath,
-    cacheLimit: 1000
-  }
-});
-
-const tags = ['dbkoda-controller', IS_PRODUCTION ? 'prod' : 'dev'];
-
-global.UAT && tags.push('uat');
-
-raygunClient.setVersion(version);
-raygunClient.setTags(tags);
+export let raygunClient; // eslint-disable-line
 
 export const setUser = (user: { id: string }) => {
   raygunClient.user = () => ({
@@ -62,13 +44,45 @@ export const setUser = (user: { id: string }) => {
   });
 };
 
-setUser({ id: 'beforeConfigLoaded' });
+export const initRaygun = (cachePath: string, defaultTags: string[]) => {
+  // ensure path exists
+  sh.mkdir('-p', cachePath);
+
+  raygunClient = new raygun.Client().init({
+    apiKey,
+    isOffline: false,
+    offlineStorageOptions: {
+      cachePath,
+      cacheLimit: 1000
+    }
+  });
+
+  defaultTags.push(global.IS_PRODUCTION ? 'prod' : 'dev');
+  global.UAT && defaultTags.push('uat');
+
+  raygunClient.setVersion(version);
+  raygunClient.setTags(defaultTags);
+
+  setUser({ id: 'beforeConfigLoaded' });
+};
+
+export let isRaygunEnabled = true; // eslint-disable-line
+
+let bringRaygunOnlineTimeout = null;
+const BRING_RAYGUN_ONLINE_TIMEOUT = 60000; // after a minute
 
 export const toggleRaygun = (enabled: boolean) => {
+  if (bringRaygunOnlineTimeout) {
+    clearTimeout(bringRaygunOnlineTimeout);
+    bringRaygunOnlineTimeout = null;
+  }
+
   if (enabled) {
     raygunClient.online();
+    isRaygunEnabled = true;
   } else {
     raygunClient.offline();
+    isRaygunEnabled = false;
   }
 };
 
@@ -92,9 +106,17 @@ console._error = console.error;
 
 export class RaygunTransport extends Transport {
   log(info: *, callback: *) {
-    const { error, customData: providedCustomData, callback: cb, request, tags, timestamp } = info;
+    const {
+      error,
+      raygun,
+      customData: providedCustomData,
+      callback: cb,
+      request,
+      tags,
+      timestamp
+    } = info;
 
-    if (!error || process.env.NODE_ENV === 'test') {
+    if (!error || raygun === false || process.env.NODE_ENV === 'test') {
       callback && callback();
       cb && cb();
       return;
@@ -106,15 +128,43 @@ export class RaygunTransport extends Transport {
 
     sendError(error, {
       customData,
-      callback: (res: *) => {
-        const code = res.statusCode > 499 ? '5XX' : res.statusCode;
-        const errMsg = raygunErrorMessages[code];
+      callback: (err: Error, res: *) => {
+        let raygunError;
 
-        if (errMsg) {
-          // $FlowFixMe
-          console._error(new Error(`RaygunTransport: [${code}] ${errMsg}`));
+        if (err) {
+          raygunError = err;
+          raygunError.message = `RaygunTransport: ${raygunError.message}`;
+        } else if (res) {
+          const code = res.statusCode > 499 ? '5XX' : res.statusCode;
+          const errMsg = raygunErrorMessages[code];
+
+          if (errMsg) {
+            raygunError = new Error(`RaygunTransport: [${code}] ${errMsg}`);
+          }
+        }
+
+        if (raygunError) {
+          if (isRaygunEnabled) {
+            raygunClient.offline();
+
+            if (!bringRaygunOnlineTimeout) {
+              bringRaygunOnlineTimeout = setTimeout(() => {
+                raygunClient.online();
+                bringRaygunOnlineTimeout = null;
+              }, BRING_RAYGUN_ONLINE_TIMEOUT);
+            }
+
+            // save the error to offline cache
+            sendError(error, {
+              customData,
+              request,
+              tags
+            });
+          }
+
+          global.l._error(raygunError);
           callback && callback();
-          cb && cb(res);
+          cb && cb(raygunError);
           return;
         }
 
@@ -131,24 +181,29 @@ export class RaygunTransport extends Transport {
 // by default crash process
 let exitOnUnhandledError = process.env.NODE_ENV !== 'test';
 
+const handleError = (err, desc) => {
+  if (_.has(global, 'l.error')) {
+    global.l.error(`${_.upperFirst(desc)}: `, err, {
+      // $FlowFixMe
+      [Symbol.for('info')]: {
+        tags: [desc],
+        callback: exitOnUnhandledError ? () => process.exit(1) : null
+      }
+    });
+  } else {
+    console.error(`${_.upperFirst(desc)}: `, err);
+    exitOnUnhandledError && process.exit(1);
+  }
+};
+
 const onUnhandledRejection = reason => {
-  l.error('Unhandled rejection: ', reason instanceof Error ? reason : new Error(String(reason)), {
-    // $FlowFixMe
-    [Symbol.for('info')]: {
-      tags: ['unhandled rejection'],
-      callback: exitOnUnhandledError ? () => process.exit(1) : null
-    }
-  });
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+
+  handleError(err, 'unhandled rejection');
 };
 
 const onUncaughtException = err => {
-  l.error('Unhandled exception: ', err, {
-    // $FlowFixMe
-    [Symbol.for('info')]: {
-      tags: ['unhandled exception'],
-      callback: exitOnUnhandledError ? () => process.exit(1) : null
-    }
-  });
+  handleError(err, 'unhandled exception');
 };
 
 process.on('unhandledRejection', onUnhandledRejection);

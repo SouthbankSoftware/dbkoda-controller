@@ -98,7 +98,7 @@
     "fs-extra": "^4.0.2",
     "generic-pool": "^3.2.0",
     "js-yaml": "^3.10.0",
-    "lodash": "^4.17.2",
+    "lodash": "^4.17.10",
     "md5-hex": "^2.0.0",
     "moment": "^2.21.0",
     "mongodb": "^3.0.6",
