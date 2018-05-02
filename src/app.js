@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-13T11:32:05+11:00
+ * @Last modified time: 2018-05-01T17:22:07+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -34,7 +34,12 @@ import bodyParser from 'body-parser';
 import primus from 'feathers-primus';
 import swagger from 'feathers-swagger';
 import sh from 'shelljs';
-import { levelConfig, commonFormatter, printfFormatter } from '~/helpers/winston';
+import {
+  levelConfig,
+  commonFormatter,
+  printfFormatter,
+  bindDbKodaLoggingApi
+} from '~/helpers/winston';
 import os from 'os';
 import fs from 'fs';
 
@@ -61,13 +66,10 @@ global.PROFILES_PATH = process.env.PROFILES_PATH =
 
 // config winston. The logger should be configured first
 {
+  const { RaygunTransport } = require('~/helpers/raygun');
+
   global.l = createLogger({
-    format: format.combine(
-      format.splat(),
-      commonFormatter,
-      format.colorize({ all: true }),
-      printfFormatter
-    ),
+    format: format.combine(commonFormatter, format.colorize({ all: true }), printfFormatter),
     level: global.IS_PRODUCTION ? 'info' : 'debug',
     levels: levelConfig.levels,
     transports: [
@@ -77,13 +79,18 @@ global.PROFILES_PATH = process.env.PROFILES_PATH =
         datePattern: 'YYYY-MM-DD',
         maxSize: '1m',
         maxFiles: global.IS_PRODUCTION ? '30d' : '3d'
-      })
+      }),
+      new RaygunTransport()
     ]
   });
 
   addColors(levelConfig);
 
   global.log = global.l;
+  bindDbKodaLoggingApi(l);
+
+  // NOTE: after this point, every error (unhandled, l.error, console.error) should be reported to
+  // `raygun`
 }
 
 // Ensure profiles.yml exists

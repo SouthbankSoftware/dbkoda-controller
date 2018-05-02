@@ -3,8 +3,8 @@
  *
  * @Author: christrott
  * @Date:   2018-01-02T16:24:08+11:00
- * @Last modified by:   christrott
- * @Last modified time: 2018-01-30T16:24:08+11:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-05-01T17:16:46+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -107,7 +107,7 @@ export class MasterPass {
         });
       })
       .catch(error => {
-        console.log(error);
+        l.warn(error);
         return Promise.reject(error);
       });
   }
