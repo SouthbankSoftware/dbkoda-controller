@@ -38,8 +38,8 @@ const iterateProperty = (obj, parent, stacks = []) => {
   }, stacks);
 };
 
-const aggregateResult = results => {
-  return results.reduce((accumulator, ret) => {
+const aggregateResult = (results, opts) => {
+  const accumulator = results.reduce((accumulator, ret) => {
     let slack = { ns: ret.ns };
     let planQuery = '';
     let command = '';
@@ -65,19 +65,27 @@ const aggregateResult = results => {
       accumulator[hexResult].planQuery = planQuery;
       accumulator[hexResult].plansSummary = ret.planSummary;
       accumulator[hexResult].execStats = ret.execStats;
+      accumulator[hexResult].id = hexResult;
     }
     return accumulator;
   }, {});
+  const array = _.keys(accumulator).map(o => accumulator[o]);
+  array.sort((a, b) => {
+    return a.millis > b.millis ? -1 : a.millis < b.millis ? 1 : 0;
+  });
+  return array.slice(0, opts.limit);
 };
 
 class ProfilingController extends EventEmitter {
   setup(app) {
     this.app = app;
     this.dbNameSpace = {};
+    this.defaultOptions = { limit: 20 };
   }
 
-  profile(db, dbName, colName) {
+  profile(db, dbName, colName, options = {}) {
     const nsFilter = colName ? `${dbName}.${colName}` : { $regex: `${dbName}.*` };
+    const opts = { ...this.defaultOptions, ...options };
     return new Promise((resolve, reject) => {
       db
         .db(dbName)
@@ -91,9 +99,10 @@ class ProfilingController extends EventEmitter {
             .collection('system.profile')
             .find({ ns: nsFilter })
             .sort({ millis: -1 })
+            .limit(20000)
             .toArray();
         })
-        .then(d => resolve(aggregateResult(d)))
+        .then(d => resolve(aggregateResult(d, opts)))
         .catch(err => reject(err));
     });
   }

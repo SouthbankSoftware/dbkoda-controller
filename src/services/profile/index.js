@@ -44,7 +44,7 @@ class Profile {
     const { driver, db } = connectObj;
     if (op === 'profile') {
       const { dbName, colName } = params.query;
-      return this.controller.profile(driver, dbName, colName);
+      return this.controller.profile(driver, dbName, colName, params.query);
     } else if (op === 'configuration') {
       return this.controller.get(driver, db);
     }

@@ -21,33 +21,7 @@
  * Created by joey on 14/8/17.
  */
 
-import winston from 'winston';
-
-const commonOptions = {
-  colorize: 'all'
-};
-
-const transports = [new winston.transports.Console(commonOptions)];
-global.l = new winston.Logger({
-  level: global.IS_PRODUCTION ? 'info' : 'debug',
-  padLevels: true,
-  levels: {
-    error: 0,
-    warn: 1,
-    notice: 2,
-    info: 3,
-    debug: 4
-  },
-  colors: {
-    error: 'red',
-    warn: 'yellow',
-    notice: 'green',
-    info: 'black',
-    debug: 'blue'
-  },
-  transports
-});
-global.log = global.l;
+global.log = global.l = console;
 log.debug('create shell');
 const MongoShell = require('./index').MongoShell;
 
