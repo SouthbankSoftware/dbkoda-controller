@@ -276,17 +276,6 @@ class MongoShell extends EventEmitter {
       return;
     }
 
-    if (data.match(/shellAutocomplete.*__autocomplete__*/) && !this.autoComplete) {
-      // Autocomplete slipped through, filter out
-      this.ignoreAutocomplete = true;
-      return;
-    }
-
-    if (this.ignoreAutocomplete && data.trim().match(/.*]/)) {
-      this.ignoreAutocomplete = false;
-      return;
-    }
-
     if (this.ignoreEmit) {
       return;
     }
@@ -393,7 +382,7 @@ class MongoShell extends EventEmitter {
     }
     this.autoComplete = true;
     this.autoCompleteOutput = '';
-    this.writeToShell(command);
+    this.writeSyncCommand(command);
   }
 
   /**
