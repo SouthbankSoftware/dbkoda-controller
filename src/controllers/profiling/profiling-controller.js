@@ -65,20 +65,15 @@ const aggregateResult = (results, opts) => {
       accumulator[hexResult].planQuery = planQuery;
       accumulator[hexResult].plansSummary = ret.planSummary;
       accumulator[hexResult].execStats = ret.execStats;
-      accumulator[hexResult].hexResult = hexResult;
+      accumulator[hexResult].id = hexResult;
     }
     return accumulator;
   }, {});
-  let array = _.keys(accumulator).map(o => accumulator[o]);
+  const array = _.keys(accumulator).map(o => accumulator[o]);
   array.sort((a, b) => {
     return a.millis > b.millis ? -1 : a.millis < b.millis ? 1 : 0;
   });
-  array = array.slice(0, opts.limit);
-  const ret = {};
-  array.forEach(a => {
-    ret[a.hexResult] = a;
-  });
-  return ret;
+  return array.slice(0, opts.limit);
 };
 
 class ProfilingController extends EventEmitter {
