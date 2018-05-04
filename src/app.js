@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-01T17:22:07+10:00
+ * @Last modified time: 2018-05-03T17:18:21+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -40,6 +40,7 @@ import {
   printfFormatter,
   bindDbKodaLoggingApi
 } from '~/helpers/winston';
+import { initRaygun, RaygunTransport } from '~/helpers/raygun';
 import os from 'os';
 import fs from 'fs';
 
@@ -64,11 +65,14 @@ global.CONFIG_PATH = process.env.CONFIG_PATH =
 global.PROFILES_PATH = process.env.PROFILES_PATH =
   process.env.PROFILES_PATH || path.resolve(global.DBKODA_HOME, 'profiles.yml');
 
-// config winston. The logger should be configured first
-{
-  const { RaygunTransport } = require('~/helpers/raygun');
+// `raygun` should always be inited
+initRaygun(path.resolve(global.DBKODA_HOME, 'raygunCache/dbkoda-controller/'), [
+  'dbkoda-controller'
+]);
 
-  global.l = createLogger({
+// config winston
+{
+  global.logger = global.log = global.l = createLogger({
     format: format.combine(commonFormatter, format.colorize({ all: true }), printfFormatter),
     level: global.IS_PRODUCTION ? 'info' : 'debug',
     levels: levelConfig.levels,
@@ -86,7 +90,6 @@ global.PROFILES_PATH = process.env.PROFILES_PATH =
 
   addColors(levelConfig);
 
-  global.log = global.l;
   bindDbKodaLoggingApi(l);
 
   // NOTE: after this point, every error (unhandled, l.error, console.error) should be reported to
