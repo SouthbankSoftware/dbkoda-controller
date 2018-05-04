@@ -49,42 +49,8 @@ class AutoCompleteController {
         const output = data.replace('[', '').replace(']', '');
         let array = output.split(',');
         array = array.map(a => a.trim().replace(/"/g, ''));
-
+        shell.removeListener(MongoShell.AUTO_COMPLETE_END, listener);
         resolve(array);
-        // let removeLength = length;
-        // shell.removeListener(MongoShell.AUTO_COMPLETE_END, listener);
-        // const output = [];
-        // if (Array.isArray(data)) {
-        //   data.map((line) => {
-        //     const splits = line.split(' ');
-        //     splits.map((l) => {
-        //       if (l.length > removeLength) {
-        //         removeLength = l.length;
-        //       }
-        //       // sometimes got a dot line
-        //       if (l.trim().length > 0) {
-        //         const newL = l.split('\r\n');
-        //         if (newL.length > 1) {
-        //           newL.map(ll => output.push(stripAnsi(ll)));
-        //         } else {
-        //           output.push(stripAnsi(l));
-        //         }
-        //       }
-        //     });
-        //   });
-        // }
-        // // remove left command on shell
-        // _.times(removeLength, () => shell.writeToShell('\b'));
-        // let outputArray = [];
-        // output.map((o) => {
-        //   if (o && o !== command && o.length > command.length) {
-        //     outputArray.push(stripAnsi(o));
-        //   }
-        // });
-        // outputArray.splice(0, 1);
-        // // make sure give unique response
-        // outputArray = _.union(outputArray);
-        // resolve(outputArray);
       };
       shell.on(MongoShell.AUTO_COMPLETE_END, listener);
     });
