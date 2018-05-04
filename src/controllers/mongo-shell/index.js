@@ -229,6 +229,8 @@ class MongoShell extends EventEmitter {
       this.initialized = true;
     } else if (this.autoComplete) {
       this.autoComplete = false;
+      this.syncExecution = false;
+      this.executing = false;
       const output = this.autoCompleteOutput
         .replace(/shellAutocomplete.*__autocomplete__/, '')
         .replace(MongoShell.prompt, '');
@@ -489,6 +491,7 @@ class MongoShell extends EventEmitter {
   }
 
   killProcess() {
+    this.removeAllListeners();
     if (isDockerCommand(this.mongoCmd)) {
       this.writeToShell('exit\n');
     } else {
