@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-10-02T13:50:52+11:00
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-02T17:33:37+10:00
+ * @Last modified time: 2018-05-04T11:05:40+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -25,9 +25,9 @@
 
 /* eslint-disable */
 
-declare var l: Function;
-declare var log: Function;
-declare var logger: Function;
+declare var l: any;
+declare var log: any;
+declare var logger: any;
 declare var IS_PRODUCTION: boolean;
 
 declare type UUID = string;
