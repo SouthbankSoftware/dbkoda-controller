@@ -74,16 +74,6 @@ const updateMongoCmd = mongoCmd => {
   }
 };
 
-const updateDockerCmd = config => {
-  if (config.dockerEnabled) {
-    global.config.mongoVersionCmd = config.docker.mongoVersionCmd;
-    global.config.mongoCmd = config.docker.mongoCmd;
-    SIBLING_MONGO_CMD.forEach(c => {
-      global.config[c] = config.docker[c];
-    });
-  }
-};
-
 export const getDumpableConfigView = (config: *) => _.pick(config, _.keys(configDefaults));
 
 const HISTORY_SIZE_PATH = 'performancePanel.historySize';
