@@ -39,7 +39,6 @@ import path from 'path';
 import { execSync } from 'child_process';
 import nanoid from 'nanoid';
 import { configDefaults } from '../configSchema';
-import { isDockerCommand } from '../../../controllers/docker';
 
 const SIBLING_MONGO_CMD = ['mongodumpCmd', 'mongorestoreCmd', 'mongoimportCmd', 'mongoexportCmd'];
 
@@ -50,9 +49,7 @@ const getMongoCmd = () => {
     if (os.platform() === 'win32') {
       mongoCmd = 'mongo.exe';
     } else {
-      mongoCmd = execSync("bash -lc 'which mongo'", {
-        encoding: 'utf8'
-      }).trim();
+      mongoCmd = execSync("bash -lc 'which mongo'", { encoding: 'utf8' }).trim();
       const tmp = mongoCmd.split('\n');
       if (tmp.length > 0) {
         mongoCmd = tmp[tmp.length - 1];
@@ -65,15 +62,25 @@ const getMongoCmd = () => {
 };
 
 const updateMongoCmd = mongoCmd => {
-  if (!mongoCmd) return;
+  if (!mongoCmd) {
+    return;
+  }
 
-  if (!isDockerCommand(mongoCmd)) {
-    global.config.mongoVersionCmd = `"${mongoCmd}" --version`;
-    const dir = path.dirname(mongoCmd);
-    const ext = os.platform() === 'win32' ? '.exe' : '';
-    for (const cmd of SIBLING_MONGO_CMD) {
-      global.config[cmd] = path.join(dir, `${cmd.slice(0, -3)}${ext}`);
-    }
+  global.config.mongoVersionCmd = `"${mongoCmd}" --version`;
+  const dir = path.dirname(mongoCmd);
+  const ext = os.platform() === 'win32' ? '.exe' : '';
+  for (const cmd of SIBLING_MONGO_CMD) {
+    global.config[cmd] = path.join(dir, `${cmd.slice(0, -3)}${ext}`);
+  }
+};
+
+const updateDockerCmd = config => {
+  if (config.dockerEnabled) {
+    global.config.mongoVersionCmd = config.docker.mongoVersionCmd;
+    global.config.mongoCmd = config.docker.mongoCmd;
+    SIBLING_MONGO_CMD.forEach(c => {
+      global.config[c] = config.docker[c];
+    });
   }
 };
 
@@ -101,9 +108,7 @@ const checkHistoryConfig = (currentConfig, nextConfig) => {
   }
 
   if (!_.isEmpty(errorsObj)) {
-    throw new errors.BadRequest('Data does not match schema', {
-      errors: errorsObj
-    });
+    throw new errors.BadRequest('Data does not match schema', { errors: errorsObj });
   }
 };
 
@@ -116,7 +121,8 @@ export default () =>
     const { config: nextConfig, emitChangedEvent, forceSave, fromConfigYml } = item;
     const { service } = context;
 
-    // `ajv` should guard most of the correctness by now, but some post checkings are also necessary
+    // `ajv` should guard most of the correctness by now, but some post checkings
+    // are also necessary
     checkHistoryConfig(global.config, nextConfig);
 
     // check and get default `mongoCmd`
@@ -155,9 +161,12 @@ export default () =>
     const hasChanges = !_.isEmpty(changed);
 
     if (hasChanges) {
-      if (changed.mongoCmd) {
-        updateMongoCmd(changed.mongoCmd.new);
+      if (changed.mongoCmd || changed.dockerEnabled) {
+        const newCmd = changed.mongoCmd ? changed.mongoCmd.new : null;
+        updateMongoCmd(newCmd);
       }
+
+      // updateDockerCmd(nextConfig);
 
       // emit changed event
       emitChangedEvent && service.emit('changed', changed);

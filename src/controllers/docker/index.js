@@ -17,6 +17,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-const isDockerCommand = cmd => cmd.indexOf('docker') >= 0;
+const isDockerCommand = () => global.config.dockerEnabled;
 
-module.exports = { isDockerCommand };
+const getMongoCommands = () => {
+  const { config } = global;
+  if (config.dockerEnabled) {
+    return config.docker;
+  }
+  return config;
+};
+
+module.exports = { isDockerCommand, getMongoCommands };

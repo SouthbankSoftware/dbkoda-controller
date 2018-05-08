@@ -51,6 +51,20 @@ export const configDefaults = {
   automaticAutoComplete: true,
   showWelcomePageAtStart: true,
   passwordStoreEnabled: false,
+  dockerEnabled: false,
+  docker: {
+    createNew: true,
+    imageName: '',
+    containerID: '',
+    hostPath: '',
+    containerPath: '',
+    mongoCmd: '',
+    mongorestoreCmd: '',
+    mongodumpCmd: '',
+    mongoexportCmd: '',
+    mongoimportCmd: '',
+    mongoVersionCmd: ''
+  },
   performancePanel: {
     preventDisplaySleep: false,
     metricSmoothingWindow: 6,
@@ -117,6 +131,47 @@ const configSchema = {
     passwordStoreEnabled: {
       type: 'boolean'
     },
+    dockerEnabled: {
+      type: 'boolean'
+    },
+    docker: {
+      type: 'object',
+      properties: {
+        createNew: {
+          type: 'boolean'
+        },
+        imageName: {
+          type: ['string', 'null']
+        },
+        containerID: {
+          type: ['string', 'null']
+        },
+        hostPath: {
+          type: ['string', 'null']
+        },
+        containerPath: {
+          type: ['string', 'null']
+        },
+        mongoCmd: {
+          type: ['string', 'null']
+        },
+        mongorestoreCmd: {
+          type: ['string', 'null']
+        },
+        mongoexportCmd: {
+          type: ['string', 'null']
+        },
+        mongodumpCmd: {
+          type: ['string', 'null']
+        },
+        mongoimportCmd: {
+          type: ['string', 'null']
+        },
+        mongoVersionCmd: {
+          type: ['string', 'null']
+        }
+      }
+    },
     performancePanel: {
       type: 'object',
       properties: {
@@ -160,7 +215,7 @@ ajv.addKeyword('validMongoCmd', {
   validate: (schema, path) => {
     if (path === null) return Promise.resolve(true);
 
-    if (isDockerCommand(path)) return Promise.resolve(true);
+    if (isDockerCommand()) return Promise.resolve(true);
 
     const mongoCmdValidatorService = app.service('mongo-cmd-validator');
 

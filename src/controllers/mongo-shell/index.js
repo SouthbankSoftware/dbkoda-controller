@@ -35,7 +35,7 @@ import fs from 'fs';
 import Status from '../mongo-connection/status';
 import Parser from './pty-parser';
 import PtyOptions from './pty-options';
-import { isDockerCommand } from '../docker';
+import { isDockerCommand, getMongoCommands } from '../docker';
 
 class MongoShell extends EventEmitter {
   constructor(connection, mongoScriptPath) {
@@ -60,7 +60,7 @@ class MongoShell extends EventEmitter {
 
   getShellVersion() {
     try {
-      const configObj = global.config; // should be read-only
+      const configObj = getMongoCommands(); // should be read-only
       log.info('Mongo Version Cmd:', configObj);
 
       if (!configObj.mongoVersionCmd) {
@@ -135,7 +135,7 @@ class MongoShell extends EventEmitter {
    * create a shell with pty
    */
   createShell() {
-    const configObj = global.config; // should be read-only
+    const configObj = getMongoCommands(); // should be read-only
     log.info('Mongo Cmd:', configObj);
 
     if (!configObj.mongoCmd) {
@@ -165,7 +165,7 @@ class MongoShell extends EventEmitter {
 
     let mongoCmdArray;
 
-    if (isDockerCommand(mongoCmd)) {
+    if (isDockerCommand()) {
       mongoCmdArray = mongoCmd.split(' ');
     } else if (mongoCmd.indexOf('"') === 0) {
       mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
@@ -212,7 +212,7 @@ class MongoShell extends EventEmitter {
     if (this.connection.requireSlaveOk) {
       this.writeToShell('rs.slaveOk()' + MongoShell.enter);
     }
-    if (isDockerCommand(mongoCmdArray[0])) {
+    if (isDockerCommand()) {
       this.readScriptsFileIntoShell();
     } else {
       this.loadScriptsIntoShell();
@@ -492,7 +492,7 @@ class MongoShell extends EventEmitter {
 
   killProcess() {
     this.removeAllListeners();
-    if (isDockerCommand(this.mongoCmd)) {
+    if (isDockerCommand()) {
       this.writeToShell('exit\n');
     } else {
       this.shell.kill();
