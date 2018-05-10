@@ -83,7 +83,7 @@ class Parser extends EventEmitter {
     }
     // check whether the last line in the buffer is prompt
     if (this.buffers.length > 0 && this.buffers[0].data) {
-      if (this.buffers[0].data.match(/dbKoda>$/)) {
+      if (this.buffers[0].data.match(/dbKoda Mongo Shell>$/)) {
         this.emit('command-ended');
       } else if (this.buffers[0].data.trim() === '...') {
         this.emit('incomplete-command-ended', '... ');

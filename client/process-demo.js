@@ -22,20 +22,31 @@
  */
 
 const { spawn } = require('node-pty');
+// const { spawn } = require('child_process');
 
 const handleShutdown = (e, n) => {
-  console.log('exit', e, n);
+  console.log('xxxxx exit', e, n);
   process.exit(e);
 };
-// process.on('exit', handleShutdown);
-// process.on('SIGINT', handleShutdown);
-// process.on('SIGHUP', handleShutdown);
-const p = spawn('mongo', ['mongodb://localhost:27017/admin']);
-p.on('data', d => console.log(d));
-p.write('show dbs\n');
 process.on('exit', handleShutdown);
 process.on('SIGINT', handleShutdown);
 process.on('SIGHUP', handleShutdown);
+
+const p = spawn('mongo', ['mongodb://localhost:27017/admin']);
+p.on('data', d => console.log(d));
+p.write('show dbs\n');
+p.on('error', code => {
+  console.log('child exit ', code);
+});
+p.on('exit', code => {
+  console.log('child exit ', code);
+});
+
+setTimeout(() => console.log('dsdff'), 5000);
+// process.removeAllListeners('SIGINT');
+// process.on('exit', handleShutdown);
+// process.on('SIGINT', handleShutdown);
+// process.on('SIGHUP', handleShutdown);
 
 // process.on('SIGTERM', handleShutdown);
 // process.on('SIGHUP', handleShutdown);

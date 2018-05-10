@@ -500,7 +500,7 @@ class MongoShell extends EventEmitter {
   }
 }
 
-MongoShell.prompt = 'dbKoda>';
+MongoShell.prompt = 'dbKoda Mongo Shell>';
 MongoShell.enter = '\r';
 MongoShell.comment = '  // dbKoda-mongodb-shell-comment.';
 MongoShell.executing = ' // dbKoda-mongodb-shell-executing';
