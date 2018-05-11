@@ -111,7 +111,7 @@ class MongoShell extends EventEmitter {
       } else {
         params.push(connection.url);
       }
-      if (connection.options && connection.options.ssl) {
+      if (connection.options && connection.ssl) {
         params.push('--ssl');
         if (connection.sslAllowInvalidCertificates) {
           params.push('--sslAllowInvalidCertificates');
