@@ -100,7 +100,7 @@ class MongoShell extends EventEmitter {
       } else {
         params = params.concat([connection.hosts]);
       }
-      if (connection.options && connection.options.ssl) {
+      if (connection.ssl) {
         params = params.concat(['--ssl', '--sslAllowInvalidCertificates']);
       }
       params.push(connection.database);
@@ -111,7 +111,7 @@ class MongoShell extends EventEmitter {
       } else {
         params.push(connection.url);
       }
-      if (connection.options && connection.ssl) {
+      if (connection.ssl) {
         params.push('--ssl');
         if (connection.sslAllowInvalidCertificates) {
           params.push('--sslAllowInvalidCertificates');
