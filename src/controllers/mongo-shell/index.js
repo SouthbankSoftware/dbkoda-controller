@@ -190,7 +190,7 @@ class MongoShell extends EventEmitter {
       l.error(error);
       throw error;
     }
-
+    global.addShutdownHander && global.addShutdownHander();
     this.status = Status.OPEN;
     this.shell.on('exit', exit => {
       l.info('mongo shell exit ', exit, this.initialized);
@@ -220,6 +220,7 @@ class MongoShell extends EventEmitter {
     this.on(MongoShell.AUTO_COMPLETE_END, () => {
       this.finishAutoComplete();
     });
+    // setTimeout(() => this.shell.write('\x03'), 10000);
   }
 
   commandEnded() {
@@ -495,8 +496,17 @@ class MongoShell extends EventEmitter {
     if (isDockerCommand()) {
       this.writeToShell('exit\n');
     } else {
-      this.shell.kill();
+      this.shell.destroy();
     }
+  }
+
+  terminateCurrentStatement() {
+    if (!this.executing) {
+      return Promise.reject(new Error('There is no running statement.'));
+    }
+    this.writeToShell('\x03');
+    this.emit(MongoShell.SHELL_EXIT, -1);
+    return Promise.resolve();
   }
 }
 

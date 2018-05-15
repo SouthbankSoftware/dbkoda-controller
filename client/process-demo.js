@@ -35,25 +35,22 @@ process.on('SIGHUP', handleShutdown);
 const p = spawn('mongo', ['mongodb://localhost:27017/admin']);
 p.on('data', d => console.log(d));
 p.write('show dbs\n');
-p.on('error', code => {
-  console.log('child exit ', code);
+p.on('SIGINT', code => {
+  console.log('child SIGINT ', code);
 });
 p.on('exit', code => {
   console.log('child exit ', code);
 });
+p.on('SIGHUP', code => {
+  console.log('child SIGHUP ', code);
+});
 
-setTimeout(() => console.log('dsdff'), 5000);
 // process.removeAllListeners('SIGINT');
+// process.removeAllListeners('exit');
 // process.on('exit', handleShutdown);
 // process.on('SIGINT', handleShutdown);
 // process.on('SIGHUP', handleShutdown);
 
-// process.on('SIGTERM', handleShutdown);
-// process.on('SIGHUP', handleShutdown);
-// process.on('SIGQUIT', handleShutdown);
-// p.on('exit', () => {
-//   console.log('exit from shell');
-// });
-
-// p.write('show dbs\n');
-// p.on('data', d => console.log(d));
+setTimeout(() => {
+  p.write('\x03');
+}, 2000);

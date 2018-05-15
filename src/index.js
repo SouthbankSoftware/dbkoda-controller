@@ -34,13 +34,13 @@ const closeConnections = () => {
   l.info('remove connections.');
   const ctr = app.service('mongo/connection/controller');
   const { connections } = ctr;
-  l.info('remove connections.', connections);
   if (connections) {
     _.keys(connections).forEach(conn => ctr.remove(conn));
   }
 };
 
 const handleShutdown = err => {
+  l.info('controller exit');
   // crash controller if unhandled error happens during shutting down phase
   setExitOnUnhandledError(true);
   closeConnections();
@@ -61,6 +61,14 @@ const handleShutdown = err => {
     });
 };
 
+const addShutdownHander = () => {
+  const signals = ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT'];
+  signals.forEach(s => process.removeAllListeners(s));
+  signals.forEach(s => process.on(s, handleShutdown));
+};
+
+global.addShutdownHander = addShutdownHander;
+
 app.once('ready', () => {
   // don't crash controller if unhandled error happens during runtime
   setExitOnUnhandledError(false);
@@ -78,12 +86,7 @@ app.once('ready', () => {
     }
   });
 
-  // register shutting down events
-  process.on('SIGINT', handleShutdown);
-  process.on('SIGTERM', handleShutdown);
-  process.on('SIGHUP', handleShutdown);
-  process.on('SIGQUIT', handleShutdown);
-
+  addShutdownHander();
   l.notice(`dbKoda Controller is ready at ${app.get('host')}:${port}`);
 });
 

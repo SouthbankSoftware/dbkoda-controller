@@ -60,13 +60,7 @@ class StopService {
   remove(id, params) {
     l.info('Stopping execution of ' + id + ' / ' + params.query.shellId);
     const shell = this.controller.getMongoShell(id, params.query.shellId);
-    let result;
-    if (shell.executing) {
-      result = Promise.resolve(shell.write('\x03'));
-    } else {
-      result = Promise.reject('No commands are currently executing');
-    }
-    return result;
+    return shell.terminateCurrentStatement();
   }
 }
 
