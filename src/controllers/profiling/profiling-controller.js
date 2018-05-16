@@ -21,8 +21,6 @@ const EventEmitter = require('events');
 const md5Hex = require('md5-hex');
 const _ = require('lodash');
 
-const { ErrorCodes } = require('../../errors/Errors');
-
 /* eslint-disable class-methods-use-this */
 
 const systemProfileCollectionName = 'system.profile';
@@ -91,9 +89,6 @@ class ProfilingController extends EventEmitter {
         .db(dbName)
         .command({ profile: -1 })
         .then(d => {
-          if (d.was <= 0) {
-            reject(new Error(ErrorCodes.PROFILING_DISABLED));
-          }
           return db
             .db(dbName)
             .collection('system.profile')
@@ -198,7 +193,6 @@ class ProfilingController extends EventEmitter {
         })
         .then(v => {
           const proms = v.map(value => {
-            console.log(value);
             const [dbName] = _.keys(value);
             const dbValue = value[dbName];
             return this.getSingleSystemProfileStats(driver, dbName)
