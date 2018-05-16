@@ -48,7 +48,7 @@ export const configDefaults = {
   telemetryEnabled: true,
   showNewFeaturesDialogOnStart: true,
   tableOutputDefault: false,
-  automaticAutoComplete: true,
+  automaticAutoComplete: false,
   showWelcomePageAtStart: true,
   passwordStoreEnabled: false,
   dockerEnabled: false,
