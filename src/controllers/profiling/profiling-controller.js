@@ -88,7 +88,7 @@ class ProfilingController extends EventEmitter {
       db
         .db(dbName)
         .command({ profile: -1 })
-        .then(d => {
+        .then(() => {
           return db
             .db(dbName)
             .collection('system.profile')
