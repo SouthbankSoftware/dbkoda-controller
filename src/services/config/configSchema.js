@@ -5,7 +5,7 @@
  * @Date:   2018-03-12T15:46:20+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-14T08:00:44+11:00
+ * @Last modified time: 2018-05-20T16:35:26+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -73,7 +73,8 @@ export const configDefaults = {
     historySize: 720,
     historyBrushSize: 30,
     alarmDisplayingWindow: 60000
-  }
+  },
+  maxOutputHistory: 1000
 };
 
 const configSchema = {
@@ -204,6 +205,10 @@ const configSchema = {
           minimum: 1000
         }
       }
+    },
+    maxOutputHistory: {
+      type: 'integer',
+      minimum: 1
     }
   },
   additionalProperties: false
