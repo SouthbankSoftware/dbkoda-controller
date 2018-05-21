@@ -60,12 +60,11 @@ export class MasterPass {
     if (!this.cryptoPass || !this.cryptoPass.masterPassword) {
       // $FlowFixMe
       this.emit(this.MASTER_PASSWORD_REQUIRED, { method: 'get' });
-      throw new errors.NotAuthenticated('Password Store not authenticated');
+      return Promise.reject(new errors.NotAuthenticated('Password Store not authenticated'));
     }
     return this.store.getPassword(_id).then((passwordEnc: string) => {
       if (!passwordEnc) {
-        Promise.reject();
-        throw new errors.NotFound(`Password store item ${_id} doesn't exist`);
+        return Promise.reject(new errors.NotFound(`Password store item ${_id} doesn't exist`));
       }
       const password: string = this.cryptoPass.decrypt(passwordEnc);
       return Promise.resolve(password);
