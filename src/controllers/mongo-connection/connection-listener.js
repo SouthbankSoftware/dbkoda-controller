@@ -93,7 +93,7 @@ class ConnectionListener extends EventEmitter {
   }
 
   onReconnect(e) {
-    l.error('reconnect success [' + this.id + ']');
+    l.debug('reconnect success [' + this.id + ']');
     if (this.retryTimeout) {
       clearTimeout(this.retryTimeout);
       this.retryTimeout = null;
