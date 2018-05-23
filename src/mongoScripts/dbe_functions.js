@@ -1,21 +1,28 @@
-//
-//  * dbKoda - a modern, open source code editor, for MongoDB.
-//  * Copyright (C) 2017-2018 Southbank Software
-//  *
-//  * This file is part of dbKoda.
-//  *
-//  * dbKoda is free software: you can redistribute it and/or modify
-//  * it under the terms of the GNU Affero General Public License as
-//  * published by the Free Software Foundation, either version 3 of the
-//  * License, or (at your option) any later version.
-//  *
-//  * dbKoda is distributed in the hope that it will be useful,
-//  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  * GNU Affero General Public License for more details.
-//  *
-//  * You should have received a copy of the GNU Affero General Public License
-//  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
+/**
+ * @Author: Guy Harrison <guy.harrison>
+ * @Date:   2018-04-26T09:58:14+10:00
+ * @Email:  guy@southbanksoftware.com
+ * @Last modified by:   wahaj
+ * @Last modified time: 2018-05-23T15:33:18+10:00
+ *
+ * dbKoda - a modern, open source code editor, for MongoDB.
+ * Copyright (C) 2017-2018 Southbank Software
+ *
+ * This file is part of dbKoda.
+ *
+ * dbKoda is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * dbKoda is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 //
 //
@@ -303,17 +310,25 @@ dbe.storageAnalysis = function() {
         var collData = {
           name: cname
         };
+        if (stats.storageSize) {
+          collData.size = stats.storageSize;
+          collData.storageSizeMB = stats.storageSize / 1048576;
+        } else {
+          collData.storageSizeMB = 0;
+        }
         collData.children = [];
         var indexes = [];
-        Object.keys(stats.indexSizes).forEach(function(idx) {
-          indexes.push({
-            name: idx,
-            size: stats.indexSizes[idx]
+        if (stats.indexSizes) {
+          Object.keys(stats.indexSizes).forEach(function(idx) {
+            indexes.push({
+              name: idx,
+              size: stats.indexSizes[idx]
+            });
           });
-        });
+        }
         collData.children.push({
           name: 'data',
-          size: stats.storageSize
+          size: stats.storageSize ? stats.storageSize : 0
         });
         collData.children.push({
           name: 'indexes',
