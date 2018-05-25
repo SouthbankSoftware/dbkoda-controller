@@ -3,7 +3,7 @@
  * @Date:   2018-04-26T09:58:14+10:00
  * @Email:  guy@southbanksoftware.com
  * @Last modified by:   wahaj
- * @Last modified time: 2018-05-23T15:33:18+10:00
+ * @Last modified time: 2018-05-25T13:56:39+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -311,7 +311,7 @@ dbe.storageAnalysis = function() {
           name: cname
         };
         if (stats.storageSize) {
-          collData.size = stats.storageSize;
+          // collData.size = stats.storageSize;
           collData.storageSizeMB = stats.storageSize / 1048576;
         } else {
           collData.storageSizeMB = 0;
