@@ -126,6 +126,8 @@ class SyncExecutionController {
         output = output.replace(/ISODate\("([a-zA-Z0-9-:.]*)"\)/g, '"ISODate(\'$1\')"');
         output = output.replace(/NumberLong\(([a-zA-Z0-9]*)\)/g, '"NumberLong(\'$1\')"');
         output = output.replace(/NumberLong\("([a-zA-Z0-9]*)"\)/g, '"NumberLong(\'$1\')"');
+        output = output.replace(/NumberDecimal\(([a-zA-Z0-9.]*)\)/g, '"NumberLong(\'$1\')"');
+        output = output.replace(/NumberDecimal\("([a-zA-Z0-9.]*)"\)/g, '"NumberLong(\'$1\')"');
         output = output.replace(/Timestamp\(([a-zA-Z0-9.:-_, ]*)\)/g, '"ObjectId(\'$1\')"');
         output = output.replace(/(BinData\(\d*?\W)(\")(.*?)(\")(\))/g, '"$1\\$2$3\\$4$5"'); //eslint-disable-line
         try {
