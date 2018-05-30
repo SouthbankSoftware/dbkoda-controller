@@ -162,12 +162,14 @@ export default (options: {
               ns,
               microsecs_running: microsecsRunning = 0,
               command = null,
+              query = null,
               planSummary = null,
               currentOpTime = null
             } = v;
 
             if (!_.has(ops, opid)) {
               // add as new operation
+
               ops[opid] = {
                 ns,
                 op,
@@ -176,6 +178,10 @@ export default (options: {
                 planSummary,
                 currentOpTime
               };
+              if (query) {
+                // prior to 3.6, commandit was called query
+                ops[opid].command = query;
+              }
             } else {
               // update time elapsed
               const op = ops[opid];
