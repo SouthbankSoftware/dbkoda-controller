@@ -1,6 +1,6 @@
 /**
- * @Last modified by:   guiguan
- * @Last modified time: 2018-03-16T09:58:22+11:00
+ * @Last modified by:   wahaj
+ * @Last modified time: 2018-05-30T09:39:03+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -98,7 +98,12 @@ class MongoConnectionController {
       if (params.sshKeyFile) {
         sshOpts.privateKey = fs.readFileSync(params.sshKeyFile);
         try {
-          sshOpts.passPhrase = await this.passwordService.get(`${params.id}-s`);
+          sshOpts.passPhrase = await this.getStorePassword(
+            params.id,
+            params.remoteUser,
+            params.passPhrase,
+            '-s'
+          );
         } catch (err) {
           l.error(err);
         }

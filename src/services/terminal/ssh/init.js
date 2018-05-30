@@ -2,8 +2,8 @@
  * @Author: Guan Gui <guiguan>
  * @Date:   2017-11-16T10:55:12+11:00
  * @Email:  root@guiguan.net
- * @Last modified by:   guiguan
- * @Last modified time: 2017-12-03T14:39:29+11:00
+ * @Last modified by:   wahaj
+ * @Last modified time: 2018-05-30T10:56:46+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -66,68 +66,73 @@ export default async (context, item) => {
     }
   }
 
-  client
-    .on('ready', () => {
-      l.debug(`Created SSH Terminal ${_id}`);
+  try {
+    client
+      .on('ready', () => {
+        l.debug(`Created SSH Terminal ${_id}`);
 
-      client.shell(
-        { ...size, term: 'xterm' },
-        {
-          env: {
-            LANG: 'en_AU.UTF-8'
-          }
-        },
-        (err, stream) => {
-          if (err) {
-            l.error(`SSH Terminal ${_id} error`, err);
-            service.emitError(_id, err.message);
-            return;
-          }
-
-          const terminal = service.terminals.get(_id);
-          const onData = payload => {
-            if (terminal && terminal.debug) {
-              l.debug(`SSH Terminal ${_id}: ${JSON.stringify(payload)}`);
+        client.shell(
+          { ...size, term: 'xterm' },
+          {
+            env: {
+              LANG: 'en_AU.UTF-8'
             }
-            service.emit('data', { _id, payload });
-          };
+          },
+          (err, stream) => {
+            if (err) {
+              l.error(`SSH Terminal ${_id} error`, err);
+              service.emitError(_id, err.message);
+              return;
+            }
 
-          if (!terminal) {
-            l.error(`SSH Terminal ${_id} doesn't exist`);
-            return;
+            const terminal = service.terminals.get(_id);
+            const onData = payload => {
+              if (terminal && terminal.debug) {
+                l.debug(`SSH Terminal ${_id}: ${JSON.stringify(payload)}`);
+              }
+              service.emit('data', { _id, payload });
+            };
+
+            if (!terminal) {
+              l.error(`SSH Terminal ${_id} doesn't exist`);
+              return;
+            }
+
+            stream.setEncoding('utf8');
+            stream
+              .on('close', () => {
+                l.warn(`SSH Terminal ${_id} stream closed`);
+                service.emitError(_id, 'SSH stream closed', 'warn');
+
+                client.end();
+              })
+              .on('data', onData)
+              .stderr.on('data', onData)
+              .on('error', error => {
+                l.error(`SSH Terminal ${_id} stream error`, error);
+                service.emitError(_id, error.message);
+              });
+
+            terminal.stream = stream;
           }
-
-          stream.setEncoding('utf8');
-          stream
-            .on('close', () => {
-              l.warn(`SSH Terminal ${_id} stream closed`);
-              service.emitError(_id, 'SSH stream closed', 'warn');
-
-              client.end();
-            })
-            .on('data', onData)
-            .stderr.on('data', onData)
-            .on('error', error => {
-              l.error(`SSH Terminal ${_id} stream error`, error);
-              service.emitError(_id, error.message);
-            });
-
-          terminal.stream = stream;
-        }
-      );
-    })
-    .on('error', error => {
-      l.error(`SSH Terminal ${_id} error`, error);
-      service.emitError(_id, error.message);
-    })
-    .connect({
-      username,
-      password: password || storePassword,
-      host,
-      port,
-      privateKey,
-      passphrase
-    });
+        );
+      })
+      .on('error', error => {
+        l.error(`SSH Terminal ${_id} error`, error);
+        service.emitError(_id, error.message);
+      })
+      .connect({
+        username,
+        password: !privateKey ? password || storePassword : '',
+        host,
+        port,
+        privateKey,
+        passphrase: privateKey ? passphrase || storePassword : ''
+      });
+  } catch (error) {
+    l.error(`SSH Terminal ${_id} error`, error);
+    service.emitError(_id, 'Malformed private key. Bad passphrase?');
+  }
 
   return { client };
 };
