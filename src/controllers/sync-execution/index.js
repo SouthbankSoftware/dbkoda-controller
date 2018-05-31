@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-01T01:36:03+10:00
+ * @Last modified time: 2018-06-01T01:50:54+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -39,7 +39,7 @@ export class SyncExecutionController {
     this.mongoController = app.service('mongo/connection/controller');
   }
 
-  writeSyncCommand({ id, shellId, commands, responseType = 'json', clearQueue = false }) {
+  writeSyncCommand({ id, shellId, commands, responseType = 'json', _clearQueue = false }) {
     const shell = this.mongoController.getMongoShell(id, shellId);
     const newCmd = commands.replace(/\r/g, '');
     return new Promise((resolve, reject) => {
