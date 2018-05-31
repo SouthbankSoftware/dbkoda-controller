@@ -1,4 +1,9 @@
-/*
+/**
+ * @Author: joey
+ * @Date:   2016-12-23T13:05:45+11:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-06-01T01:21:18+10:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,14 +23,8 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Author: joey
- * @Date:   2016-12-23T13:05:45+11:00
- * @Last modified by:   guiguan
- * @Last modified time: 2017-06-08T18:01:54+10:00
- */
-
-const hooks = require('./hooks');
+import _ from 'lodash';
+import hooks from './hooks';
 
 class SyncExecutionService {
   constructor(options) {
@@ -63,23 +62,22 @@ class SyncExecutionService {
     this.controller = app.service('mongo/sync-execution/controller');
   }
 
-  /**
-   * run script commands on mongo shell
-   * @param id  the id of the connection
-   * @param data  {shellId, commands, responseType} shellId is the shell id to execute the commands
-   */
   update(id, data) {
     if (data.swapProfile == true) {
       log.info('swap to databse ', id, data.shellId, data.newProfile);
       return this.controller.swapProfile(id, data.shellId, data.newProfile);
     }
-    // eslint-disable-line
+
     log.info('run script commands', id, data, data.shellId);
-    return this.controller.writeSyncCommand(id, data.shellId, data.commands, data.responseType);
+    return this.controller.writeSyncCommand({
+      id,
+      ..._.pick(data, ['shellId', 'commands', 'responseType', 'clearQueue'])
+    });
   }
 }
 
-module.exports = function() {
+/** @ignore */
+export default function() {
   const app = this;
 
   // Initialize our service with any options it requires
@@ -95,6 +93,4 @@ module.exports = function() {
   // Set up our after hooks
   mongoExecutionService.after(hooks.after);
   return service;
-};
-
-module.exports.SyncExecutionService = SyncExecutionService;
+}

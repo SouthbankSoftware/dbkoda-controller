@@ -1,8 +1,6 @@
 /**
- * This class is used to create a wrapper on top of mongo shell and listen on its pty channels.
- *
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-13T22:42:31+11:00
+ * @Last modified time: 2018-06-01T00:56:05+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -37,7 +35,10 @@ import Parser from './pty-parser';
 import PtyOptions from './pty-options';
 import { isDockerCommand, getMongoCommands } from '../docker';
 
-class MongoShell extends EventEmitter {
+/**
+ * This class is used to create a wrapper on top of mongo shell and listen on its pty channels.
+ */
+export class MongoShell extends EventEmitter {
   constructor(connection, mongoScriptPath) {
     super();
     this.changePromptCmd = 'var prompt="' + MongoShell.prompt + '";\n';
@@ -50,7 +51,7 @@ class MongoShell extends EventEmitter {
     this.executing = false;
     this.status = Status.CREATED;
     this.mongoScriptPath = mongoScriptPath;
-    this.parser = new Parser();
+    this.parser = new Parser(MongoShell);
     this.autoComplete = false;
     this.shellVersion = this.getShellVersion();
     this.commandQueue = [];
@@ -223,7 +224,7 @@ class MongoShell extends EventEmitter {
     // setTimeout(() => this.shell.write('\x03'), 10000);
   }
 
-  commandEnded() {
+  commandEnded(execEndingStr) {
     if (!this.initialized) {
       this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt + MongoShell.enter);
       this.emit(MongoShell.INITIALIZED);
@@ -237,9 +238,11 @@ class MongoShell extends EventEmitter {
         .replace(MongoShell.prompt, '');
       this.emit(MongoShell.AUTO_COMPLETE_END, output);
     } else if (this.syncExecution) {
-      this.syncExecution = false;
-      this.executing = false;
-      this.emit(MongoShell.SYNC_EXECUTE_END, '');
+      if (execEndingStr === MongoShell.CUSTOM_EXEC_ENDING) {
+        this.syncExecution = false;
+        this.executing = false;
+        this.emit(MongoShell.SYNC_EXECUTE_END);
+      }
     } else if (this.executing) {
       const cmd = this.runCommandFromQueue();
       if (!cmd) {
@@ -368,7 +371,7 @@ class MongoShell extends EventEmitter {
       return;
     }
     data = data.replace(/\t/g, '  ');
-    l.debug('write to shell ', data);
+    l.debug('Writing to shell: ', data);
     this.currentCommand = data;
     this.shell.write(data);
   }
@@ -480,11 +483,11 @@ class MongoShell extends EventEmitter {
       return;
     }
     if (output && output.match('^connecting to: ')) {
-      const url = output.split('connecting to: ')[1];
+      const [, url] = output.split('connecting to: ');
       const pattern = /(\S+):(\S+)@(\S+)?/;
       const matches = url.match(pattern);
       if (matches && matches.length > 3) {
-        const rest = output.split(matches[0])[1];
+        const [, rest] = output.split(matches[0]);
         output = matches[1] + ':****************@' + matches[3] + rest;
       }
     }
@@ -511,6 +514,7 @@ class MongoShell extends EventEmitter {
 }
 
 MongoShell.prompt = 'dbKoda Mongo Shell>';
+MongoShell.CUSTOM_EXEC_ENDING = '__DBKODA_EXEC_END__';
 MongoShell.enter = '\r';
 MongoShell.comment = '  // dbKoda-mongodb-shell-comment.';
 MongoShell.executing = ' // dbKoda-mongodb-shell-executing';
@@ -523,5 +527,3 @@ MongoShell.AUTO_COMPLETE_END = 'mongo-auto-complete-end';
 MongoShell.INITIALIZED = 'mongo-shell-initialized';
 MongoShell.SHELL_EXIT = 'mongo-shell-process-exited';
 MongoShell.RECONNECTED = 'mongo-shell-reconnected';
-
-module.exports.MongoShell = MongoShell;

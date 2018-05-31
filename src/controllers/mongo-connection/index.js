@@ -1,6 +1,6 @@
 /**
- * @Last modified by:   wahaj
- * @Last modified time: 2018-05-30T09:39:03+10:00
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-05-31T22:36:13+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -236,7 +236,7 @@ class MongoConnectionController {
           const shell = new MongoShell(conn, this.getMongoScriptsPath());
           if (!shell.shellVersion || shell.shellVersion === 'UNKNOWN') {
             throw new errors.GeneralError(
-              'Creation of shell connection failed. Unable to detect  your mongo binary.<br/><br/>Please make sure the Mongo shell is in your path, or define path to mongo shell in the Preferences Panel.(Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)'
+              'Creation of shell connection failed. Unable to detect your mongo binary.<br/><br/>Please make sure the Mongo shell is in your path, or define path to mongo shell in the Preferences Panel.(Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)'
             );
           }
           return { success: true };
@@ -266,7 +266,7 @@ class MongoConnectionController {
             log.error('create mongo shell failed:', err);
             if (err.code === 'MONGO_BINARY_UNDETECTED') {
               throw new errors.GeneralError(
-                'Creation of shell connection failed. Unable to detect  your mongo binary.<br/><br/>Please make sure the Mongo shell is in your path, or define path to mongo shell in the Preferences Panel.(Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)'
+                'Creation of shell connection failed. Unable to detect your mongo binary.<br/><br/>Please make sure the Mongo shell is in your path, or define path to mongo shell in the Preferences Panel.(Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)'
               );
             } else if (err.responseCode === 'MONGO_BINARY_CORRUPTED') {
               log.error('Corrupted mongo binary');
@@ -627,16 +627,6 @@ class MongoConnectionController {
   }
 
   /**
-   * execute sync command
-   */
-  writeSyncCommand(id, shellId, commands) {
-    l.info('execute command ', id, shellId, commands);
-    const shell = this.getMongoShell(id, shellId);
-    shell.writeSyncCommand(`${commands}`);
-    return shell;
-  }
-
-  /**
    * get mongo shell instance based on id
    * @param id  connection id
    * @param shellId shell id
@@ -644,13 +634,15 @@ class MongoConnectionController {
   getMongoShell(id, shellId) {
     const connect = this.connections[id];
     if (!connect) {
-      l.error('connection ' + id + ' doesnt exist.');
-      throw new errors.BadRequest('Connection does not exist');
+      const msg = `Connection ${id} doesn't exist`;
+      l.error(msg);
+      throw new errors.BadRequest(msg);
     }
     const shell = connect.getShell(shellId);
     if (!shell) {
-      l.error('shell connection ' + shellId + ' doesnt exist.');
-      throw new errors.BadRequest('Connection does not exist');
+      const msg = `Shell ${shellId} doesn't exist`;
+      l.error(msg);
+      throw new errors.BadRequest(msg);
     }
     return shell;
   }

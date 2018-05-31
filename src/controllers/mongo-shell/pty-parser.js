@@ -1,7 +1,7 @@
 /**
  * Created by joey on 14/8/17
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-23T17:09:51+11:00
+ * @Last modified time: 2018-06-01T00:28:36+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -22,25 +22,25 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const _ = require('lodash');
-const { EventEmitter } = require('events');
-const ParseState = require('./parser-state');
-const {
+import _ from 'lodash';
+import { EventEmitter } from 'events';
+import escapeRegExp from 'escape-string-regexp';
+import ParseState from './parser-state';
+import {
   escapedStateHandler,
   csiStateHandler,
   csiStateParameterHandler,
   normalStateHandler
-} = require('./input-handler');
-const Buffer = require('./buffer');
-
-/* eslint no-fallthrough : 0 */
+} from './input-handler';
+import Buffer from './buffer';
 
 /**
  * parsing pty output
  */
-class Parser extends EventEmitter {
-  constructor() {
+export default class Parser extends EventEmitter {
+  constructor(MongoShell) {
     super();
+
     this.buffers = [];
     this.state = ParseState.NORMAL;
     this.currentParam = 0;
@@ -49,6 +49,9 @@ class Parser extends EventEmitter {
     this.postfix = '';
     this.bufferX = 0; // the x position on the buffer
     this.bufferY = 0; // the y position on the buffer
+
+    Parser.PROMPT_REGEX = new RegExp(`${escapeRegExp(MongoShell.prompt)}$`);
+    Parser.CUSTOM_EXEC_ENDING_REGEX = new RegExp(`${escapeRegExp(MongoShell.CUSTOM_EXEC_ENDING)}$`);
   }
 
   getCachedBuffer() {
@@ -56,41 +59,77 @@ class Parser extends EventEmitter {
     return Object.assign({}, cachedBuffer);
   }
 
-  /**
-   * listen on pty output
-   *
-   * @param data
-   */
   onRead(data) {
     this.parse(data);
-    let cached = null;
-    if (this.buffers.length > 0) {
-      // if (this.bufferY === -1) {
-      //   // remove the cache line
-      //   this.bufferY = 0;
-      //   this.buffers.splice(0, 1);
-      // }
-      if (this.buffers.length === 0) {
-        return;
+
+    const buffersLen = this.buffers.length;
+    const lastBufferIdx = buffersLen - 1;
+    const secondLastBufferIdx = buffersLen - 2;
+
+    for (let i = 0; i < buffersLen; i += 1) {
+      const buffer = this.buffers[i].data;
+      let shouldEmit = true;
+
+      if (i === secondLastBufferIdx) {
+        const match = buffer.match(Parser.CUSTOM_EXEC_ENDING_REGEX);
+
+        if (match) {
+          shouldEmit = false;
+          this.emit('command-ended', match[0]);
+        }
+      } else if (i === lastBufferIdx) {
+        shouldEmit = false;
+
+        const match = buffer.match(Parser.PROMPT_REGEX);
+
+        if (match) {
+          this.emit('command-ended', match[0]);
+        } else if (buffer.trim() === '...') {
+          this.emit('incomplete-command-ended', '... ');
+        }
+
+        this.buffers = [this.buffers[i]];
       }
-      cached = this.buffers.pop();
-      this.buffers.map(buffer => {
-        l.debug('emit output data ', buffer.data);
-        this.emit('data', buffer.data);
-      });
-      this.buffers = [];
-      this.buffers.push(cached);
-    }
-    // check whether the last line in the buffer is prompt
-    if (this.buffers.length > 0 && this.buffers[0].data) {
-      if (this.buffers[0].data.match(/dbKoda Mongo Shell>$/)) {
-        this.emit('command-ended');
-      } else if (this.buffers[0].data.trim() === '...') {
-        this.emit('incomplete-command-ended', '... ');
+
+      if (shouldEmit) {
+        l.debug('Parser emitting: ', buffer);
+        this.emit('data', buffer);
       }
     }
-    this.bufferY = this.buffers.length - 1 >= 0 ? this.buffers.length - 1 : 0;
+
+    this.bufferY = 0;
   }
+
+  // onRead(data) {
+  //   this.parse(data);
+  //   let cached = null;
+  //   if (this.buffers.length > 0) {
+  //     // if (this.bufferY === -1) {
+  //     //   // remove the cache line
+  //     //   this.bufferY = 0;
+  //     //   this.buffers.splice(0, 1);
+  //     // }
+  //     if (this.buffers.length === 0) {
+  //       return;
+  //     }
+  //     cached = this.buffers.pop();
+  //     this.buffers.map(buffer => {
+  //       l.debug('emit output data ', buffer.data);
+  //       this.emit('data', buffer.data);
+  //     });
+  //     this.buffers = [];
+  //     this.buffers.push(cached);
+  //   }
+  //   // check whether the last line in the buffer is prompt
+  //   if (this.buffers.length > 0 && this.buffers[0].data) {
+  //     if (this.buffers[0].data.match(/dbKoda Mongo Shell>$/)) {
+  //       this.emit('command-ended');
+  //     } else if (this.buffers[0].data.trim() === '...') {
+  //       this.emit('incomplete-command-ended', '... ');
+  //     }
+  //   }
+  //   this.bufferY = this.buffers.length - 1 >= 0 ? this.buffers.length - 1 : 0;
+  // }
 
   /**
    * parse the data from pty output.
@@ -121,6 +160,7 @@ class Parser extends EventEmitter {
           }
           this.finalizeParam();
           this.state = ParseState.CSI;
+        // eslint-disable-next-line no-fallthrough
         case ParseState.CSI:
           if (Object.prototype.hasOwnProperty.call(csiStateHandler, ch)) {
             csiStateHandler[data[i]](this, this.params, this.prefix, this.postfix);
@@ -187,5 +227,3 @@ class Parser extends EventEmitter {
     this.bufferX = 0;
   }
 }
-
-module.exports = Parser;
