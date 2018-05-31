@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-01T01:50:54+10:00
+ * @Last modified time: 2018-06-01T09:49:22+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,7 +28,7 @@ import errors from 'feathers-errors';
 import escapeRegExp from 'escape-string-regexp';
 import { MongoShell } from '../mongo-shell';
 
-const OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.prompt)}.*|[\\n\\r]|\\.+`, 'g');
+const OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.prompt)}.*|[\\n\\r]`, 'g');
 
 export class SyncExecutionController {
   setup(app) {
@@ -97,7 +97,7 @@ export class SyncExecutionController {
       const commandStr = formattedCmds.replace(/[\n\r]+/g, '');
       log.debug('command:', commandStr);
 
-      output = output.replace(new RegExp(`${escapeRegExp(commandStr)}`, 'g'), '');
+      // output = output.replace(new RegExp(`${escapeRegExp(commandStr)}`, 'g'), '');
       l.debug('Filtered output:', output);
 
       if (responseType === 'json' || responseType === 'explain') {
