@@ -67,11 +67,15 @@ export default class Parser extends EventEmitter {
     const secondLastBufferIdx = buffersLen - 2;
 
     for (let i = 0; i < buffersLen; i += 1) {
-      const buffer = this.buffers[i].data;
+      const buffer = this.buffers[i];
+
+      if (!buffer) continue;
+
+      const bufferData = this.buffers[i].data;
       let shouldEmit = true;
 
       if (i === secondLastBufferIdx) {
-        const match = buffer.match(Parser.CUSTOM_EXEC_ENDING_REGEX);
+        const match = bufferData.match(Parser.CUSTOM_EXEC_ENDING_REGEX);
 
         if (match) {
           shouldEmit = false;
@@ -80,20 +84,20 @@ export default class Parser extends EventEmitter {
       } else if (i === lastBufferIdx) {
         shouldEmit = false;
 
-        const match = buffer.match(Parser.PROMPT_REGEX);
+        const match = bufferData.match(Parser.PROMPT_REGEX);
 
         if (match) {
           this.emit('command-ended', match[0]);
-        } else if (buffer.trim() === '...') {
+        } else if (bufferData.trim() === '...') {
           this.emit('incomplete-command-ended', '... ');
         }
 
-        this.buffers = [this.buffers[i]];
+        this.buffers = [buffer];
       }
 
       if (shouldEmit) {
-        l.debug('Parser emitting: ', buffer);
-        this.emit('data', buffer);
+        l.debug('Parser emitting: ', bufferData);
+        this.emit('data', bufferData);
       }
     }
 

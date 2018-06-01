@@ -98,8 +98,6 @@ export class SyncExecutionController {
       const commandStr = formattedCmds.replace(/[\n\r]+/g, '');
       log.debug('command:', commandStr);
 
-      // output = output.replace(new RegExp(`${escapeRegExp(commandStr)}`, 'g'), '');
-
       if (responseType === 'json' || responseType === 'explain') {
         output = toStrict(output);
 
@@ -115,7 +113,6 @@ export class SyncExecutionController {
           resolve(output);
         }
       } else {
-        // TODO: is thi still needed?
         resolve(output);
       }
 

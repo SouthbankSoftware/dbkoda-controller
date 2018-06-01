@@ -42,7 +42,7 @@ function toStrictSimple(str) {
       })
       // undefined, shell is buggy here too,
       // @see https://jira.mongodb.org/browse/SERVER-6102
-      .replace('undefined', '{ "$undefined": true }')
+      .replace(/:\s*undefined/g, ': { "$undefined": true }')
   );
 }
 
