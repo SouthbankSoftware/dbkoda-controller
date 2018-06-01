@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-01T09:49:22+10:00
+ * @Last modified time: 2018-06-01T10:34:17+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -27,8 +27,9 @@ import uuid from 'node-uuid';
 import errors from 'feathers-errors';
 import escapeRegExp from 'escape-string-regexp';
 import { MongoShell } from '../mongo-shell';
+import { toStrict } from './shell';
 
-const OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.prompt)}.*|[\\n\\r]`, 'g');
+const OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.prompt)}.*`, 'g');
 
 export class SyncExecutionController {
   setup(app) {
@@ -91,33 +92,24 @@ export class SyncExecutionController {
       l.debug('Sync execution ended');
       let output = shellOutputs.join('\n');
 
-      l.debug('Raw output:', output);
+      const rawOutput = output;
       output = output.replace(OUTPUT_FILTER_REGEX, '');
 
       const commandStr = formattedCmds.replace(/[\n\r]+/g, '');
       log.debug('command:', commandStr);
 
       // output = output.replace(new RegExp(`${escapeRegExp(commandStr)}`, 'g'), '');
-      l.debug('Filtered output:', output);
 
       if (responseType === 'json' || responseType === 'explain') {
-        // output = output.replace(/\n/g, '').replace(/\r/g, '');
-        // output = output.replace(/ObjectId\("([a-zA-Z0-9]*)"\)/g, '"ObjectId(\'$1\')"');
-        // output = output.replace(/ISODate\("([a-zA-Z0-9-:.]*)"\)/g, '"ISODate(\'$1\')"');
-        // output = output.replace(/NumberLong\(([a-zA-Z0-9]*)\)/g, '"NumberLong(\'$1\')"');
-        // output = output.replace(/NumberLong\("([a-zA-Z0-9]*)"\)/g, '"NumberLong(\'$1\')"');
-        // output = output.replace(/NumberDecimal\(([a-zA-Z0-9.]*)\)/g, '"NumberLong(\'$1\')"');
-        // output = output.replace(/NumberDecimal\("([a-zA-Z0-9.]*)"\)/g, '"NumberLong(\'$1\')"');
-        // output = output.replace(/Timestamp\(([a-zA-Z0-9.:-_, ]*)\)/g, '"ObjectId(\'$1\')"');
-        // output = output.replace(/(BinData\(\d*?\W)(")(.*?)(")(\))/g, '"$1\\$2$3\\$4$5"');
+        output = toStrict(output);
 
         try {
           JSON.parse(output);
 
-          l.debug('response output ', output);
-
           resolve(output);
         } catch (err) {
+          l.debug('Raw output:', rawOutput);
+          l.debug('Filtered output:', output);
           l.error(`Failed to parse json output for ${formattedCmds}:`, err);
 
           resolve(output);
