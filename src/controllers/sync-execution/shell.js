@@ -43,7 +43,10 @@ function toStrictSimple(str) {
       // undefined, shell is buggy here too,
       // @see https://jira.mongodb.org/browse/SERVER-6102
       .replace(/:\s*undefined/g, ': { "$undefined": true }')
-      .replace(/:\s*\/(.+?)\/([gimuyxs]{0,7})\s*/g, ': { "$regex": "$1", "$options": "$2" }')
+      .replace(
+        /:\s*\/([^\/\n]*?(?:\\\/)*?[^\/\n]*?)\/([gimuyxs]{0,7})(?=[\s\n]+)/g,
+        ': { "$regex": "$1", "$options": "$2" }'
+      )
   );
 }
 
