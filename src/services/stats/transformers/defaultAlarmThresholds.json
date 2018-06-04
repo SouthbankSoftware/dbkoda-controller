@@ -88,8 +88,8 @@
     "thresholds": [
       {
         "metric": "connections_current",
-        "l1": 2,
-        "l2": 3,
+        "l1": 3,
+        "l2": 4,
         "alarmPath": "alarm.mongo.connections_current",
         "warningMessage":
           "You have an unusually high number of connections (mean=%.2f,sd=%.2f, current=%d)",
