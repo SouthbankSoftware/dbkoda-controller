@@ -27,6 +27,7 @@ const { exec } = require('child_process');
 const errors = require('feathers-errors');
 const hooks = require('feathers-hooks-common');
 const request = require('request-promise');
+const psTree = require('ps-tree');
 const os = require('os');
 const _ = require('lodash');
 
@@ -75,10 +76,14 @@ class DrillRestController {
             cwd: drillPath,
             env: null
           },
-          err => {
-            log.error('failed to launch java controller ', err);
+          (stdout, stderr) => {
+            console.log(`drill-controller:stdout: ${stdout}`);
+            console.log(`drill-controller:stderr: ${stderr}`);
           }
         );
+        this.drillControllerInstance.on('exit', function (code) {
+            console.log('drill controller process exited with code ' + code);
+        });
         this.checkDrillConnectionStatus(
           result => {
             log.info('check java controller status:', result);
@@ -129,15 +134,13 @@ class DrillRestController {
         cwd: configObj.drillCmd + '/bin',
         env: null
       };
-      this.drillInstance = exec(drillCmdStr, drillOptions, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          // const err = new Error('Drill Exec Failed');
-          // err.code = 'DRILL_EXEC_FAILED';
-          // throw err;
-        }
-        console.log(`stdout: ${stdout}`);
-        console.log(`stderr: ${stderr}`);
+      this.drillInstance = exec(drillCmdStr, drillOptions, (stdout, stderr) => {
+        console.log(`drill:stdout: ${stdout}`);
+        console.log(`drill:stderr: ${stderr}`);
+      });
+
+      this.drillInstance.on('exit', function (code) {
+          console.log('drill process exited with code ' + code);
       });
       this.bDrillStarted = true;
     }
@@ -303,6 +306,9 @@ class DrillRestController {
           .then(result => {
             console.log(result);
             delete this.profileHash[params.alias];
+            if (Object.keys(this.profileHash).length === 0){
+              this.quitDrillProcess();
+            }
             resolve(true);
           })
           .catch(err => {
@@ -348,10 +354,48 @@ class DrillRestController {
     this.bDrillStarted = false;
     this.bDrillControllerStarted = false;
     if (this.drillInstance) {
-      this.drillInstance.kill('SIGTERM');
+      this.drillInstance.stdin.end();
+      this.kill( this.drillInstance.pid, 'SIGTERM', function() {
+          console.log('Drill got killed successfully!!');
+      });
     }
     if (this.drillControllerInstance) {
-      this.drillControllerInstance.kill('SIGTERM');
+      this.drillControllerInstance.stdin.end();
+      this.kill( this.drillControllerInstance.pid, 'SIGTERM', function() {
+          console.log('Drill controller got killed successfully!!')
+      });
+    }
+  }
+  kill(pid, signal, callback) {
+    signal   = signal || 'SIGKILL';
+    callback = callback || function () {};
+    const isWin = /^win/.test(process.platform);
+    if(!isWin) {
+      const killTree = true;
+      if(killTree) {
+          psTree(pid, function (err, children) {
+              [pid].concat(
+                  children.map(function (p) {
+                      return p.PID;
+                  })
+              ).forEach(function (tpid) {
+                  try { process.kill(tpid, signal) }
+                  catch (ex) { }
+              });
+              callback();
+          });
+      } else {
+          try { process.kill(pid, signal) }
+          catch (ex) { }
+          callback();
+      }
+    } else {
+      const cp = require('child_process');
+      cp.exec('taskkill /PID ' + pid + ' /T /F', {timeout: 5000}, function (error, stdout, stderr) {
+        if (stdout.indexOf('SUCCESS') >= 0) {
+          callback();
+        }
+      });
     }
   }
 }
