@@ -3,20 +3,14 @@
   "gitName": "dbkoda-controller",
   "fullName": "dbKoda Controller",
   "description": "dbKoda Controller built with state of the art Feathers stack",
-  "version": "1.0",
+  "version": "1.0.0",
   "author": {
     "name": "Southbank Software",
     "email": "developer@southbanksoftware.com",
     "url": "http://southbanksoftware.com"
   },
   "main": "lib/",
-  "keywords": [
-    "feathers",
-    "mongodb",
-    "shell",
-    "api",
-    "xterm"
-  ],
+  "keywords": ["feathers", "mongodb", "shell", "api", "xterm"],
   "engines": {
     "node": ">= 8.9.1"
   },
@@ -27,33 +21,43 @@
     "dev:debug": "yarn run dev:cbuild && yarn debug",
     "dev:test": "UAT=true yarn run dev",
     "dev:install": "yarn install --ignore-scripts",
-    "dev:build": "babel --source-maps --copy-files --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
+    "dev:build":
+      "babel --source-maps --copy-files --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
     "dev:cbuild": "yarn run clean && yarn run dev:build",
     "dev:watch": "nodemon --watch src --exec \"yarn dev\"",
-    "dev:watch:sampleConnections": "babel src/services/top-connections/sampleConnections.js  --source-maps --watch --out-file lib/services/top-connections/sampleConnections.js",
-    "dev:chrome": "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222 --no-first-run --user-data-dir=/tmp/chrome-dev-profile",
+    "dev:watch:sampleConnections":
+      "babel src/services/top-connections/sampleConnections.js  --source-maps --watch --out-file lib/services/top-connections/sampleConnections.js",
+    "dev:chrome":
+      "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222 --no-first-run --user-data-dir=/tmp/chrome-dev-profile",
     "start": "node lib/",
     "debug": "node --inspect-brk .",
     "clean": "rimraf lib controller-dev.log",
-    "build": "babel --copy-files --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
+    "build":
+      "babel --copy-files --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
     "test": "yarn flow && yarn run eslint && yarn run test:all",
     "test:win": "yarn flow && yarn run eslint && yarn run test:all:win",
     "eslint": "eslint --ignore-pattern src/mongoScripts src/. tests/.",
-    "test:integration": "rimraf data && NODE_ENV=test nyc mocha tests/integration/ --opts mocha.opts -t 20000",
-    "test:integration:win": "rimraf data && set NODE_ENV=test&& nyc mocha tests/integration/ --opts mocha.opts -t 20000",
+    "test:integration":
+      "rimraf data && NODE_ENV=test nyc mocha tests/integration/ --opts mocha.opts -t 20000",
+    "test:integration:win":
+      "rimraf data && set NODE_ENV=test&& nyc mocha tests/integration/ --opts mocha.opts -t 20000",
     "test:unit": "NODE_ENV=test nyc mocha tests/unit/ --opts mocha.opts",
     "test:dev": "NODE_ENV=test mocha --opts mocha.opts tests/ -f",
     "test:unit:win": "set NODE_ENV=test&& nyc mocha tests/unit/ --opts mocha.opts",
-    "test:all": "rimraf coverage && NODE_ENV=test nyc --reporter=html mocha tests/unit tests/integration -t 20000 --opts mocha.opts",
-    "test:all:win": "rimraf coverage && set NODE_ENV=test&& nyc --reporter=html mocha tests/unit tests/integration -t 20000 --opts mocha.opts",
+    "test:all":
+      "rimraf coverage && NODE_ENV=test nyc --reporter=html mocha tests/unit tests/integration -t 20000 --opts mocha.opts",
+    "test:all:win":
+      "rimraf coverage && set NODE_ENV=test&& nyc --reporter=html mocha tests/unit tests/integration -t 20000 --opts mocha.opts",
     "test:report": "open -b com.google.chrome coverage/index.html",
     "docs": "yarn run esdoc && open -b com.google.chrome ./docs/index.html",
     "esdoc": "rimraf docs && esdoc -c .esdoc.json",
     "flow": "flow",
     "flow:install": "flow-typed install --overwrite --skip",
-    "format": "bash -c 'INPUT=$(IFS=\"\n\"; echo \"$0\n$*\"); FI=$(egrep '\"'\"'\\.jsx?$|\\.json$|\\.scss$'\"'\"' <<< \"$INPUT\"); if [[ ! -z \"$FI\" ]]; then prettier --write $FI; fi; FI=$(egrep '\"'\"'\\.jsx?$'\"'\"' <<< \"$INPUT\"); if [[ ! -z \"$FI\" ]]; then eslint --fix $FI; fi'",
+    "format":
+      "bash -c 'INPUT=$(IFS=\"\n\"; echo \"$0\n$*\"); FI=$(egrep '\"'\"'\\.jsx?$|\\.json$|\\.scss$'\"'\"' <<< \"$INPUT\"); if [[ ! -z \"$FI\" ]]; then prettier --write $FI; fi; FI=$(egrep '\"'\"'\\.jsx?$'\"'\"' <<< \"$INPUT\"); if [[ ! -z \"$FI\" ]]; then eslint --fix $FI; fi'",
     "prepush": "yarn flow",
-    "precommit": "INPUT=$(git diff --name-only --cached --diff-filter=d); if [[ ! -z \"$INPUT\" ]]; then yarn format $INPUT; git add $INPUT; fi"
+    "precommit":
+      "INPUT=$(git diff --name-only --cached --diff-filter=d); if [[ ! -z \"$INPUT\" ]]; then yarn format $INPUT; git add $INPUT; fi"
   },
   "repository": {
     "type": "git",
