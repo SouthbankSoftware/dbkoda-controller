@@ -41,13 +41,25 @@ dbk_agg.aggId = 0;
 dbk_agg.sampleSize = 100; // No of rows we sample by default
 dbk_agg.resultSize = 20; // Maximum rows held in result cache
 dbk_agg.debug = false;
+dbk_agg.useLimitSample = true;
+
+dbk_agg.timer = function(startTime, message) {
+  // debug timings
+  var nowTime = new Date();
+  var elapsed = nowTime - startTime;
+  if (dbk_agg.debug) {
+    print(message, elapsed, 'ms');
+  }
+  return nowTime;
+};
 
 dbk_agg.setSampleSize = function(aggId) {
   if (dbk_agg.sampleSize > 0) {
     // If version is above 3.2
     if (
-      db.version().match(/^([012]|3.0|3.1).*/gim) || // eslint-disable-line
-      version().match(/^([012]|3.0|3.1).*/gim) // eslint-disable-line
+      dbk_agg.useLimitSample // Use LIMIT, not SAMPLE since it's much faster
+      // db.version().match(/^([012]|3.0|3.1).*/gim) || // eslint-disable-line
+      // version().match(/^([012]|3.0|3.1).*/gim) // eslint-disable-line
     ) {
       dbk_agg.aggregates[aggId].steps[0] = {
         $limit: dbk_agg.sampleSize
@@ -78,6 +90,7 @@ dbk_agg.setSampleSize = function(aggId) {
 };
 // Returns a new identifier for the aggregate builder
 dbk_agg.newAggBuilder = function(dbName, collectionName) {
+  var startTime = new Date(); // eslint-disable-line
   dbk_agg.aggId += 1;
   var newAgg = {};
   newAgg.dbName = dbName;
@@ -89,7 +102,13 @@ dbk_agg.newAggBuilder = function(dbName, collectionName) {
   newAgg.sampleSize = dbk_agg.sampleSize;
   dbk_agg.aggregates[dbk_agg.aggId] = newAgg;
   dbk_agg.setSampleSize(dbk_agg.aggId);
+
+  startTime = dbk_agg.timer(startTime, 'before get attributes');
+
   dbk_agg.getAttributes(dbk_agg.aggId, 0, true);
+
+  startTime = dbk_agg.timer(startTime, 'after get attributes');
+
   if (dbk_agg.debug) print('nagb aggId=' + dbk_agg.aggId); // eslint-disable-line
   return {
     id: dbk_agg.aggId
@@ -182,6 +201,7 @@ dbk_agg.validateStep = function(step) {
 //
 
 dbk_agg.getResults = function(aggId, stepId, reset) {
+  var startTime = new Date(); // eslint-disable-line
   dbk_agg.setSampleSize(aggId);
   var agg = dbk_agg.aggregates[aggId];
   var results = [];
@@ -194,6 +214,7 @@ dbk_agg.getResults = function(aggId, stepId, reset) {
     try {
       results = [];
       var returnCount = 0;
+      startTime = dbk_agg.timer(startTime, 'before fetching results');
       var stepCursor = mydb // eslint-disable-line
         .getCollection(agg.collectionName)
         .aggregate(partialPipeline);
@@ -203,6 +224,7 @@ dbk_agg.getResults = function(aggId, stepId, reset) {
     } catch (err) {
       error = err.code;
     }
+    startTime = dbk_agg.timer(startTime, 'after fetching results');
     // var subset = results.slice(0, 10);
 
     dbk_agg.aggregates[aggId].stepResults[stepId] = results;
@@ -214,7 +236,7 @@ dbk_agg.getResults = function(aggId, stepId, reset) {
   } else {
     results = dbk_agg.aggregates[aggId].stepResults[stepId];
   }
-
+  startTime = dbk_agg.timer(startTime, 'about to return results');
   return results;
 };
 
@@ -267,12 +289,14 @@ dbk_agg.attributesFromArray = function(data) {
 
 // Get the attributes for a given step
 // TODO: Caching
-// TODO: During execution, save any errors into a sturcutre
+// TODO: During execution, save any errors into a structure
 //       that the front end can read
 dbk_agg.getAttributes = function(aggId, stepId, reset) {
   var attributes;
+  var startTime = new Date(); //eslint-disable-line
   if (reset || stepId === 0 || stepId === '0') {
     var inputData = dbk_agg.getResults(aggId, stepId, reset);
+    startTime = dbk_agg.timer(startTime, 'dbk_agg.getResults');
     if (dbk_agg.sampleSize > 0) {
       dbk_agg.aggregates[aggId].stepResults[stepId] = inputData.slice(0, dbk_agg.sampleSize); // Limit max documents here
     } else {
