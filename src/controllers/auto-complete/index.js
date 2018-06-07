@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-23T16:14:33+11:00
+ * @Last modified time: 2018-06-08T04:11:47+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,8 +21,8 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const { MongoShell } = require('../mongo-shell');
 const hooks = require('feathers-hooks-common');
+const { mongoShellRequestResponseTypes } = require('../mongo-shell');
 
 /**
  * this controller is used to handle auto complete for mongo shell
@@ -42,18 +42,15 @@ class AutoCompleteController {
    */
   autoComplete(id, shellId, command) {
     const shell = this.mongoController.getMongoShell(id, shellId);
-    shell.writeAutoComplete("shellAutocomplete('" + command + "');__autocomplete__\n");
 
-    return new Promise(resolve => {
-      const listener = data => {
-        const output = data.replace('[', '').replace(']', '');
-        let array = output.split(',');
-        array = array.map(a => a.trim().replace(/"/g, ''));
-        shell.removeListener(MongoShell.AUTO_COMPLETE_END, listener);
-        resolve(array);
-      };
-      shell.on(MongoShell.AUTO_COMPLETE_END, listener);
-    });
+    return shell
+      .syncExecuteCode(
+        "shellAutocomplete('" + command + "');__autocomplete__",
+        mongoShellRequestResponseTypes.JSON
+      )
+      .then(request => {
+        return JSON.parse(request.response);
+      });
   }
 }
 

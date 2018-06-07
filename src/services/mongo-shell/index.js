@@ -2,7 +2,7 @@
  * @Author: joey
  * @Date:   2016-12-23T13:05:45+11:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-23T16:58:38+11:00
+ * @Last modified time: 2018-06-07T15:49:36+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -25,6 +25,8 @@
 
 const _ = require('lodash');
 const hooks = require('./hooks');
+
+// TODO: define event consts here
 
 class ShellService {
   constructor(options) {

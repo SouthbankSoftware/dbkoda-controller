@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-01T10:34:17+10:00
+ * @Last modified time: 2018-06-08T03:53:10+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,52 +21,23 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import EventEmitter from 'events';
 import hooks from 'feathers-hooks-common';
 import uuid from 'node-uuid';
 import errors from 'feathers-errors';
-import escapeRegExp from 'escape-string-regexp';
-import { MongoShell } from '../mongo-shell';
-import { toStrict } from './shell';
-
-const OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.prompt)}.*`, 'g');
+import { mongoShellRequestResponseTypes } from '../mongo-shell';
 
 export class SyncExecutionController {
   setup(app) {
-    this.emitter = new EventEmitter();
-    this.requestQueue = [];
-    this.emitter.on('command::finished', this.commandFinished.bind(this));
     this.app = app;
     this.mongoController = app.service('mongo/connection/controller');
   }
 
-  writeSyncCommand({ id, shellId, commands, responseType = 'json', _clearQueue = false }) {
+  writeSyncCommand({ id, shellId, commands, responseType = mongoShellRequestResponseTypes.JSON }) {
     const shell = this.mongoController.getMongoShell(id, shellId);
-    const newCmd = commands.replace(/\r/g, '');
-    return new Promise((resolve, reject) => {
-      this.requestQueue.push({ shell, commands: newCmd, resolve, reject, responseType });
-      this.runSyncCommandFromQueue();
-    });
-  }
+    let code = commands.replace(/\r/g, '');
+    code = this.formatCommand(code);
 
-  commandFinished(commands) {
-    log.debug('commands finished ', commands, 'current queue size:', this.requestQueue.length);
-    if (this.requestQueue.length > 0) {
-      this.runSyncCommandFromQueue();
-    }
-  }
-
-  runSyncCommandFromQueue() {
-    const newQueue = [];
-    while (this.requestQueue.length > 0) {
-      const req = this.requestQueue.shift();
-      if (req && !req.shell.isShellBusy()) {
-        this.runSyncCommandOnShell(req);
-      } else if (req) {
-        newQueue.push(req);
-      }
-    }
-    this.requestQueue = newQueue;
+    return shell.syncExecuteCode(code, responseType).then(request => request.response);
   }
 
   // eslint-disable-next-line
@@ -78,50 +49,6 @@ export class SyncExecutionController {
       return formatted.join(' ');
     }
     return commands;
-  }
-
-  runSyncCommandOnShell(req) {
-    const { shell, commands, resolve, responseType } = req;
-    const formattedCmds = this.formatCommand(commands);
-    const shellOutputs = [];
-    shell.on(MongoShell.SYNC_OUTPUT_EVENT, this.outputListener.bind(this, shellOutputs));
-    const syncExecutEnd = () => {
-      shell.removeAllListeners(MongoShell.SYNC_OUTPUT_EVENT);
-      shell.removeAllListeners(MongoShell.SYNC_EXECUTE_END);
-
-      l.debug('Sync execution ended');
-      let output = shellOutputs.join('\n');
-
-      const rawOutput = output;
-      output = output.replace(OUTPUT_FILTER_REGEX, '');
-
-      const commandStr = formattedCmds.replace(/[\n\r]+/g, '');
-      log.debug('command:', commandStr);
-
-      if (responseType === 'json' || responseType === 'explain') {
-        output = toStrict(output);
-
-        try {
-          JSON.parse(output);
-
-          resolve(output);
-        } catch (err) {
-          l.debug('Raw output:', rawOutput);
-          l.debug('Filtered output:', output);
-          l.error(`Failed to parse json output for ${formattedCmds}:`, err);
-
-          resolve(output);
-        }
-      } else {
-        resolve(output);
-      }
-
-      this.emitter.emit('command::finished', formattedCmds);
-    };
-
-    shell.on(MongoShell.SYNC_EXECUTE_END, syncExecutEnd.bind(this));
-    this.currentCommand = { shell, formattedCmds, resolve, responseType };
-    shell.writeSyncCommand(`${formattedCmds}\rprint('${MongoShell.CUSTOM_EXEC_ENDING}');`);
   }
 
   /**
@@ -151,8 +78,7 @@ export class SyncExecutionController {
     } else {
       commands += 'connect("' + url + '")';
     }
-    // this.output = '';
-    let shell = null;
+
     if (!this.mongoController.existMongoShell(id, shellId)) {
       // connection doesn't exist, need to create a new shell for the new profile
       const connection = this.mongoController.connections[newProfile];
@@ -162,23 +88,14 @@ export class SyncExecutionController {
         return Promise.resolve({ shellId: newShellId });
       }
       throw new errors.BadRequest('Connection does not exist');
-    } else {
-      shell = this.mongoController.getMongoShell(id, shellId);
     }
-    if (shell.isShellBusy()) {
-      return new Promise(resolve => {
-        this.requestQueue.push({ shell, commands, resolve });
-      });
-    }
-    return new Promise(resolve => {
-      this.requestQueue.push({ shell, commands, resolve });
-      this.runSyncCommandFromQueue();
-    });
-  }
 
-  // eslint-disable-next-line
-  outputListener(shellOutputs, data) {
-    shellOutputs.push(data);
+    return this.writeSyncCommand({
+      id,
+      shellId,
+      commands,
+      responseType: mongoShellRequestResponseTypes.RAW
+    });
   }
 }
 

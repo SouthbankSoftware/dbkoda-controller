@@ -1,7 +1,7 @@
 /**
  * Created by joey on 14/8/17
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-23T17:10:26+11:00
+ * @Last modified time: 2018-06-05T18:13:03+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -24,24 +24,21 @@
 
 /* eslint no-return-assign: 0 */
 
-const ParserState = require('./parser-state');
-const escapeSequence = require('./escape-sequence');
-const Buffer = require('./buffer');
+import ParserState from './parser-state';
+import escapeSequence from './escape-sequence';
 
-const normalStateHandler = {};
-
-normalStateHandler[escapeSequence.CR] = parser => {
-  parser.bufferX = 0;
-};
-
-normalStateHandler[escapeSequence.LF] = parser => {
-  parser.bufferX = 0;
-  parser.bufferY += 1;
-  parser.buffers.push(new Buffer()); // eslint-disable-line no-buffer-constructor
-};
-
-normalStateHandler[escapeSequence.ESC] = parser => {
-  parser.state = ParserState.ESCAPED;
+const normalStateHandler = {
+  [escapeSequence.CR]: parser => {
+    parser.bufferX = 0;
+  },
+  [escapeSequence.LF]: parser => {
+    parser.bufferX = 0;
+    parser.bufferY += 1;
+    parser.buffers.push('');
+  },
+  [escapeSequence.ESC]: parser => {
+    parser.state = ParserState.ESCAPED;
+  }
 };
 
 /**
@@ -85,7 +82,7 @@ const csiStateParameterHandler = {
 };
 
 const cursorCharAbsolute = (parser, params) => {
-  let param = params[0];
+  let [param] = params;
   if (param < 1) {
     param = 1;
   }
@@ -93,8 +90,8 @@ const cursorCharAbsolute = (parser, params) => {
   if (parser.buffers.length > parser.bufferY && parser.bufferY >= 0) {
     // if the x cursor is greater than the current line length, append space
     const currentLine = parser.buffers[parser.bufferY];
-    while (currentLine && currentLine.data && currentLine.data.length < parser.bufferX) {
-      currentLine.data += ' ';
+    while (currentLine && currentLine.length < parser.bufferX) {
+      parser.buffers[parser.bufferY] += ' ';
     }
   }
 };
@@ -117,11 +114,11 @@ const eraseInDisplay = (parser, params) => {
     switch (params[0]) {
       case 0:
         // erase right
-        currentLine.data = currentLine.data.substring(0, parser.bufferX);
+        parser.buffers[i] = currentLine.substring(0, parser.bufferX);
         break;
       case 1:
         // erase left
-        currentLine.data = currentLine.data.substring(parser.bufferX + 1);
+        parser.buffers[i] = currentLine.substring(parser.bufferX + 1);
         break;
       default:
         log.error('unrecognize parameter for J ', params);
@@ -137,11 +134,11 @@ const eraseInLine = (parser, params) => {
   switch (params[0]) {
     case 0:
       // erase right
-      currentLine.data = currentLine.data.substring(0, parser.bufferX);
+      parser.buffers[parser.bufferY] = currentLine.substring(0, parser.bufferX);
       break;
     case 1:
       // erase left
-      currentLine.data = currentLine.data.substring(parser.bufferX + 1);
+      parser.buffers[parser.bufferY] = currentLine.substring(parser.bufferX + 1);
       break;
     default:
       log.error('unrecognize parameter for J ', params);
@@ -227,7 +224,7 @@ const csiStateHandler = {
   } // cursorBackwardTab
 };
 
-module.exports = {
+export default {
   escapedStateHandler,
   csiStateParameterHandler,
   csiStateHandler,

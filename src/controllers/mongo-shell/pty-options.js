@@ -1,4 +1,8 @@
-/*
+/**
+ * Created by joey on 14/8/17.
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-06-05T18:13:54+10:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,16 +21,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * Created by joey on 14/8/17.
- */
 
-const PytOptions = {
+export default {
   name: 'xterm-color',
   cols: 1000,
   rows: 25,
   cwd: '.',
   env: process.env
 };
-
-module.exports = PytOptions;

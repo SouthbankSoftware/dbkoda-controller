@@ -1,7 +1,7 @@
 /**
  * Created by joey on 14/8/17
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-01T00:28:36+10:00
+ * @Last modified time: 2018-06-08T02:17:30+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -32,7 +32,6 @@ import {
   csiStateParameterHandler,
   normalStateHandler
 } from './input-handler';
-import Buffer from './buffer';
 
 /**
  * parsing pty output
@@ -50,16 +49,18 @@ export default class Parser extends EventEmitter {
     this.bufferX = 0; // the x position on the buffer
     this.bufferY = 0; // the y position on the buffer
 
-    Parser.PROMPT_REGEX = new RegExp(`${escapeRegExp(MongoShell.prompt)}$`);
-    Parser.CUSTOM_EXEC_ENDING_REGEX = new RegExp(`${escapeRegExp(MongoShell.CUSTOM_EXEC_ENDING)}$`);
+    if (!Parser.PROMPT_REGEX) {
+      Parser.PROMPT_REGEX = new RegExp(`${escapeRegExp(MongoShell.PROMPT)}$`);
+    }
+
+    if (!Parser.CUSTOM_EXEC_ENDING_REGEX) {
+      Parser.CUSTOM_EXEC_ENDING_REGEX = new RegExp(
+        `${escapeRegExp(MongoShell.CUSTOM_EXEC_ENDING)}$`
+      );
+    }
   }
 
-  getCachedBuffer() {
-    const cachedBuffer = _.find(this.buffers, buffer => buffer.cached === true);
-    return Object.assign({}, cachedBuffer);
-  }
-
-  onRead(data) {
+  onRead = data => {
     this.parse(data);
 
     const buffersLen = this.buffers.length;
@@ -69,71 +70,37 @@ export default class Parser extends EventEmitter {
     for (let i = 0; i < buffersLen; i += 1) {
       const buffer = this.buffers[i];
 
-      if (!buffer) continue;
-
-      const bufferData = this.buffers[i].data;
-      let shouldEmit = true;
-
       if (i === secondLastBufferIdx) {
-        const match = bufferData.match(Parser.CUSTOM_EXEC_ENDING_REGEX);
+        const match = buffer.match(Parser.CUSTOM_EXEC_ENDING_REGEX);
 
         if (match) {
-          shouldEmit = false;
-          this.emit('command-ended', match[0]);
+          this.emit('executionEnded');
+
+          this.buffers = [''];
+
+          // skip rest
+          break;
         }
       } else if (i === lastBufferIdx) {
-        shouldEmit = false;
-
-        const match = bufferData.match(Parser.PROMPT_REGEX);
+        const match = buffer.match(Parser.PROMPT_REGEX);
 
         if (match) {
-          this.emit('command-ended', match[0]);
-        } else if (bufferData.trim() === '...') {
-          this.emit('incomplete-command-ended', '... ');
+          this.emit('promptShown');
+        } else if (buffer.trim() === '...') {
+          this.emit('threeDotShown');
         }
 
         this.buffers = [buffer];
+
+        // don't emit last line yet, which could be further modified by future commands
+        break;
       }
 
-      if (shouldEmit) {
-        l.debug('Parser emitting: ', bufferData);
-        this.emit('data', bufferData);
-      }
+      this.emit('parsedLine', buffer);
     }
 
     this.bufferY = 0;
-  }
-
-  // onRead(data) {
-  //   this.parse(data);
-  //   let cached = null;
-  //   if (this.buffers.length > 0) {
-  //     // if (this.bufferY === -1) {
-  //     //   // remove the cache line
-  //     //   this.bufferY = 0;
-  //     //   this.buffers.splice(0, 1);
-  //     // }
-  //     if (this.buffers.length === 0) {
-  //       return;
-  //     }
-  //     cached = this.buffers.pop();
-  //     this.buffers.map(buffer => {
-  //       l.debug('emit output data ', buffer.data);
-  //       this.emit('data', buffer.data);
-  //     });
-  //     this.buffers = [];
-  //     this.buffers.push(cached);
-  //   }
-  //   // check whether the last line in the buffer is prompt
-  //   if (this.buffers.length > 0 && this.buffers[0].data) {
-  //     if (this.buffers[0].data.match(/dbKoda Mongo Shell>$/)) {
-  //       this.emit('command-ended');
-  //     } else if (this.buffers[0].data.trim() === '...') {
-  //       this.emit('incomplete-command-ended', '... ');
-  //     }
-  //   }
-  //   this.bufferY = this.buffers.length - 1 >= 0 ? this.buffers.length - 1 : 0;
-  // }
+  };
 
   /**
    * parse the data from pty output.
@@ -196,32 +163,26 @@ export default class Parser extends EventEmitter {
     if (this.bufferY < 0) {
       return;
     }
+
     if (this.buffers.length <= this.bufferY) {
-      this.buffers.push(new Buffer()); // eslint-disable-line no-buffer-constructor
+      this.buffers.push('');
       this.bufferX = 0;
     }
-    // else if (this.bufferX >= PytOptions.cols) {
-    //   this.bufferX = 0;
-    //   this.bufferY += 1;
-    //   this.buffers.push(new Buffer()); // eslint-disable-line no-buffer-constructor
-    // }
-    if (this.bufferY < this.buffers.length && !this.buffers[this.bufferY].data) {
-      this.buffers[this.bufferY].data = ' ';
-    }
-    const diff = this.bufferX - this.buffers[this.bufferY].data.length + 1;
-    if (diff > 0) {
-      _.times(diff, (this.buffers[this.bufferY].data += ' '));
-    }
-    const tmp = this.buffers[this.bufferY].data;
-    // this.buffers[this.bufferY].write(ch, this.bufferX);
-    // this.buffers[this.bufferY].data = buffer.toString();
 
-    // if (this.bufferX >= tmp.length - 1) {
-    //   this.buffers[this.bufferY].data = tmp + ch;
-    // } else {
-    this.buffers[this.bufferY].data =
-      tmp.substr(0, this.bufferX) + ch + tmp.substr(this.bufferX + 1);
-    // }
+    // make Y direction consistent
+    if (this.bufferY < this.buffers.length && !this.buffers[this.bufferY]) {
+      this.buffers[this.bufferY] = ' ';
+    }
+
+    // make X direction consistent
+    const diff = this.bufferX - this.buffers[this.bufferY].length + 1;
+    if (diff > 0) {
+      _.times(diff, (this.buffers[this.bufferY] += ' '));
+    }
+    const tmp = this.buffers[this.bufferY];
+
+    this.buffers[this.bufferY] = tmp.substr(0, this.bufferX) + ch + tmp.substr(this.bufferX + 1);
+
     this.bufferX += 1;
   }
 

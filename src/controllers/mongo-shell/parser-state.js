@@ -1,4 +1,8 @@
-/*
+/**
+ * Created by joey on 14/8/17.
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-06-05T18:06:46+10:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,11 +21,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * Created by joey on 14/8/17.
- */
 
-const ParserState = {
+export default {
   NORMAL: 0,
   ESCAPED: 1,
   CSI_PARAM: 2,
@@ -31,5 +32,3 @@ const ParserState = {
   DCS: 6,
   IGNORE: 7
 };
-
-module.exports = ParserState;

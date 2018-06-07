@@ -1,6 +1,14 @@
 /**
+ * @flow
+ *
+ * Imagine a mongo shell process as a CPU core and manage its input and output data flow.
+ * This work is based on Joey's original pty implementation
+ *
+ * @Author: Joey, Guan Gui <guiguan>
+ * @Date:   2018-06-05T12:12:29+10:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-01T00:56:05+10:00
+ * @Last modified time: 2018-06-08T04:30:31+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,45 +29,101 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* eslint-disable class-methods-use-this */
-
 import _ from 'lodash';
+// $FlowFixMe
 import { spawn } from 'node-pty';
 import { execSync } from 'child_process';
+// $FlowFixMe
 import { EventEmitter } from 'events';
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
+import uuid from 'node-uuid';
+// $FlowFixMe
+import escapeRegExp from 'escape-string-regexp';
 import Status from '../mongo-connection/status';
 import Parser from './pty-parser';
 import PtyOptions from './pty-options';
 import { isDockerCommand, getMongoCommands } from '../docker';
+import { toStrict } from './mongodbExtendedJsonUtils';
 
-/**
- * This class is used to create a wrapper on top of mongo shell and listen on its pty channels.
- */
+export const mongoShellRequestResponseTypes = {
+  JSON: 'JSON', // try to parse output into valid json
+  RAW: 'RAW', // just return output as it is
+  NULL: 'NULL' // return nothing
+};
+
+export const mongoShellRequestStates = {
+  ENQUEUED: 'ENQUEUED',
+  RUNNING: 'RUNNING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED'
+};
+
+export type MongoShellRequestResponseType = $Keys<typeof mongoShellRequestResponseTypes>;
+
+export type MongoShellRequestState = $Keys<typeof mongoShellRequestStates>;
+
+export type MongoShellRequest = {
+  id?: UUID, // request id
+  code: string, // mongo shell code to be executed
+  realtime?: boolean, // whether to wait for all output before flushing buffer
+  state?: MongoShellRequestState, // current request state
+  responseType?: MongoShellRequestResponseType, // response type when it is not realtime
+  data?: any, // any custom data associated with current request
+  error?: Error, // the error received when request has failed
+  response?: string // the output received when request has succeeded
+};
+
+const BUFFER_TIME = 500;
+// remove `exit` and `quit()` cmd from input
+const INPUT_FILTER_REGEX = /(^|[;\s]+)(?:exit[\s]*(?:;[;\s]*|$)|quit\s*\(\s*\)[;\s]*)/g;
+
 export class MongoShell extends EventEmitter {
-  constructor(connection, mongoScriptPath) {
+  static CUSTOM_EXEC_ENDING = '__DBKODA_EXEC_END__';
+  static DEFAULT_PROMPT = '> ';
+  static PROMPT = 'dbKoda Mongo Shell>';
+  static ENTER = '\r';
+  static CHANGE_PROMPT_CMD = `var prompt="${MongoShell.PROMPT}";`;
+  static PRINT_CUSTOM_EXEC_ENDING_CMD = `print("${MongoShell.CUSTOM_EXEC_ENDING}");`;
+  static OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.PROMPT)}.*`, 'g');
+
+  // events
+  static eventOutputAvailable = 'outputAvailable';
+  static eventRequestResolved = 'requestResolved';
+  static eventReady = 'ready';
+  static eventExited = 'exited';
+
+  id: UUID;
+  requestQueue: MongoShellRequest[] = [];
+  currentRequest: ?MongoShellRequest = null;
+  commandQueue: string[] = [];
+  outputBuffer: string[] = [];
+  connection: * = null;
+  initialized: boolean = false;
+  status: * = Status.CREATED;
+  mongoScriptPath: string;
+  parser: Parser;
+  shellVersion: string;
+  mongoCmd: string = '';
+
+  _cleanup: ?() => void = null;
+
+  constructor(connection: *, mongoScriptPath: string) {
     super();
-    this.changePromptCmd = 'var prompt="' + MongoShell.prompt + '";\n';
-    this.emitter = new EventEmitter();
+
     this.connection = connection;
-    this.initialized = false;
-    this.currentCommand = '';
-    this.outputQueue = [];
-    this.prevExecutionTime = 0;
-    this.executing = false;
-    this.status = Status.CREATED;
     this.mongoScriptPath = mongoScriptPath;
     this.parser = new Parser(MongoShell);
-    this.autoComplete = false;
-    this.shellVersion = this.getShellVersion();
-    this.commandQueue = [];
-    this.mongoCmd = '';
+    this.shellVersion = MongoShell.getShellVersion();
     l.debug(`Shell version: ${this.shellVersion}`);
   }
 
-  getShellVersion() {
+  get isBusy() {
+    return this.currentRequest != null;
+  }
+
+  static getShellVersion() {
     try {
       const configObj = getMongoCommands(); // should be read-only
       log.info('Mongo Version Cmd:', configObj);
@@ -86,7 +150,7 @@ export class MongoShell extends EventEmitter {
     }
   }
 
-  createMongoShellParameters() {
+  _createMongoShellParameters() {
     const ver = this.shellVersion
       .trim()
       .substring(0, 6)
@@ -132,32 +196,219 @@ export class MongoShell extends EventEmitter {
     return params;
   }
 
-  /**
-   * create a shell with pty
-   */
+  _onShellExit = code => {
+    if (!this.initialized) {
+      l.error(`Mongo shell exited without fully initialized. Exit code: ${code}`);
+
+      this.status = Status.CLOSED;
+
+      this.emit(MongoShell.eventExited, code);
+    } else {
+      l.info(`Mongo shell exited. Exit code: ${code}`);
+
+      this.emit(MongoShell.eventExited, code);
+
+      this.status = Status.CLOSED;
+    }
+
+    this._cleanup && this._cleanup();
+  };
+
+  _onExecutionEnded = () => {
+    l.debug(`Execution ended. Current request queue length: ${this.requestQueue.length}`);
+
+    const request = this.currentRequest;
+
+    if (!request) {
+      l.error(new Error('MongoShell: executionEnded event received for no request'));
+      return;
+    }
+
+    const { realtime } = request;
+
+    if (realtime) {
+      this._emitRealtimeOutput.flush();
+      request.state = mongoShellRequestStates.SUCCEEDED;
+    } else {
+      const { responseType } = request;
+
+      if (responseType === mongoShellRequestResponseTypes.JSON) {
+        let response = this.outputBuffer.join('');
+        const rawOutput = response;
+        response = response.replace(MongoShell.OUTPUT_FILTER_REGEX, '');
+        response = toStrict(response);
+
+        try {
+          JSON.parse(response);
+
+          request.state = mongoShellRequestStates.SUCCEEDED;
+        } catch (err) {
+          l.debug('Raw output:', rawOutput);
+          l.debug('Filtered output:', response);
+          l.error(`Failed to parse json output for ${request.code}:`, err);
+
+          request.state = mongoShellRequestStates.FAILED;
+          request.error = err;
+        } finally {
+          request.response = response;
+        }
+      } else if (responseType === mongoShellRequestResponseTypes.NULL) {
+        request.state = mongoShellRequestStates.SUCCEEDED;
+      } else {
+        request.response = this.outputBuffer.join('');
+        request.state = mongoShellRequestStates.SUCCEEDED;
+      }
+
+      this.outputBuffer = [];
+    }
+
+    this._resolveRequest(request);
+    this.currentRequest = null;
+    _.defer(this._processRequest);
+  };
+
+  _onAvailableForMoreInput = () => {
+    l.debug('Shell available for more input');
+
+    this._digestCommandQueue();
+  };
+
+  _onParsedLine = parsedLine => {
+    if (parsedLine.endsWith(MongoShell.PRINT_CUSTOM_EXEC_ENDING_CMD)) return;
+
+    if (!this.currentRequest || this.currentRequest.realtime) {
+      // received output from the default or a realtime request
+
+      this.outputBuffer.push(parsedLine + MongoShell.ENTER);
+      // emit realtime output in constant rate :P
+      this._emitRealtimeOutput();
+
+      return;
+    }
+
+    const { responseType } = this.currentRequest;
+
+    if (responseType === mongoShellRequestResponseTypes.NULL) return;
+
+    this.outputBuffer.push(parsedLine + MongoShell.ENTER);
+  };
+
+  _loadScriptsIntoShell(): Promise<MongoShellRequest> {
+    const scriptPath = path.join(this.mongoScriptPath + '/all-in-one.js');
+    let command = `load("${scriptPath}");`;
+    if (os.platform() === 'win32') {
+      command = command.replace(/\\/g, '\\\\');
+    }
+    log.info('load pre defined scripts ' + scriptPath);
+
+    return this.syncExecuteCode(command);
+  }
+
+  _readScriptsFileIntoShell(): Promise<MongoShellRequest> {
+    const fileBuffer = fs.readFileSync(path.join(this.mongoScriptPath + '/all-in-one.js'));
+    const fileContent = fileBuffer.toString('utf8');
+
+    return this.syncExecuteCode(fileContent);
+  }
+
+  _emitRealtimeOutput = _.throttle(
+    () => {
+      if (this.outputBuffer.length === 0) {
+        return;
+      }
+
+      const requestId = _.get(this.currentRequest, 'id', null);
+      const output = this.outputBuffer.join('');
+      this.outputBuffer = [];
+
+      l.debug(`Emitting realtime output for request ${requestId || 'default'}...`);
+      this.emit(MongoShell.eventOutputAvailable, requestId, output);
+    },
+    BUFFER_TIME,
+    {
+      leading: true
+    }
+  );
+
+  _writeToShell(cmd: string) {
+    if (!cmd) {
+      return;
+    }
+
+    cmd = cmd.replace(/\t/g, '  ');
+
+    l.debug('Writing to shell: ', JSON.stringify(cmd));
+    this.shell.write(cmd);
+  }
+
+  _digestCommandQueue() {
+    const cmd = this.commandQueue.shift();
+    if (cmd) {
+      this._writeToShell(cmd);
+      return true;
+    }
+    return false;
+  }
+
+  _decomposeCodeAndEnqueueCommands(code: string) {
+    const decomposed = code.split('\n');
+
+    decomposed.forEach(cmd => {
+      cmd = cmd.replace(INPUT_FILTER_REGEX, '$1');
+
+      // always add \r to a cmd
+      if (!cmd.endsWith(MongoShell.ENTER)) {
+        cmd += MongoShell.ENTER;
+      }
+
+      // for every non-empty cmd
+      if (cmd.length > 1) {
+        this.commandQueue.push(cmd);
+      }
+    });
+
+    this.commandQueue.push(MongoShell.PRINT_CUSTOM_EXEC_ENDING_CMD + MongoShell.ENTER);
+  }
+
+  _processRequest = () => {
+    if (this.isBusy || this.requestQueue.length === 0) return;
+
+    this.commandQueue = [];
+    this.currentRequest = this.requestQueue.shift();
+    this.currentRequest.state = mongoShellRequestStates.RUNNING;
+    this._decomposeCodeAndEnqueueCommands(this.currentRequest.code);
+    this._digestCommandQueue();
+  };
+
+  _resolveRequest = (request: MongoShellRequest) => {
+    this.emit(MongoShell.eventRequestResolved, request);
+  };
+
   createShell() {
     const configObj = getMongoCommands(); // should be read-only
-    log.info('Mongo Cmd:', configObj);
 
     if (!configObj.mongoCmd) {
       const err = new Error('Mongo binary undetected');
-      err.code = 'MONGO_BINARY_UNDETECTED';
+      // $FlowFixMe
+      err.responseCode = 'MONGO_BINARY_UNDETECTED';
       throw err;
     }
 
     if (this.shellVersion === 'UNKNOWN') {
       const err = new Error('Mongo binary corrupted');
+      // $FlowFixMe
       err.responseCode = 'MONGO_BINARY_CORRUPTED';
       throw err;
     }
 
     if (this.shellVersion.match(/^([012]).*/gim)) {
-      log.error('Invalid Mongo binary Version Detected.');
+      log.error('Invalid Mongo binary version detected.');
       const err = new Error(
-        'Mongo Binary Version (' +
+        'Mongo binary version (' +
           this.shellVersion +
-          ') is not supported, please upgrade to a Mongo Binary version of at least 3.0'
+          ') is not supported, please upgrade to a Mongo binary version of at least 3.0'
       );
+      // $FlowFixMe
       err.responseCode = 'MONGO_BINARY_INVALID_VERSION';
       throw err;
     }
@@ -177,12 +428,14 @@ export class MongoShell extends EventEmitter {
 
     if (os.platform() !== 'win32') {
       _.assign(PtyOptions, {
+        // $FlowFixMe
         uid: process.getuid(),
+        // $FlowFixMe
         gid: process.getgid()
       });
     }
 
-    const parameters = this.createMongoShellParameters();
+    const parameters = this._createMongoShellParameters();
 
     try {
       this.mongoCmd = mongoCmdArray[0];
@@ -191,339 +444,154 @@ export class MongoShell extends EventEmitter {
       l.error(error);
       throw error;
     }
+
     global.addShutdownHander && global.addShutdownHander();
     this.status = Status.OPEN;
-    this.shell.on('exit', exit => {
-      l.info('mongo shell exit ', exit, this.initialized);
-      if (!this.initialized) {
-        this.emit(MongoShell.INITIALIZED, exit);
-      } else {
-        // set the initialized status in order to make the reconnect works as initialize process
-        this.initialized = false;
-        this.emit(MongoShell.SHELL_EXIT, exit);
-        this.status = Status.CLOSED;
-      }
-    });
-    this.shell.on('data', this.parser.onRead.bind(this.parser));
-    this.parser.on('data', this.readParserOutput.bind(this));
-    this.parser.on('command-ended', this.commandEnded.bind(this));
-    this.parser.on('incomplete-command-ended', this.incompleteCommandEnded.bind(this));
+    const parserOnRead = this.parser.onRead.bind(this.parser);
 
-    // handle shell output
+    this.shell.on('exit', this._onShellExit);
+    this.shell.on('data', parserOnRead);
+    this.parser.on('parsedLine', this._onParsedLine);
+    this.parser.on('executionEnded', this._onExecutionEnded);
+    this.parser.on('promptShown', this._onAvailableForMoreInput);
+    this.parser.on('threeDotShown', this._onAvailableForMoreInput);
+
+    this._cleanup = () => {
+      this.shell.removeListener('exit', this._onShellExit);
+      this.shell.removeListener('data', parserOnRead);
+      this.parser.removeListener('parsedLine', this._onParsedLine);
+      this.parser.removeListener('executionEnded', this._onExecutionEnded);
+      this.parser.removeListener('promptShown', this._onAvailableForMoreInput);
+      this.parser.removeListener('threeDotShown', this._onAvailableForMoreInput);
+      this.removeAllListeners(MongoShell.eventOutputAvailable);
+      this.removeAllListeners(MongoShell.eventRequestResolved);
+      this.removeAllListeners(MongoShell.eventReady);
+      this.removeAllListeners(MongoShell.eventExited);
+    };
+
+    // change prompt
+    this.syncExecuteCode(MongoShell.CHANGE_PROMPT_CMD, mongoShellRequestResponseTypes.RAW).then(
+      request => {
+        if (request.response) {
+          this.emit(MongoShell.eventOutputAvailable, null, request.response);
+        }
+      }
+    );
+
+    // allow read from slave
     if (this.connection.requireSlaveOk) {
-      this.writeToShell('rs.slaveOk()' + MongoShell.enter);
+      this.syncExecuteCode('rs.slaveOk()');
     }
+
+    let p;
+
+    // load mongo scripts
     if (isDockerCommand()) {
-      this.readScriptsFileIntoShell();
+      p = this._readScriptsFileIntoShell();
     } else {
-      this.loadScriptsIntoShell();
-    }
-    this.on(MongoShell.AUTO_COMPLETE_END, () => {
-      this.finishAutoComplete();
-    });
-    // setTimeout(() => this.shell.write('\x03'), 10000);
-  }
-
-  commandEnded(execEndingStr) {
-    if (!this.initialized) {
-      this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt + MongoShell.enter);
-      this.emit(MongoShell.INITIALIZED);
-      this.initialized = true;
-    } else if (this.autoComplete) {
-      this.autoComplete = false;
-      this.syncExecution = false;
-      this.executing = false;
-      const output = this.autoCompleteOutput
-        .replace(/shellAutocomplete.*__autocomplete__/, '')
-        .replace(MongoShell.prompt, '');
-      this.emit(MongoShell.AUTO_COMPLETE_END, output);
-    } else if (this.syncExecution) {
-      if (execEndingStr === MongoShell.CUSTOM_EXEC_ENDING) {
-        this.syncExecution = false;
-        this.executing = false;
-        this.emit(MongoShell.SYNC_EXECUTE_END);
-      }
-    } else if (this.executing) {
-      const cmd = this.runCommandFromQueue();
-      if (!cmd) {
-        this.prevExecutionTime = 0;
-        this.executing = false;
-        this.emitOutput(MongoShell.prompt + MongoShell.enter);
-        this.emit(MongoShell.EXECUTE_END);
-        this.emitBufferedOutput();
-      }
-    }
-  }
-
-  incompleteCommandEnded(data) {
-    if (!this.executing) {
-      this.previousOutput = data;
-      this.emitOutput(data + MongoShell.enter);
-      this.parser.clearBuffer();
-      return;
-    }
-    const cmd = this.runCommandFromQueue();
-    if (!cmd) {
-      this.parser.clearBuffer();
-      this.prevExecutionTime = 0;
-      this.executing = false;
-      this.emit(MongoShell.EXECUTE_END);
-      this.writeToShell(MongoShell.enter + MongoShell.enter);
-    }
-  }
-
-  readParserOutput(data) {
-    if (data.indexOf('// ignore_emit_begin ') >= 0) {
-      this.ignoreEmit = true;
+      p = this._loadScriptsIntoShell();
     }
 
-    if (data.indexOf('// ignore_emit_ended ') >= 0) {
-      this.ignoreEmit = false;
-      return;
-    }
-
-    if (this.ignoreEmit) {
-      return;
-    }
-
-    if (!this.initialized && data.indexOf('shell') >= 0) {
-      this.writeToShell(`${this.changePromptCmd}`);
-    }
-    if (!this.initialized) {
-      this.emit(MongoShell.OUTPUT_EVENT, data + MongoShell.enter);
-      return;
-    }
-    if (this.autoComplete) {
-      this.autoCompleteOutput += data.trim();
-    } else if (this.syncExecution && data !== MongoShell.prompt) {
-      this.emit(MongoShell.SYNC_OUTPUT_EVENT, data);
-    } else if (!(data === this.previousOutput && this.previousOutput === MongoShell.prompt)) {
-      this.emitOutput(data + MongoShell.enter);
-    }
-    this.previousOutput = data;
-  }
-
-  loadScriptsIntoShell() {
-    const scriptPath = path.join(this.mongoScriptPath + '/all-in-one.js');
-    let command = `load("${scriptPath}");`;
-    if (os.platform() === 'win32') {
-      command = command.replace(/\\/g, '\\\\');
-    }
-    log.info('load pre defined scripts ' + scriptPath);
-    this.writeToShell(command + MongoShell.enter);
-  }
-
-  readScriptsFileIntoShell() {
-    const fileBuffer = fs.readFileSync(path.join(this.mongoScriptPath + '/all-in-one.js'));
-    const fileContent = fileBuffer.toString('utf8');
-    this.write('// ignore_emit_begin ' + MongoShell.enter);
-    this.write(fileContent + MongoShell.enter);
-    this.write('// ignore_emit_ended ' + MongoShell.enter);
-  }
-
-  /**
-   * whether the shell is executing any commands
-   * @returns {boolean}
-   */
-  isShellBusy() {
-    return this.executing || this.syncExecution;
-  }
-
-  /**
-   * emit output event
-   *
-   * @param output
-   */
-  emitOutput(output) {
-    if (!this.executing || !this.initialized) {
-      this.outputQueue.push(output);
-      this.emitBufferedOutput();
-      return;
-    }
-    // this.emit(MongoShell.OUTPUT_EVENT, output);
-    this.outputQueue.push(output);
-
-    const milliseconds = new Date().getTime();
-
-    if (milliseconds - this.prevExecutionTime > 200) {
-      this.emitBufferedOutput();
-    }
-  }
-
-  emitBufferedOutput() {
-    this.prevExecutionTime = new Date().getTime();
-    let allData = '';
-    this.outputQueue.map(o => {
-      // this.emit(MongoShell.OUTPUT_EVENT, o);
-      allData += o;
-    });
-    this.outputQueue.splice(0, this.outputQueue.length);
-    l.debug('emit output ', allData);
-    this.emit(MongoShell.OUTPUT_EVENT, allData);
-  }
-
-  /**
-   * write the command to shell
-   * @param data
-   */
-  writeToShell(data) {
-    if (!data) {
-      return;
-    }
-    data = data.replace(/\t/g, '  ');
-    l.debug('Writing to shell: ', data);
-    this.currentCommand = data;
-    this.shell.write(data);
-  }
-
-  /**
-   * handle auto complete command
-   *
-   * @param command
-   */
-  writeAutoComplete(command) {
-    if (this.autoComplete) {
-      // ignore if there is already a auto complete in execution
-      return;
-    }
-    this.autoComplete = true;
-    this.autoCompleteOutput = '';
-    this.writeSyncCommand(command);
-  }
-
-  /**
-   * called when auto complete execution is finished.
-   */
-  finishAutoComplete() {
-    this.autoComplete = false;
-    this.autoCompleteOutput = '';
-  }
-
-  /**
-   * send command to shell and gether the output message
-   */
-  writeSyncCommand(data) {
-    l.info('write sync command ', data);
-    this.syncExecution = true;
-    this.prevExecutionTime = new Date().getTime();
-    this.write(data + MongoShell.enter);
-  }
-
-  write(data) {
-    this.commandQueue = [];
-    if (!data) {
-      // got an empty command request
-      this.emit(MongoShell.EXECUTE_END, MongoShell.prompt + MongoShell.enter);
-      this.emit(MongoShell.OUTPUT_EVENT, MongoShell.prompt + MongoShell.enter);
-      return;
-    }
-    const split = data.split('\n');
-    this.executing = true;
-    this.outputQueue = [];
-    this.prevExecutionTime = new Date().getTime();
-    const cmdQueue = [];
-    split.forEach(cmd => {
-      if (
-        cmd &&
-        cmd.trim() &&
-        cmd.trim() !== 'exit' &&
-        cmd.trim() !== 'exit;' &&
-        cmd.trim().indexOf('quit()') < 0
-      ) {
-        if (cmd.match(/\r$/)) {
-          cmdQueue.push(cmd);
-        } else {
-          cmdQueue.push(cmd + MongoShell.enter);
-        }
+    p.then(request => {
+      if (request.state === mongoShellRequestStates.SUCCEEDED) {
+        this.initialized = true;
+        this.emit(MongoShell.eventReady);
       }
     });
-    const sep = '';
-    const combinedCmd = cmdQueue.join(sep);
-    if (os.platform() !== 'win32') {
-      if (combinedCmd.length > 500) {
-        let temparray;
-        const chunk = 1;
-        while (cmdQueue.length > 0) {
-          temparray = cmdQueue.splice(0, chunk);
-          const joinCmd = temparray.join(sep);
-          this.commandQueue.push(joinCmd);
-        }
-        this.runCommandFromQueue();
-      } else {
-        this.writeToShell(combinedCmd);
-      }
-    } else {
-      this.writeToShell(combinedCmd);
-    }
   }
 
-  runCommandFromQueue() {
-    const cmd = this.commandQueue.shift();
-    if (cmd) {
-      this.writeToShell(cmd);
-      return true;
+  enqueueRequest(request: MongoShellRequest): UUID {
+    if (request.id == null) {
+      request.id = uuid.v1();
     }
-    return false;
+
+    if (request.realtime == null) {
+      request.realtime = true;
+    }
+
+    _.assign(request, {
+      error: null,
+      response: null
+    });
+
+    if (!request.code) {
+      request.state = mongoShellRequestStates.FAILED;
+      request.error = new Error('MongoShell: empty request code');
+
+      // make sure request id is received by caller first
+      _.defer(() => this._resolveRequest(request));
+      // $FlowIssue
+      return request.id;
+    }
+
+    if (!request.realtime && request.responseType == null) {
+      request.responseType = mongoShellRequestResponseTypes.RAW;
+    }
+
+    this.requestQueue.push(request);
+
+    request.state = mongoShellRequestStates.ENQUEUED;
+
+    l.debug(`Enqueued a new request. Current request queue length: ${this.requestQueue.length}`);
+
+    // start process request, but make sure request id is received by caller first
+    _.defer(this._processRequest);
+    // $FlowIssue
+    return request.id;
   }
 
   /**
-   * filter out unnecessary message
-   *
-   * @param data
+   * Execute code asynchronously in shell, and output will come back chuck by chuck via
+   * eventOutputAvailable
    */
-  filterOutput(data) {
-    let output = data.toString();
-    if (output.indexOf('var prompt=') >= 0) {
-      return;
-    }
-    if (output.indexOf(MongoShell.comment) >= 0) {
-      return;
-    }
-    if (output.trim().length === 0) {
-      return;
-    }
-    if (output && output.match('^connecting to: ')) {
-      const [, url] = output.split('connecting to: ');
-      const pattern = /(\S+):(\S+)@(\S+)?/;
-      const matches = url.match(pattern);
-      if (matches && matches.length > 3) {
-        const [, rest] = output.split(matches[0]);
-        output = matches[1] + ':****************@' + matches[3] + rest;
-      }
-    }
-    return output;
-  }
+  asyncExecuteCode = (code: string): UUID => {
+    return this.enqueueRequest({
+      code,
+      realtime: true
+    });
+  };
+
+  /**
+   * Execute code synchronously in shell, and return a promise that will resolve to a request
+   * containing final output from shell
+   */
+  syncExecuteCode = (
+    code: string,
+    responseType: MongoShellRequestResponseType = mongoShellRequestResponseTypes.NULL,
+    data?: any
+  ): Promise<MongoShellRequest> => {
+    return new Promise(resolve => {
+      const reqId = this.enqueueRequest({
+        code,
+        realtime: false,
+        responseType,
+        data
+      });
+
+      const onRequestResolved = (request: MongoShellRequest) => {
+        if (request.id !== reqId) return;
+
+        this.removeListener(MongoShell.eventRequestResolved, onRequestResolved);
+        resolve(request);
+      };
+
+      this.on(MongoShell.eventRequestResolved, onRequestResolved);
+    });
+  };
 
   killProcess() {
-    this.removeAllListeners();
     if (isDockerCommand()) {
-      this.writeToShell('exit\n');
+      this._writeToShell('exit\n');
     } else {
       this.shell.destroy();
     }
   }
 
   terminateCurrentStatement() {
-    if (!this.executing) {
+    if (!this.isBusy) {
       return Promise.reject(new Error('There is no running statement.'));
     }
-    this.writeToShell('\x03');
-    this.emit(MongoShell.SHELL_EXIT, -1);
+    this._writeToShell('\x03');
     return Promise.resolve();
   }
 }
-
-MongoShell.prompt = 'dbKoda Mongo Shell>';
-MongoShell.CUSTOM_EXEC_ENDING = '__DBKODA_EXEC_END__';
-MongoShell.enter = '\r';
-MongoShell.comment = '  // dbKoda-mongodb-shell-comment.';
-MongoShell.executing = ' // dbKoda-mongodb-shell-executing';
-MongoShell.executed = ' // dbKoda-mongodb-shell-executed';
-MongoShell.OUTPUT_EVENT = 'mongo-output-data';
-MongoShell.SYNC_OUTPUT_EVENT = 'mongo-output-data-sync';
-MongoShell.EXECUTE_END = 'mongo-execution-end';
-MongoShell.SYNC_EXECUTE_END = 'mongo-sync-execution-end';
-MongoShell.AUTO_COMPLETE_END = 'mongo-auto-complete-end';
-MongoShell.INITIALIZED = 'mongo-shell-initialized';
-MongoShell.SHELL_EXIT = 'mongo-shell-process-exited';
-MongoShell.RECONNECTED = 'mongo-shell-reconnected';

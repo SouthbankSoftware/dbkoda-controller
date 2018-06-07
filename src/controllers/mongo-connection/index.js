@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-31T22:36:13+10:00
+ * @Last modified time: 2018-06-08T08:18:02+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -35,9 +35,14 @@ const MongoConnection = require('./connection');
 const Status = require('./status');
 const ConnectionListener = require('./connection-listener');
 const uuid = require('node-uuid');
+const escapeRegExp = require('escape-string-regexp');
 const { Errors } = require('../../errors/Errors');
 
 const { Mongos, ReplSet, Server } = mongodb;
+const REMOVE_CHANGE_PROMPT_CMD_REGEX = new RegExp(
+  `.*${escapeRegExp(MongoShell.CHANGE_PROMPT_CMD)}`,
+  'g'
+);
 
 /**
  * Mongo instance connection controller
@@ -264,7 +269,7 @@ class MongoConnectionController {
           })
           .catch(err => {
             log.error('create mongo shell failed:', err);
-            if (err.code === 'MONGO_BINARY_UNDETECTED') {
+            if (err.responseCode === 'MONGO_BINARY_UNDETECTED') {
               throw new errors.GeneralError(
                 'Creation of shell connection failed. Unable to detect your mongo binary.<br/><br/>Please make sure the Mongo shell is in your path, or define path to mongo shell in the Preferences Panel.(Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)'
               );
@@ -332,8 +337,8 @@ class MongoConnectionController {
       }
       return Promise.resolve({ id, shellIds });
     } catch (err) {
-      l.error('get error', err);
-      return Promise.reject('Failed to remove connection.');
+      l.error('Failed to remove connection', err);
+      return Promise.reject(err);
     }
   }
 
@@ -375,7 +380,7 @@ class MongoConnectionController {
     return new Promise((resolve, reject) => {
       const connection = this.connections[id];
       if (!connection) {
-        reject('cant find connection id ' + id);
+        reject(new Error(`Connection ${id} doesn't exist`));
       }
       const shellId = sid || uuid.v1();
       this.createMongoShellProcess(id, shellId, connection)
@@ -434,7 +439,8 @@ class MongoConnectionController {
    */
   createMongoShellProcess(id, shellId, connection) {
     const that = this;
-    return new Promise((resolve, reject) => {
+    // TODO chech old reject logic
+    return new Promise((resolve, _reject) => {
       let mongoScriptsPath;
       if (global.IS_PRODUCTION) {
         mongoScriptsPath = process.env.MONGO_SCRIPTS_PATH;
@@ -445,7 +451,7 @@ class MongoConnectionController {
       const shell = new MongoShell(connection, mongoScriptsPath);
       shell.createShell();
       const connectionMessage = [];
-      shell.on(MongoShell.SHELL_EXIT, exit => {
+      shell.on(MongoShell.eventExited, exit => {
         log.warn(`mongo shell(${id}-${shellId} exit ${exit} ${shell.id} ${shell.status}`);
         // status is closing means it is closed by users
         if (shell.status !== Status.CLOSING && shell.status !== Status.CLOSED) {
@@ -453,23 +459,23 @@ class MongoConnectionController {
           log.warn(`mongo shell ${id} ${shellId} was killed for some reasons, try to reconnect`);
           this.createMongoShellProcess(id, shellId, connection)
             .then(v => {
-              const output = v.output;
+              const { output } = v;
               output.unshift(' ******* Shell Connection Restarted. ******** \n');
 
               log.warn('reconnect output message ', output, output.length);
               that.connections[id].shells[shellId] = v.shell;
-              that.mongoShell.emit(MongoShell.RECONNECTED, {
+              that.mongoShell.emit('mongo-shell-reconnected', {
                 id,
                 shellId,
                 output
               });
             })
             .catch(() => {
-              that.mongoShell.emit(MongoShell.SHELL_EXIT, { id, shellId });
+              that.mongoShell.emit('mongo-shell-process-exited', { id, shellId });
             });
         }
       });
-      shell.on(MongoShell.OUTPUT_EVENT, data => {
+      shell.on(MongoShell.eventOutputAvailable, (_requestId, data) => {
         if (!data) {
           return;
         }
@@ -479,46 +485,23 @@ class MongoConnectionController {
           output: data
         };
         if (!shell.initialized) {
-          l.debug('initialized message', data);
-          if (data.indexOf('prompt=') < 0 && data.indexOf('load') < 0 && data.indexOf('true') < 0) {
-            connectionMessage.push(emitData);
-          }
+          emitData.output = emitData.output.replace(REMOVE_CHANGE_PROMPT_CMD_REGEX, '');
+          connectionMessage.push(emitData);
           return;
         }
-        l.debug('send data to client ', data);
         that.mongoShell.emit('shell-output', emitData);
       });
-      shell.on(MongoShell.EXECUTE_END, () => {
-        l.debug('mongodb execution command finished.');
+      shell.on(MongoShell.eventRequestResolved, request => {
+        if (!request.realtime) return;
+
         that.mongoShell.emit('mongo-execution-end', { id, shellId });
       });
-      shell.on(MongoShell.INITIALIZED, err => {
-        if (!err) {
-          l.info('mongo shell initialized');
-          const outputMsg = [];
-          connectionMessage.map(msg => outputMsg.push(msg.output));
-          resolve({ shell, output: outputMsg });
-        } else {
-          // failed to initialized
-          log.error('failed to initialize ', err, connectionMessage);
-          let outputMsg = '';
-          connectionMessage.map(msg => {
-            outputMsg += msg.output + '.';
-          });
-          reject({
-            code: err,
-            responseMessage: outputMsg,
-            responseCode: 'FAILED_LAUNCH_MONGO_SHELL'
-          });
-        }
+      shell.on(MongoShell.eventReady, () => {
+        l.info('mongo shell initialized');
+        const outputMsg = [];
+        connectionMessage.map(msg => outputMsg.push(msg.output));
+        resolve({ shell, output: outputMsg });
       });
-
-      setTimeout(() => {
-        if (!shell.initialized) {
-          shell.initialized = true;
-          resolve({ shell, output: [] });
-        }
-      }, 20000);
     });
   }
 
@@ -610,7 +593,7 @@ class MongoConnectionController {
         return l.error(err);
       }
       l.debug('write data on shell ' + data + '\n');
-      shell.write(`${data}`);
+      shell.asyncExecuteCode(data);
     });
   }
 
@@ -620,7 +603,7 @@ class MongoConnectionController {
   executeCmd(id, shellId, commands) {
     l.info('execute command ', id, shellId, commands);
     const shell = this.getMongoShell(id, shellId);
-    shell.write(`${commands}`);
+    shell.asyncExecuteCode(commands);
     return new Promise(resolve => {
       resolve({ id, shellId });
     });
