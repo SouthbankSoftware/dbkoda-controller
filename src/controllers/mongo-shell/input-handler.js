@@ -1,7 +1,7 @@
 /**
  * Created by joey on 14/8/17
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-05T18:13:03+10:00
+ * @Last modified time: 2018-06-08T15:29:09+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -89,8 +89,10 @@ const cursorCharAbsolute = (parser, params) => {
   parser.bufferX = param - 1;
   if (parser.buffers.length > parser.bufferY && parser.bufferY >= 0) {
     // if the x cursor is greater than the current line length, append space
-    const currentLine = parser.buffers[parser.bufferY];
-    while (currentLine && currentLine.length < parser.bufferX) {
+    while (
+      parser.buffers[parser.bufferY] &&
+      parser.buffers[parser.bufferY].length < parser.bufferX
+    ) {
       parser.buffers[parser.bufferY] += ' ';
     }
   }
