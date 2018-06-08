@@ -8,7 +8,7 @@
  * @Date:   2018-06-05T12:12:29+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-08T04:30:31+10:00
+ * @Last modified time: 2018-06-08T12:53:01+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -86,7 +86,7 @@ export class MongoShell extends EventEmitter {
   static ENTER = '\r';
   static CHANGE_PROMPT_CMD = `var prompt="${MongoShell.PROMPT}";`;
   static PRINT_CUSTOM_EXEC_ENDING_CMD = `print("${MongoShell.CUSTOM_EXEC_ENDING}");`;
-  static OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.PROMPT)}.*`, 'g');
+  static OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.PROMPT)}.*|[\r\n]`, 'g');
 
   // events
   static eventOutputAvailable = 'outputAvailable';

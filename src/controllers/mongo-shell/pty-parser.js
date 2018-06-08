@@ -1,7 +1,7 @@
 /**
  * Created by joey on 14/8/17
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-08T02:17:30+10:00
+ * @Last modified time: 2018-06-08T12:12:49+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -76,10 +76,7 @@ export default class Parser extends EventEmitter {
         if (match) {
           this.emit('executionEnded');
 
-          this.buffers = [''];
-
-          // skip rest
-          break;
+          continue;
         }
       } else if (i === lastBufferIdx) {
         const match = buffer.match(Parser.PROMPT_REGEX);
