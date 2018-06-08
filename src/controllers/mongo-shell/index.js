@@ -8,7 +8,7 @@
  * @Date:   2018-06-05T12:12:29+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-08T12:53:01+10:00
+ * @Last modified time: 2018-06-08T13:45:14+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -243,9 +243,13 @@ export class MongoShell extends EventEmitter {
 
           request.state = mongoShellRequestStates.SUCCEEDED;
         } catch (err) {
-          l.debug('Raw output:', rawOutput);
-          l.debug('Filtered output:', response);
-          l.error(`Failed to parse json output for ${request.code}:`, err);
+          if (IS_PRODUCTION) {
+            l.error('MongoShell: failed to parse json output', err);
+          } else {
+            l.debug('Raw output:', JSON.stringify(rawOutput));
+            l.debug('Filtered output:', JSON.stringify(response));
+            l.error(`Failed to parse json output for ${request.code}:`, err);
+          }
 
           request.state = mongoShellRequestStates.FAILED;
           request.error = err;
