@@ -8,7 +8,7 @@
  * @Date:   2018-06-05T12:12:29+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-08T15:30:34+10:00
+ * @Last modified time: 2018-06-12T01:10:06+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -76,13 +76,14 @@ export type MongoShellRequest = {
 };
 
 const BUFFER_TIME = 500;
+const SET_TIMEOUT_FOR_INCOMPLETE_COMMAND_DEBOUNCE_TIME = 1000;
 // remove `exit` and `quit()` cmd from input
 const INPUT_FILTER_REGEX = /(^|[;\s]+)(?:exit[\s]*(?:;[;\s]*|$)|quit\s*\(\s*\)[;\s]*)/g;
 
 export class MongoShell extends EventEmitter {
   static CUSTOM_EXEC_ENDING = '__DBKODA_EXEC_END__';
-  static DEFAULT_PROMPT = '> ';
   static PROMPT = 'dbKoda Mongo Shell>';
+  static THREE_DOTS = '...';
   static ENTER = '\r';
   static CHANGE_PROMPT_CMD = `var prompt="${MongoShell.PROMPT}";`;
   static PRINT_CUSTOM_EXEC_ENDING_CMD = `print("${MongoShell.CUSTOM_EXEC_ENDING}");`;
@@ -228,7 +229,12 @@ export class MongoShell extends EventEmitter {
 
     if (realtime) {
       this._emitRealtimeOutput.flush();
-      request.state = mongoShellRequestStates.SUCCEEDED;
+
+      if (request.state === mongoShellRequestStates.RUNNING) {
+        request.state = mongoShellRequestStates.SUCCEEDED;
+      }
+    } else if (request.state === mongoShellRequestStates.FAILED) {
+      request.response = this.outputBuffer.join('');
     } else {
       const { responseType } = request;
 
@@ -271,13 +277,39 @@ export class MongoShell extends EventEmitter {
     _.defer(this._processRequest);
   };
 
-  _onAvailableForMoreInput = () => {
-    l.debug('Shell available for more input');
+  _onAvailableForMoreInput = (signal: string) => {
+    l.debug(`Shell available for more input after: ${signal}`);
+
+    if (signal === MongoShell.THREE_DOTS) {
+      this._setTimeoutForIncompleteCommand();
+
+      if (this.commandQueue.length <= 1) {
+        // don't digest PRINT_CUSTOM_EXEC_ENDING_CMD for THREE_DOTS signal
+        return;
+      }
+    }
 
     this._digestCommandQueue();
   };
 
+  _setTimeoutForIncompleteCommand = _.debounce(() => {
+    l.warn('Incomplete command timed out');
+
+    const request = this.currentRequest;
+
+    if (!request) return;
+
+    request.state = mongoShellRequestStates.FAILED;
+    request.error = new Error('MongoShell: incomplete command timed out');
+    // $FlowFixMe
+    request.error.responseCode = 'INCOMPLETE_COMMAND_TIMED_OUT';
+
+    this._endCurrentRunningCommand();
+  }, SET_TIMEOUT_FOR_INCOMPLETE_COMMAND_DEBOUNCE_TIME);
+
   _onParsedLine = parsedLine => {
+    this._setTimeoutForIncompleteCommand.cancel();
+
     if (parsedLine.endsWith(MongoShell.PRINT_CUSTOM_EXEC_ENDING_CMD)) return;
 
     if (!this.currentRequest || this.currentRequest.realtime) {
@@ -325,7 +357,7 @@ export class MongoShell extends EventEmitter {
       const output = this.outputBuffer.join('');
       this.outputBuffer = [];
 
-      l.debug(`Emitting realtime output for request ${requestId || 'default'}...`);
+      l.debug(`Emitting realtime output for request ${requestId || 'default'}`);
       this.emit(MongoShell.eventOutputAvailable, requestId, output);
     },
     BUFFER_TIME,
@@ -371,6 +403,7 @@ export class MongoShell extends EventEmitter {
       }
     });
 
+    // add our own end signal
     this.commandQueue.push(MongoShell.PRINT_CUSTOM_EXEC_ENDING_CMD + MongoShell.ENTER);
   }
 
@@ -386,6 +419,14 @@ export class MongoShell extends EventEmitter {
 
   _resolveRequest = (request: MongoShellRequest) => {
     this.emit(MongoShell.eventRequestResolved, request);
+  };
+
+  _endCurrentRunningCommand = () => {
+    // deplete queueing commands
+    this.commandQueue = [MongoShell.PRINT_CUSTOM_EXEC_ENDING_CMD + MongoShell.ENTER];
+
+    // send ctrl-c
+    this._writeToShell('\x03');
   };
 
   createShell() {
@@ -457,16 +498,14 @@ export class MongoShell extends EventEmitter {
     this.shell.on('data', parserOnRead);
     this.parser.on('parsedLine', this._onParsedLine);
     this.parser.on('executionEnded', this._onExecutionEnded);
-    this.parser.on('promptShown', this._onAvailableForMoreInput);
-    this.parser.on('threeDotShown', this._onAvailableForMoreInput);
+    this.parser.on('availableForMoreInput', this._onAvailableForMoreInput);
 
     this._cleanup = () => {
       this.shell.removeListener('exit', this._onShellExit);
       this.shell.removeListener('data', parserOnRead);
       this.parser.removeListener('parsedLine', this._onParsedLine);
       this.parser.removeListener('executionEnded', this._onExecutionEnded);
-      this.parser.removeListener('promptShown', this._onAvailableForMoreInput);
-      this.parser.removeListener('threeDotShown', this._onAvailableForMoreInput);
+      this.parser.removeListener('availableForMoreInput', this._onAvailableForMoreInput);
       this.removeAllListeners(MongoShell.eventOutputAvailable);
       this.removeAllListeners(MongoShell.eventRequestResolved);
       this.removeAllListeners(MongoShell.eventReady);
@@ -592,10 +631,16 @@ export class MongoShell extends EventEmitter {
   }
 
   terminateCurrentStatement() {
-    if (!this.isBusy) {
-      return Promise.reject(new Error('There is no running statement.'));
-    }
-    this._writeToShell('\x03');
+    const request = this.currentRequest;
+
+    if (!request) return Promise.reject(new Error('MongoShell: no request is currently running'));
+
+    request.state = mongoShellRequestStates.FAILED;
+    request.error = new Error('MongoShell: request cancelled by user');
+    // $FlowFixMe
+    request.error.responseCode = 'REQUEST_CANCELLED_BY_USER';
+
+    this._endCurrentRunningCommand();
     return Promise.resolve();
   }
 }

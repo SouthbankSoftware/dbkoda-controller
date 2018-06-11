@@ -1,7 +1,7 @@
 /**
  * Created by joey on 14/8/17
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-08T12:12:49+10:00
+ * @Last modified time: 2018-06-12T00:04:35+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -58,6 +58,10 @@ export default class Parser extends EventEmitter {
         `${escapeRegExp(MongoShell.CUSTOM_EXEC_ENDING)}$`
       );
     }
+
+    if (!Parser.MongoShell) {
+      Parser.MongoShell = MongoShell;
+    }
   }
 
   onRead = data => {
@@ -82,9 +86,9 @@ export default class Parser extends EventEmitter {
         const match = buffer.match(Parser.PROMPT_REGEX);
 
         if (match) {
-          this.emit('promptShown');
-        } else if (buffer.trim() === '...') {
-          this.emit('threeDotShown');
+          this.emit('availableForMoreInput', Parser.MongoShell.PROMPT);
+        } else if (buffer.trim() === Parser.MongoShell.THREE_DOTS) {
+          this.emit('availableForMoreInput', Parser.MongoShell.THREE_DOTS);
         }
 
         this.buffers = [buffer];
