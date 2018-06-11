@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-08T08:18:02+10:00
+ * @Last modified time: 2018-06-12T01:11:25+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -29,7 +29,7 @@ const errors = require('feathers-errors');
 const _ = require('lodash');
 const fs = require('fs');
 const sshTunnel = require('open-ssh-tunnel');
-const { MongoShell } = require('../mongo-shell');
+const { MongoShell, mongoShellRequestStates } = require('../mongo-shell');
 const mongoUri = require('mongodb-uri');
 const MongoConnection = require('./connection');
 const Status = require('./status');
@@ -40,7 +40,7 @@ const { Errors } = require('../../errors/Errors');
 
 const { Mongos, ReplSet, Server } = mongodb;
 const REMOVE_CHANGE_PROMPT_CMD_REGEX = new RegExp(
-  `.*${escapeRegExp(MongoShell.CHANGE_PROMPT_CMD)}`,
+  `.*${escapeRegExp(MongoShell.CHANGE_PROMPT_CMD)}[\r\n]*`,
   'g'
 );
 
@@ -460,7 +460,7 @@ class MongoConnectionController {
           this.createMongoShellProcess(id, shellId, connection)
             .then(v => {
               const { output } = v;
-              output.unshift(' ******* Shell Connection Restarted. ******** \n');
+              output.unshift('### mongo shell restarted\r');
 
               log.warn('reconnect output message ', output, output.length);
               that.connections[id].shells[shellId] = v.shell;
@@ -494,12 +494,30 @@ class MongoConnectionController {
       shell.on(MongoShell.eventRequestResolved, request => {
         if (!request.realtime) return;
 
+        let output = '';
+
+        if (request.state === mongoShellRequestStates.FAILED) {
+          if (request.error.responseCode === 'INCOMPLETE_COMMAND_TIMED_OUT') {
+            output += 'Error: incomplete MongoDB command detected, please check your syntax\r';
+          } else if (request.error.responseCode === 'REQUEST_CANCELLED_BY_USER') {
+            output += 'Warn: request cancelled by user\r';
+          }
+        }
+
+        output += '### execution ended\r';
+
         that.mongoShell.emit('mongo-execution-end', { id, shellId });
+        that.mongoShell.emit('shell-output', {
+          id,
+          shellId,
+          output
+        });
       });
       shell.on(MongoShell.eventReady, () => {
         l.info('mongo shell initialized');
         const outputMsg = [];
         connectionMessage.map(msg => outputMsg.push(msg.output));
+        outputMsg.push('### shell ready\r');
         resolve({ shell, output: outputMsg });
       });
     });
