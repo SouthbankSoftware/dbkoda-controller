@@ -188,6 +188,9 @@ class MongoConnectionController {
           if (conn.username && conn.password) {
             options.auth = { user: conn.username, password: conn.password };
           }
+          if (conn.authenticationDatabase) {
+            options.authSource = conn.authenticationDatabase;
+          }
           this.mongoClient.connect(conn.url, options, (err, db) => {
             if (err !== null) {
               l.error('failed to connect mongo instance ', err.message);
