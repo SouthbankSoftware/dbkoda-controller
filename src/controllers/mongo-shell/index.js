@@ -8,7 +8,7 @@
  * @Date:   2018-06-05T12:12:29+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-12T01:10:06+10:00
+ * @Last modified time: 2018-06-12T10:45:00+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -171,12 +171,18 @@ export class MongoShell extends EventEmitter {
       }
       params.push(connection.database);
     } else {
-      if (connection.url && connection.url.indexOf('ssl=') > 0) {
-        const url = connection.url.replace(/.ssl=true/, '').replace(/.ssl=false/, '');
-        params.push(url);
+      const urlMatch = connection.url.match(/(.*?)(?:[?&]?ssl=(true|false).*)/);
+
+      if (urlMatch) {
+        params.push(urlMatch[1]);
+
+        if (urlMatch[2] === 'true') {
+          connection.ssl = true;
+        }
       } else {
         params.push(connection.url);
       }
+
       if (connection.ssl) {
         params.push('--ssl');
         if (connection.sslAllowInvalidCertificates) {
