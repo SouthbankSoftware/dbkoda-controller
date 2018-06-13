@@ -8,7 +8,7 @@
  * @Date:   2018-06-05T12:12:29+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-12T10:45:00+10:00
+ * @Last modified time: 2018-06-13T10:44:12+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -255,12 +255,28 @@ export class MongoShell extends EventEmitter {
 
           request.state = mongoShellRequestStates.SUCCEEDED;
         } catch (err) {
+          let bugContext = '';
+
+          if (err.message) {
+            const match = err.message.match(/position (\d+)/);
+
+            if (match) {
+              const bugIdx = Number(match[1]);
+              const width = 20;
+              bugContext = JSON.stringify(response.substring(bugIdx - width, bugIdx + width));
+            }
+          }
+
           if (IS_PRODUCTION) {
-            l.error('MongoShell: failed to parse json output', err);
+            l.error('MongoShell: failed to parse json output', err, bugContext);
           } else {
             l.debug('Raw output:', JSON.stringify(rawOutput));
             l.debug('Filtered output:', JSON.stringify(response));
-            l.error(`Failed to parse json output for ${request.code}:`, err);
+            l.error(
+              `MongoShell: failed to parse json output for ${request.code}:`,
+              err,
+              bugContext
+            );
           }
 
           request.state = mongoShellRequestStates.FAILED;

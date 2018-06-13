@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-29T15:13:01+11:00
+ * @Last modified time: 2018-06-13T11:04:52+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -22,7 +22,7 @@
  */
 
 const winston = require('winston');
-const {launchSingleInstance, killMongoInstance, generateMongoData} = require('test-utils');
+const { launchSingleInstance, killMongoInstance, generateMongoData } = require('test-utils');
 // const assert = require('assert');
 const {
   connection,
@@ -38,7 +38,7 @@ let shellId;
 const port = getRandomPort();
 
 describe('test run shell command', () => {
-  before(function (done) {
+  before(function(done) {
     if (os.platform() === 'win32') {
       this.skip();
     } else {
@@ -52,75 +52,83 @@ describe('test run shell command', () => {
           {},
           {
             query: {
-              url: 'mongodb://localhost:' + port + '/test',
-            },
-          },
+              url: 'mongodb://localhost:' + port + '/test'
+            }
+          }
         )
-        .then((v) => {
+        .then(v => {
           winston.info('create connection ', v);
           connectionId = v.id;
           shellId = v.shellId;
           setTimeout(() => done(), MLAUNCH_TIMEOUT);
         })
-        .catch((e) => {
+        .catch(e => {
           console.log('error:', e);
         });
     }
   });
 
-  after(function () {
+  after(function() {
     this.timeout(TIMEOUT);
     connection.remove(connectionId);
     killMongoInstance(port);
   });
 
-
   it('test explain output for json', () => {
     return new Promise((resolve, reject) => {
-      syncExecution.update(connectionId, {
-        shellId,
-        commands: 'use test1',
-        responseType: 'text'
-      }).then(() => {
-        return syncExecution.update(connectionId, {
+      syncExecution
+        .update(connectionId, {
           shellId,
-          commands: 'db.user.find().explain("executionStats")',
-          responseType: 'json'
-        });
-      }).then((output) => {
-        console.log('write output xXXX: ', output);
-        JSON.parse(output);
-        return syncExecution.update(connectionId, {
-          shellId,
-          commands: 'db.user.find().explain()',
-          responseType: 'json'
-        });
-      }).then((output) => {
-        JSON.parse(output);
-        return syncExecution.update(connectionId, {
-          shellId,
-          commands: 'db.user.find().explain("allPlansExecution")',
-          responseType: 'json'
-        });
-      }).then((output) => {
-        JSON.parse(output);
-        resolve();
-      }).catch(err => reject(err));
+          commands: 'use test1',
+          responseType: 'RAW'
+        })
+        .then(() => {
+          return syncExecution.update(connectionId, {
+            shellId,
+            commands: 'db.user.find().explain("executionStats")',
+            responseType: 'JSON'
+          });
+        })
+        .then(output => {
+          console.log('write output xXXX: ', output);
+          JSON.parse(output);
+          return syncExecution.update(connectionId, {
+            shellId,
+            commands: 'db.user.find().explain()',
+            responseType: 'JSON'
+          });
+        })
+        .then(output => {
+          JSON.parse(output);
+          return syncExecution.update(connectionId, {
+            shellId,
+            commands: 'db.user.find().explain("allPlansExecution")',
+            responseType: 'JSON'
+          });
+        })
+        .then(output => {
+          JSON.parse(output);
+          resolve();
+        })
+        .catch(err => reject(err));
     });
   }).timeout(TIMEOUT);
 
   it('test get log global command', () => {
     return new Promise((resolve, reject) => {
-      syncExecution.update(connectionId, {
-        shellId,
-        commands: 'db.getSiblingDB("admin").runCommand({ getLog: "global" })',
-        responseType: 'json'
-      }).then((output) => {
-        console.log('get log output ');
-        console.log(output);
-        // JSON.parse(output);
-        resolve();
-      }).catch(err => reject(err));
+      syncExecution
+        .update(connectionId, {
+          shellId,
+          commands: 'db.getSiblingDB("admin").runCommand({ getLog: "global" })',
+          responseType: 'JSON'
+        })
+        .then(output => {
+          console.log('get log output ');
+          console.log(output);
+          // JSON.parse(output);
+          resolve();
+        })
+        .catch(err => reject(err));
     });
   }).timeout(TIMEOUT);
 
@@ -139,44 +147,54 @@ describe('test run shell command', () => {
 
   it('test get collection stats command', () => {
     return new Promise((resolve, reject) => {
-      syncExecution.update(connectionId, {
-        shellId,
-        commands: 'db.getSiblingDB("test").user.stats(1024)',
-        responseType: 'json'
-      }).then((output) => {
-        console.log('test get log global command get output');
-        console.log(output);
-        JSON.parse(output.replace(/[\r\n\t]*/g, ''));
-        resolve();
-      }).catch(err => reject(err));
+      syncExecution
+        .update(connectionId, {
+          shellId,
+          commands: 'db.getSiblingDB("test").user.stats(1024)',
+          responseType: 'JSON'
+        })
+        .then(output => {
+          console.log('test get log global command get output');
+          console.log(output);
+          JSON.parse(output.replace(/[\r\n\t]*/g, ''));
+          resolve();
+        })
+        .catch(err => reject(err));
     });
   }).timeout(TIMEOUT);
 
   it('test get user roles command', () => {
     return new Promise((resolve, reject) => {
-      syncExecution.update(connectionId, {
-        shellId,
-        commands: 'db.getSiblingDB("test").getRoles({rolesInfo: 1, showPrivileges: false, showBuiltinRoles: true})',
-        responseType: 'json'
-      }).then((output) => {
-        console.log('test get user roles command get output', output);
-        JSON.parse(output.replace(/[\r\n\t]*/g, ''));
-        resolve();
-      }).catch(err => reject(err));
+      syncExecution
+        .update(connectionId, {
+          shellId,
+          commands:
+            'db.getSiblingDB("test").getRoles({rolesInfo: 1, showPrivileges: false, showBuiltinRoles: true})',
+          responseType: 'JSON'
+        })
+        .then(output => {
+          console.log('test get user roles command get output', output);
+          JSON.parse(output.replace(/[\r\n\t]*/g, ''));
+          resolve();
+        })
+        .catch(err => reject(err));
     });
   }).timeout(TIMEOUT);
 
   it('test get user roles command', () => {
     return new Promise((resolve, reject) => {
-      syncExecution.update(connectionId, {
-        shellId,
-        commands: 'db.getSiblingDB("admin").runCommand( { getParameter : "*" })',
-        responseType: 'json'
-      }).then((output) => {
-        console.log('test get user roles command get output', output);
-        JSON.parse(output);
-        resolve();
-      }).catch(err => reject(err));
+      syncExecution
+        .update(connectionId, {
+          shellId,
+          commands: 'db.getSiblingDB("admin").runCommand( { getParameter : "*" })',
+          responseType: 'JSON'
+        })
+        .then(output => {
+          console.log('test get user roles command get output', output);
+          JSON.parse(output);
+          resolve();
+        })
+        .catch(err => reject(err));
     });
   }).timeout(TIMEOUT);
 });

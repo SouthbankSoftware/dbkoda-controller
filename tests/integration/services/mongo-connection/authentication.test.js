@@ -1,22 +1,16 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2017-04-18T11:21:30+10:00
+ * @Last modified time: 2018-06-13T11:14:58+10:00
  */
 
 const assert = require('assert');
-const {launchSingleInstance, killMongoInstance} = require('test-utils');
-const {
-  connection,
-  shell,
-  TIMEOUT,
-  getRandomPort,
-  MLAUNCH_TIMEOUT,
-} = require('../commons');
+const { launchSingleInstance, killMongoInstance } = require('test-utils');
+const { connection, shell, TIMEOUT, getRandomPort, MLAUNCH_TIMEOUT } = require('../commons');
 const os = require('os');
 
-describe('test run shell command', () => {
+describe('test run shell command authentication', () => {
   const port = getRandomPort();
-  before(function (done) {
+  before(function(done) {
     if (os.platform() === 'win32') {
       this.skip();
     } else {
@@ -26,7 +20,7 @@ describe('test run shell command', () => {
     }
   });
 
-  after(function () {
+  after(function() {
     this.timeout(TIMEOUT * 3);
     killMongoInstance(port);
   });
@@ -39,16 +33,16 @@ describe('test run shell command', () => {
           query: {
             url: 'mongodb://localhost:' + port,
             authorization: true,
-            test: false,
-          },
-        },
+            test: false
+          }
+        }
       )
-      .then((v) => {
+      .then(v => {
         assert.equal(true, false);
         connection.remove(v.id);
       })
-      .catch((err) => {
-        assert.equal(err.code, 401);
+      .catch(err => {
+        assert.equal(err.codeName, 'Unauthorized');
       });
   });
 
@@ -60,15 +54,15 @@ describe('test run shell command', () => {
           query: {
             url: 'mongodb://localhost:' + port,
             authorization: true,
-            test: true,
-          },
-        },
+            test: true
+          }
+        }
       )
       .then(() => {
         assert.fail();
       })
-      .catch((err) => {
-        assert.equal(err.code, 401);
+      .catch(err => {
+        assert.equal(err.codeName, 'Unauthorized');
       });
   });
 
@@ -80,15 +74,15 @@ describe('test run shell command', () => {
           query: {
             url: 'mongodb://admin:123456@localhost:' + port + '/admin',
             authorization: true,
-            test: false,
-          },
-        },
+            test: false
+          }
+        }
       )
-      .then((response) => {
+      .then(response => {
         console.log('get response ', Object.keys(response));
         assert.equal(true, Object.keys(response).includes('id'));
       })
-      .catch((err) => {
+      .catch(err => {
         assert.fail(err);
       });
   });
@@ -102,26 +96,26 @@ describe('test run shell command', () => {
             url: 'mongodb://admin:123456@localhost:' + port + '/test',
             authorization: true,
             test: false,
-            database: 'admin',
-          },
-        },
+            database: 'admin'
+          }
+        }
       )
-      .then((response) => {
+      .then(response => {
         console.log('get response ', Object.keys(response));
         assert.equal(true, Object.keys(response).includes('id'));
         return response;
       })
-      .then((value) => {
+      .then(value => {
         shell
-          .create({id: value.id}, {})
-          .then((value) => {
+          .create({ id: value.id }, {})
+          .then(value => {
             assert.equal(Object.keys(value).includes('shellId'), true);
           })
-          .catch((err) => {
+          .catch(err => {
             assert.fail(err);
           });
       })
-      .catch((err) => {
+      .catch(err => {
         assert.fail(err);
       });
   });
