@@ -25,7 +25,8 @@ script:
   - set -e
   - yarn install --no-progress
   - mkdir -p ~/.dbKoda
-  - yarn test
+  # - yarn test
+  - yarn test:integration --grep 'test authorization connection with wrong credential enable test'
 
 notifications:
   slack:

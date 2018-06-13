@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-13T11:14:58+10:00
+ * @Last modified time: 2018-06-13T11:36:29+10:00
  */
 
 const assert = require('assert');
@@ -62,6 +62,7 @@ describe('test run shell command authentication', () => {
         assert.fail();
       })
       .catch(err => {
+        console.log(err);
         assert.equal(err.codeName, 'Unauthorized');
       });
   });
