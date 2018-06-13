@@ -104,11 +104,6 @@ const cursorCharAbsolute = (parser, params) => {
  *     Ps = 1  -> Erase Above.
  *     Ps = 2  -> Erase All.
  *     Ps = 3  -> Erase Saved Lines (xterm).
- * CSI ? Ps J
- *   Erase in Display (DECSED).
- *     Ps = 0  -> Selective Erase Below (default).
- *     Ps = 1  -> Selective Erase Above.
- *     Ps = 2  -> Selective Erase All.
  */
 const eraseInDisplay = (parser, params) => {
   for (let i = parser.bufferY; parser.bufferY >= 0 && i < parser.buffers.length; i += 1) {
@@ -121,6 +116,11 @@ const eraseInDisplay = (parser, params) => {
       case 1:
         // erase left
         parser.buffers[i] = currentLine.substring(parser.bufferX + 1);
+        break;
+      case 2:
+        // erase all
+        parser.buffers[i] = '';
+        parser.bufferX = 0;
         break;
       default:
         log.error('unrecognize parameter for J ', params);
