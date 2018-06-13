@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-01-29T15:13:18+11:00
+ * @Last modified time: 2018-06-13T13:56:36+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,8 +21,7 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const winston = require('winston');
-const {launchSingleInstance, killMongoInstance, generateMongoData} = require('test-utils');
+const { launchSingleInstance, killMongoInstance, generateMongoData } = require('test-utils');
 const assert = require('assert');
 const {
   connection,
@@ -39,7 +38,7 @@ let shellId;
 const port = getRandomPort();
 
 describe('test run shell command', () => {
-  before(function (done) {
+  before(function(done) {
     if (os.platform() === 'win32') {
       this.skip();
     } else {
@@ -54,17 +53,17 @@ describe('test run shell command', () => {
               {},
               {
                 query: {
-                  url: 'mongodb://localhost:' + port + '/test',
-                },
-              },
+                  url: 'mongodb://localhost:' + port + '/test'
+                }
+              }
             )
-            .then((v) => {
-              winston.info('create connection ', v);
+            .then(v => {
+              console.log('create connection ', v);
               connectionId = v.id;
               shellId = v.shellId;
               done();
             })
-            .catch((e) => {
+            .catch(e => {
               console.log('error:', e);
             });
         }, MLAUNCH_TIMEOUT);
@@ -72,7 +71,7 @@ describe('test run shell command', () => {
     }
   });
 
-  after(function () {
+  after(function() {
     this.timeout(TIMEOUT);
     connection.remove(connectionId);
     killMongoInstance(port);
@@ -81,68 +80,83 @@ describe('test run shell command', () => {
   it('test run show collections through sync service', () => {
     return new Promise((resolve, reject) => {
       syncExecution.timeout = 30000;
-      syncExecution.update(connectionId, {
-        shellId,
-        commands: 'use users',
-        responseType: 'text',
-      }).then((o) => {
-        console.log('get user users output:', o);
-        return syncExecution.update(connectionId, {
+      syncExecution
+        .update(connectionId, {
           shellId,
-          commands: 'show collections\n',
-          responseType: 'text',
+          commands: 'use users',
+          responseType: 'text'
+        })
+        .then(o => {
+          console.log('get user users output:', o);
+          return syncExecution.update(connectionId, {
+            shellId,
+            commands: 'show collections\n',
+            responseType: 'text'
+          });
+        })
+        .then(output => {
+          console.log('xxxx test run show collections through sync service:', output);
+          resolve(output);
+        })
+        .catch(err => {
+          console.log('err ', err);
+          reject(err);
         });
-      }).then((output) => {
-        console.log('xxxx test run show collections through sync service:', output);
-        resolve(output);
-      }).catch((err) => {
-        console.log('err ', err);
-        reject(err);
-      });
     });
   }).timeout(TIMEOUT);
 
   it('test run show dbs through sync service', () => {
     return new Promise((resolve, reject) => {
       syncExecution.timeout = 30000;
-      return syncExecution.update(connectionId, {
-        shellId,
-        commands: 'show dbs',
-        responseType: 'text',
-      }).then((output) => {
-        console.log('show dbs output ', output);
-        assert.equal(output.indexOf('test') >= 0, true);
-        resolve(output);
-      }).catch((err) => {
-        reject(err);
-      });
+      return syncExecution
+        .update(connectionId, {
+          shellId,
+          commands: 'show dbs',
+          responseType: 'text'
+        })
+        .then(output => {
+          console.log('show dbs output ', output);
+          assert.equal(output.indexOf('test') >= 0, true);
+          resolve(output);
+        })
+        .catch(err => {
+          reject(err);
+        });
     });
   }).timeout(TIMEOUT);
 
   it('test run promise request through sync service', () => {
     const promises = [];
-    promises.push(syncExecution.update(connectionId, {
-      shellId,
-      commands: 'show dbs',
-      responseType: 'text'
-    }));
-    promises.push(syncExecution.update(connectionId, {
-      shellId,
-      commands: 'show collections',
-      responseType: 'text'
-    }));
-    promises.push(syncExecution.update(connectionId, {
-      shellId,
-      commands: 'use test',
-      responseType: 'text'
-    }));
+    promises.push(
+      syncExecution.update(connectionId, {
+        shellId,
+        commands: 'show dbs',
+        responseType: 'text'
+      })
+    );
+    promises.push(
+      syncExecution.update(connectionId, {
+        shellId,
+        commands: 'show collections',
+        responseType: 'text'
+      })
+    );
+    promises.push(
+      syncExecution.update(connectionId, {
+        shellId,
+        commands: 'use test',
+        responseType: 'text'
+      })
+    );
 
     return new Promise((resolve, reject) => {
-      Promise.all(promises).then((v) => {
-        console.log('run promise request through sync service xxxx:', v);
-        assert.equal(v.length, 3);
-        resolve();
-      }).catch(err => reject(err));
+      Promise.all(promises)
+        .then(v => {
+          console.log('run promise request through sync service xxxx:', v);
+          assert.equal(v.length, 3);
+          resolve();
+        })
+        .catch(err => reject(err));
     });
   }).timeout(TIMEOUT);
 
@@ -150,35 +164,46 @@ describe('test run shell command', () => {
     let shell1Id;
     let shell2Id;
     let shell3Id;
-    return shell.create({id: connectionId}).then((o) => {
-      shell1Id = o.shellId;
-      return shell.create({id: connectionId});
-    }).then((o) => {
-      shell2Id = o.shellId;
-      return shell.create({id: connectionId});
-    }).then((o) => {
-      shell3Id = o.shellId;
-      console.log('shell id ', shell1Id, shell2Id, shell3Id);
-      const promises = [];
-      promises.push(syncExecution.update(connectionId, {
-        shellId: shell1Id,
-        commands: 'show dbs',
-        responseType: 'text'
-      }));
-      promises.push(syncExecution.update(connectionId, {
-        shellId: shell2Id,
-        commands: 'show collections',
-        responseType: 'text'
-      }));
-      promises.push(syncExecution.update(connectionId, {
-        shellId: shell3Id,
-        commands: 'use test',
-        responseType: 'text'
-      }));
-      return Promise.all(promises);
-    }).then((o) => {
-      console.log('get output ', o);
-      assert.equal(o.length, 3);
-    });
+    return shell
+      .create({ id: connectionId })
+      .then(o => {
+        shell1Id = o.shellId;
+        return shell.create({ id: connectionId });
+      })
+      .then(o => {
+        shell2Id = o.shellId;
+        return shell.create({ id: connectionId });
+      })
+      .then(o => {
+        shell3Id = o.shellId;
+        console.log('shell id ', shell1Id, shell2Id, shell3Id);
+        const promises = [];
+        promises.push(
+          syncExecution.update(connectionId, {
+            shellId: shell1Id,
+            commands: 'show dbs',
+            responseType: 'text'
+          })
+        );
+        promises.push(
+          syncExecution.update(connectionId, {
+            shellId: shell2Id,
+            commands: 'show collections',
+            responseType: 'text'
+          })
+        );
+        promises.push(
+          syncExecution.update(connectionId, {
+            shellId: shell3Id,
+            commands: 'use test',
+            responseType: 'text'
+          })
+        );
+        return Promise.all(promises);
+      })
+      .then(o => {
+        console.log('get output ', o);
+        assert.equal(o.length, 3);
+      });
   }).timeout(TIMEOUT);
 });

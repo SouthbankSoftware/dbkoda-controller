@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-13T11:04:52+10:00
+ * @Last modified time: 2018-06-13T13:56:31+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -21,7 +21,6 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const winston = require('winston');
 const { launchSingleInstance, killMongoInstance, generateMongoData } = require('test-utils');
 // const assert = require('assert');
 const {
@@ -57,7 +56,7 @@ describe('test run shell command', () => {
           }
         )
         .then(v => {
-          winston.info('create connection ', v);
+          console.log('create connection ', v);
           connectionId = v.id;
           shellId = v.shellId;
           setTimeout(() => done(), MLAUNCH_TIMEOUT);

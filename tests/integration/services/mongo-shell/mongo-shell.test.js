@@ -1,9 +1,8 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-13T11:26:59+10:00
+ * @Last modified time: 2018-06-13T13:56:26+10:00
  */
 
-const winston = require('winston');
 const uuidV1 = require('node-uuid');
 const { launchSingleInstance, killMongoInstance, generateMongoData } = require('test-utils');
 const {
@@ -41,7 +40,7 @@ describe('test run shell command', () => {
           }
         )
         .then(v => {
-          winston.info('create connection ', v);
+          console.log('create connection ', v);
           connectionId = v.id;
           shellId = v.shellId;
           setTimeout(() => done(), MLAUNCH_TIMEOUT);
@@ -70,7 +69,7 @@ describe('test run shell command', () => {
     });
     return new Promise(resolve => {
       shell.on(events.OUTPUT, msg => {
-        winston.info('test run show collections, get command output ', msg);
+        console.log('test run show collections, get command output ', msg);
         if (msg.output && msg.output.includes('user')) {
           resolve();
         }
@@ -91,7 +90,7 @@ describe('test run shell command', () => {
         }
       });
     }).catch(err => {
-      winston.error('get error ', err);
+      console.error('get error ', err);
       assert.equal(true, false);
     });
   }).timeout(TIMEOUT);
