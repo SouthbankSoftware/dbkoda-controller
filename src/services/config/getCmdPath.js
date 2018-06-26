@@ -1,11 +1,13 @@
 /**
  * @flow
  *
+ * Asynchronously get a cmd's absolute path
+ *
  * @Author: Guan Gui <guiguan>
- * @Date:   2018-03-05T15:35:16+11:00
+ * @Date:   2018-06-19T13:51:17+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-21T16:16:58+10:00
+ * @Last modified time: 2018-06-19T17:28:03+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,10 +28,27 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import processItems from '~/hooks/processItems';
-import getDumpableConfigView from '../getDumpableConfigView';
+import _ from 'lodash';
+import { exec } from 'child_process';
+import os from 'os';
 
-export default () =>
-  processItems((_context, _item) => {
-    return getDumpableConfigView(global.config);
+export default (cmd: string): Promise<?string> =>
+  new Promise(resolve => {
+    let pathCmd;
+
+    if (os.platform() === 'win32') {
+      pathCmd = `where.exe ${cmd}`;
+    } else {
+      pathCmd = `bash -lc 'which ${cmd}'`;
+    }
+
+    exec(pathCmd, (err, stdout) => {
+      if (err) {
+        return resolve(null);
+      }
+
+      let result = stdout.toString().trim();
+      result = _.last(result.split(/\r\n|\n/));
+      resolve(result || null);
+    });
   });

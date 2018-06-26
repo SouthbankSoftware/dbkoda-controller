@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-08T03:53:10+10:00
+ * @Last modified time: 2018-06-26T16:23:34+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -57,6 +57,7 @@ export class SyncExecutionController {
   swapProfile(id, shellId, newProfile) {
     const { url, password: pw, username } = this.mongoController.connections[newProfile];
     let commands = 'var db = ';
+    // TODO
     if (
       this.mongoController.connections[newProfile].shellVersion.match(/^3.0.*/gi) ||
       this.mongoController.connections[newProfile].shellVersion.match(/^3.1.*/gi) ||

@@ -2,10 +2,10 @@
  * @flow
  *
  * @Author: Guan Gui <guiguan>
- * @Date:   2018-03-05T15:35:16+11:00
+ * @Date:   2017-12-18T10:30:13+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-21T16:16:58+10:00
+ * @Last modified time: 2018-06-19T17:30:40+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -27,9 +27,14 @@
  */
 
 import processItems from '~/hooks/processItems';
-import getDumpableConfigView from '../getDumpableConfigView';
+import getCmdPath from '../../config/getCmdPath';
 
 export default () =>
-  processItems((_context, _item) => {
-    return getDumpableConfigView(global.config);
-  });
+  processItems(
+    (context, item) => {
+      const { cmd } = item;
+
+      return getCmdPath(cmd);
+    },
+    { idAlias: 'cmd' }
+  );

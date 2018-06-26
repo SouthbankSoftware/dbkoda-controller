@@ -1,0 +1,34 @@
+{
+  "info": {
+    "_postman_id": "26b7a3d7-412d-47a9-9f94-9d0223fbea6b",
+    "name": "dbkoda-controller-cmd-path",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "getCmdPath",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw":
+            "{\n  \"config\": {\n    \"mongoCmd\": \"/usr/local/bin/mongo\",\n    \"drillCmd\": null,\n    \"drillControllerCmd\": null,\n    \"telemetryEnabled\": true,\n    \"showWelcomePageAtStart\": true,\n    \"passwordStoreEnabled\": true,\n    \"performancePanel\": {\n      \"preventDisplaySleep\": false,\n      \"metricSmoothingWindow\": 3,\n      \"foregroundSamplingRate\": 1000,\n      \"backgroundSamplingRate\": 1000,\n      \"historySize\": 720,\n      \"historyBrushSize\": 30,\n      \"alarmDisplayingWindow\": 60000\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3030/cmd-path/mongo",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3030",
+          "path": ["cmd-path", "mongo"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 /**
  * Created by joey on 21/7/17.
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-13T22:43:09+11:00
+ * @Last modified time: 2018-06-26T15:30:18+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,7 +26,6 @@ import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import { escapeDoubleQuotes } from './processDoubleQuotes';
 import tokeniseCmdString from './tokeniseCmdString';
-import { isDockerCommand, getMongoCommands } from '../docker';
 
 class OSCommandsController extends EventEmitter {
   constructor() {
@@ -50,8 +49,8 @@ class OSCommandsController extends EventEmitter {
   }
 
   runCommandFromQueue() {
-    const configObj = getMongoCommands(); // should be read-only
-    log.info('Mongo Cmd:', configObj);
+    const mongoConfig = global.config.mongo; // should be read-only
+    log.info('Mongo Cmd:', mongoConfig);
     if (this.requestQueue.length <= 0) {
       return;
     }
@@ -64,10 +63,10 @@ class OSCommandsController extends EventEmitter {
       cmd = cmd.replace('-p ******', `-p "${escapeDoubleQuotes(password)}"`);
     }
     let params = tokeniseCmdString(cmd);
-    let mongoCmd = configObj[params[0] + 'Cmd'] ? configObj[params[0] + 'Cmd'] : params[0];
+    let mongoCmd = mongoConfig[`mongo${params[0]}Cmd`] || params[0];
     params.splice(0, 1);
 
-    if (isDockerCommand(mongoCmd)) {
+    if (mongoConfig.dockerized) {
       const tmp = mongoCmd.split(' ');
       mongoCmd = tmp[0];
       tmp.splice(0, 1);

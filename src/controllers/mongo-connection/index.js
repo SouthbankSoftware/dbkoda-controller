@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-12T01:11:25+10:00
+ * @Last modified time: 2018-06-26T16:49:52+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -241,12 +241,10 @@ class MongoConnectionController {
       .then(() => {
         if (conn.test) {
           l.debug('this is test connection.');
-          const shell = new MongoShell(conn, this.getMongoScriptsPath());
-          if (!shell.shellVersion || shell.shellVersion === 'UNKNOWN') {
-            throw new errors.GeneralError(
-              'Creation of shell connection failed. Unable to detect your mongo binary.<br/><br/>Please make sure the Mongo shell is in your path, or define path to mongo shell in the Preferences Panel.(Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)'
-            );
-          }
+
+          // logics in mongo-shell/index.js will validate the Mongo shell binary whenever it is
+          // being created
+
           return { success: true };
         }
         const serverConfig = db.topology;
@@ -442,7 +440,9 @@ class MongoConnectionController {
    */
   createMongoShellProcess(id, shellId, connection) {
     const that = this;
-    // TODO chech old reject logic
+    // TODO
+    // • chech old reject logic
+    // • timeout on shell creation
     return new Promise((resolve, _reject) => {
       let mongoScriptsPath;
       if (global.IS_PRODUCTION) {
@@ -455,6 +455,7 @@ class MongoConnectionController {
       shell.createShell();
       const connectionMessage = [];
       shell.on(MongoShell.eventExited, exit => {
+        // TODO: echo back error messages if not initialized
         log.warn(`mongo shell(${id}-${shellId} exit ${exit} ${shell.id} ${shell.status}`);
         // status is closing means it is closed by users
         if (shell.status !== Status.CLOSING && shell.status !== Status.CLOSED) {

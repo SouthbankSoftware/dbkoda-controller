@@ -1,8 +1,11 @@
 /**
- * @Author: guiguan
- * @Date:   2017-09-22T09:43:34+10:00
+ * @flow
+ *
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2017-12-12T11:17:22+11:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-12T21:20:49+11:00
+ * @Last modified time: 2018-06-19T16:59:08+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -25,31 +28,32 @@
 
 /* eslint-disable class-methods-use-this */
 
+// $FlowFixMe
 import errors from 'feathers-errors';
 import hooks from './hooks';
 
-export class MongoCmdValidator {
-  find(_params) {
+export class CmdPath {
+  find(_params: *) {
     throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
-  get(_id, _params) {
+  get(_id: *, _params: *) {
     throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
-  create(_data, _params) {
+  create(_data: *, _params: *) {
     throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
-  update(_id, _data, _params) {
+  update(_id: *, _data: *, _params: *) {
     throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
-  patch(_id, _data, _params) {
+  patch(_id: *, _data: *, _params: *) {
     throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 
-  remove(_id, _params) {
+  remove(_id: *, _params: *) {
     throw new errors.NotImplemented('Request should have been processed by hooks');
   }
 }
@@ -59,10 +63,10 @@ export default function() {
   const app = this;
 
   // Initialize our service with any options it requires
-  app.use('/mongo-cmd-validator', new MongoCmdValidator());
+  app.use('/cmd-path', new CmdPath());
 
   // Get our initialize service to that we can bind hooks
-  const service = app.service('/mongo-cmd-validator');
+  const service = app.service('/cmd-path');
 
   // Set up our before hooks
   service.before(hooks.before);

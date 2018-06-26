@@ -1,11 +1,9 @@
 /**
- * @flow
- *
  * @Author: Guan Gui <guiguan>
- * @Date:   2018-03-05T15:35:16+11:00
+ * @Date:   2018-06-25T18:57:41+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-21T16:16:58+10:00
+ * @Last modified time: 2018-06-25T19:55:41+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,10 +24,7 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import processItems from '~/hooks/processItems';
-import getDumpableConfigView from '../getDumpableConfigView';
-
-export default () =>
-  processItems((_context, _item) => {
-    return getDumpableConfigView(global.config);
-  });
+export ConfigError from './ConfigError';
+export MongoConfigError from './MongoConfigError';
+export PerformancePanelConfigError from './PerformancePanelConfigError';
+export UserConfigError from './UserConfigError';

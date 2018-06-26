@@ -5,7 +5,7 @@
  * @Date:   2018-03-12T15:46:20+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-20T16:35:26+10:00
+ * @Last modified time: 2018-06-22T13:59:10+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,45 +26,76 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// $FlowFixMe
-import Ajv from 'ajv';
-import ajv from '~/helpers/ajv';
-import app from '~/app';
-import { isDockerCommand } from '../../controllers/docker';
-
-// [IMPORTANT] please keep `configDefaults` and `configSchema` consistent
-export const configDefaults = {
+// [IMPORTANT] please keep `configDefaults` (both flow types and default values) and `configSchema`
+// consistent
+export const configDefaults: {
+  user: {
+    id: ?string
+  },
+  mongo: {
+    dockerized: boolean,
+    docker: {
+      cmd: ?string,
+      createNew: boolean,
+      imageName: ?string,
+      containerId: ?string,
+      hostPath: ?string,
+      containerPath: ?string
+    },
+    cmd: ?string,
+    versionCmd: ?string,
+    importCmd: ?string,
+    exportCmd: ?string,
+    dumpCmd: ?string,
+    restoreCmd: ?string
+  },
+  drillCmd: ?string,
+  drillControllerCmd: ?string,
+  telemetryEnabled: boolean,
+  showNewFeaturesDialogOnStart: boolean,
+  tableOutputDefault: boolean,
+  automaticAutoComplete: boolean,
+  showWelcomePageAtStart: boolean,
+  passwordStoreEnabled: boolean,
+  performancePanel: {
+    preventDisplaySleep: boolean,
+    metricSmoothingWindow: number,
+    foregroundSamplingRate: number,
+    backgroundSamplingRate: number,
+    historySize: number,
+    historyBrushSize: number,
+    alarmDisplayingWindow: number
+  },
+  maxOutputHistory: number
+} = {
   user: {
     id: null // this should always be `null` by default, and controller will figure it out
   },
-  mongoCmd: null, // this should always be `null` by default, and controller will figure it out
+  mongo: {
+    dockerized: false,
+    docker: {
+      cmd: null, // this should always be `null` by default, and controller will figure it out
+      createNew: true,
+      imageName: 'mongo:3.6',
+      containerId: null,
+      hostPath: null,
+      containerPath: null
+    },
+    cmd: null, // this should always be `null` by default, and controller will figure it out
+    versionCmd: null,
+    importCmd: null,
+    exportCmd: null,
+    dumpCmd: null,
+    restoreCmd: null
+  },
   drillCmd: null, // ui will figure this out
   drillControllerCmd: null, // ui will figure this out
-  mongoVersionCmd: null,
-  mongoexportCmd: null,
-  mongoimportCmd: null,
-  mongodumpCmd: null,
-  mongorestoreCmd: null,
   telemetryEnabled: true,
   showNewFeaturesDialogOnStart: true,
   tableOutputDefault: true,
   automaticAutoComplete: true,
   showWelcomePageAtStart: true,
   passwordStoreEnabled: false,
-  dockerEnabled: false,
-  docker: {
-    createNew: true,
-    imageName: '',
-    containerID: '',
-    hostPath: '',
-    containerPath: '',
-    mongoCmd: '',
-    mongorestoreCmd: '',
-    mongodumpCmd: '',
-    mongoexportCmd: '',
-    mongoimportCmd: '',
-    mongoVersionCmd: ''
-  },
   performancePanel: {
     preventDisplaySleep: false,
     metricSmoothingWindow: 6,
@@ -89,24 +120,54 @@ const configSchema = {
         }
       }
     },
-    mongoCmd: {
-      type: ['string', 'null'],
-      validMongoCmd: null
-    },
-    mongoVersionCmd: {
-      type: ['string', 'null']
-    },
-    mongoexportCmd: {
-      type: ['string', 'null']
-    },
-    mongoimportCmd: {
-      type: ['string', 'null']
-    },
-    mongodumpCmd: {
-      type: ['string', 'null']
-    },
-    mongorestoreCmd: {
-      type: ['string', 'null']
+    mongo: {
+      type: 'object',
+      properties: {
+        dockerized: {
+          type: 'boolean'
+        },
+        docker: {
+          type: 'object',
+          properties: {
+            cmd: {
+              type: ['string', 'null']
+            },
+            createNew: {
+              type: 'boolean'
+            },
+            imageName: {
+              type: ['string', 'null']
+            },
+            containerId: {
+              type: ['string', 'null']
+            },
+            hostPath: {
+              type: ['string', 'null']
+            },
+            containerPath: {
+              type: ['string', 'null']
+            }
+          }
+        },
+        cmd: {
+          type: ['string', 'null']
+        },
+        versionCmd: {
+          type: ['string', 'null']
+        },
+        importCmd: {
+          type: ['string', 'null']
+        },
+        exportCmd: {
+          type: ['string', 'null']
+        },
+        dumpCmd: {
+          type: ['string', 'null']
+        },
+        restoreCmd: {
+          type: ['string', 'null']
+        }
+      }
     },
     drillCmd: {
       type: ['string', 'null']
@@ -134,44 +195,6 @@ const configSchema = {
     },
     dockerEnabled: {
       type: 'boolean'
-    },
-    docker: {
-      type: 'object',
-      properties: {
-        createNew: {
-          type: 'boolean'
-        },
-        imageName: {
-          type: ['string', 'null']
-        },
-        containerID: {
-          type: ['string', 'null']
-        },
-        hostPath: {
-          type: ['string', 'null']
-        },
-        containerPath: {
-          type: ['string', 'null']
-        },
-        mongoCmd: {
-          type: ['string', 'null']
-        },
-        mongorestoreCmd: {
-          type: ['string', 'null']
-        },
-        mongoexportCmd: {
-          type: ['string', 'null']
-        },
-        mongodumpCmd: {
-          type: ['string', 'null']
-        },
-        mongoimportCmd: {
-          type: ['string', 'null']
-        },
-        mongoVersionCmd: {
-          type: ['string', 'null']
-        }
-      }
     },
     performancePanel: {
       type: 'object',
@@ -213,28 +236,5 @@ const configSchema = {
   },
   additionalProperties: false
 };
-
-ajv.addKeyword('validMongoCmd', {
-  async: true,
-  type: 'string',
-  validate: (schema, path) => {
-    if (path === null) return Promise.resolve(true);
-
-    if (isDockerCommand()) return Promise.resolve(true);
-
-    const mongoCmdValidatorService = app.service('mongo-cmd-validator');
-
-    return mongoCmdValidatorService
-      .create({
-        mongoCmdPath: path
-      })
-      .then(() => true)
-      .catch(err => {
-        l.error(err);
-
-        return Promise.reject(new Ajv.ValidationError([err]));
-      });
-  }
-});
 
 export default configSchema;

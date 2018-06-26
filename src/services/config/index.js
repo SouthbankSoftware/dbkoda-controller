@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T14:09:35+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-14T10:17:39+11:00
+ * @Last modified time: 2018-06-25T19:45:22+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -34,8 +34,9 @@ import moment from 'moment';
 // $FlowFixMe
 import yaml from 'js-yaml';
 // $FlowFixMe
-import errors from 'feathers-errors';
+import errors, { FeathersError } from 'feathers-errors';
 import path from 'path';
+import { ConfigError } from '~/errors';
 import hooks from './hooks';
 import { configDefaults } from './configSchema';
 
@@ -48,7 +49,7 @@ class Config {
   _fileServiceDisposer: *;
 
   constructor() {
-    this.events = ['changed'];
+    this.events = ['changed', 'error'];
   }
 
   setup(app: *) {
@@ -74,10 +75,13 @@ class Config {
                 const { errors } = err;
 
                 if (_.isPlainObject(errors)) {
-                  l.warn(
+                  const configErr = new ConfigError(
                     'Corrupted entries %o detected in config.yml. Backing up and trying to recover them...',
-                    errors
+                    { errors }
                   );
+                  l.warn(configErr.message, configErr.errors);
+                  this.emitError(configErr, 'warn');
+
                   return this.backupConfigYml().then(() => {
                     for (const p of _.keys(errors)) {
                       const entryPath = p.replace(/^config\./, '');
@@ -99,12 +103,16 @@ class Config {
               });
             })
             .catch(err => {
-              this.handleError(err);
+              const configErr = new ConfigError(
+                'Corrupted config.yml detected. Backing up and recovering...',
+                { errors: err.errors || { config: err.message } }
+              );
+              this.handleError(configErr);
+              this.emitError(configErr, 'error');
 
-              l.warn('Corrupted config.yml detected. Backing up and recovering...');
               return this.backupConfigYml().then(() =>
                 this.patch('current', {
-                  config: {},
+                  config: configDefaults,
                   emitChangedEvent: false,
                   forceSave: true
                 }).catch(this.handleError)
@@ -115,7 +123,7 @@ class Config {
           if (handle404 && err.code === 404) {
             // create config from defaults
             return this.patch('current', {
-              config: {},
+              config: configDefaults,
               emitChangedEvent: false,
               forceSave: true
             }).catch(this.handleError);
@@ -174,9 +182,14 @@ class Config {
     });
   }
 
-  handleError(err) {
-    l.error(err, err.errors);
+  emitError(error: FeathersError, level: 'warn' | 'error' = 'error') {
+    // $FlowFixMe
+    this.emit('error', { payload: { error, level } });
   }
+
+  handleError = err => {
+    l.error(err, err.errors || '');
+  };
 
   find(_params: *) {
     throw new errors.NotImplemented('Request should have been processed by hooks');

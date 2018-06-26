@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T15:35:16+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-16T12:20:02+11:00
+ * @Last modified time: 2018-06-26T14:01:30+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -29,65 +29,179 @@
 import processItems from '~/hooks/processItems';
 // $FlowFixMe
 import yaml from 'js-yaml';
-// $FlowFixMe
-import errors from 'feathers-errors';
+import { MongoConfigError, PerformancePanelConfigError, UserConfigError } from '~/errors';
 import _ from 'lodash';
 // $FlowFixMe
-import diff from 'deep-diff';
+import { diff, applyChange } from 'deep-diff';
 import os from 'os';
 import path from 'path';
-import { execSync } from 'child_process';
 import nanoid from 'nanoid';
 import { configDefaults } from '../configSchema';
+import getDumpableConfigView from '../getDumpableConfigView';
+import getCmdPath from '../getCmdPath';
+import validateMongoCmd from '../validateMongoCmd';
+import validateDockerTarget from '../validateDockerTarget';
 
-const SIBLING_MONGO_CMD = ['mongodumpCmd', 'mongorestoreCmd', 'mongoimportCmd', 'mongoexportCmd'];
+const SIBLING_MONGO_CMD = ['importCmd', 'exportCmd', 'dumpCmd', 'restoreCmd'];
+const RESETTABLE_MONGO_CMD = ['cmd', 'versionCmd', ...SIBLING_MONGO_CMD];
+const USER_ID_LEN = 21;
 
-const getMongoCmd = () => {
-  let mongoCmd = null;
+const _getCombinedConfig = (path: string, nextConfig: {}): any => {
+  const nextValue = _.get(nextConfig, path);
+  const currentValue = _.get(global.config, path);
 
-  try {
-    if (os.platform() === 'win32') {
-      mongoCmd = 'mongo.exe';
-    } else {
-      mongoCmd = execSync("bash -lc 'which mongo'", { encoding: 'utf8' }).trim();
-      const tmp = mongoCmd.split('\n');
-      if (tmp.length > 0) {
-        mongoCmd = tmp[tmp.length - 1];
+  if (nextValue === undefined) {
+    return currentValue;
+  }
+
+  if (typeof currentValue === 'object' && currentValue !== null) {
+    const result = _.isArray(currentValue) ? [] : {};
+
+    // $FlowFixMe
+    return _.merge(result, currentValue, nextValue);
+  }
+
+  return nextValue;
+};
+
+const _configPathIsNotNullOrUndefinedAndWillChange = (path: string, nextConfig): boolean => {
+  const nextValue = _.get(nextConfig, path);
+
+  if (nextValue == null) {
+    return false;
+  }
+
+  const currentValue = _.get(global.config, path);
+  return !_.isEqual(currentValue, _getCombinedConfig(path, nextConfig));
+};
+
+const _resetMongoCmds = (nextConfig: typeof configDefaults) => {
+  for (const cmd of RESETTABLE_MONGO_CMD) {
+    _.set(nextConfig, `mongo.${cmd}`, null);
+  }
+};
+
+const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDefaults, service) => {
+  let needsToUpdateConfigYml = false;
+
+  const dockerConfig = _getCombinedConfig('mongo.docker', nextConfig);
+
+  validateDockerTarget(dockerConfig);
+
+  if (
+    _configPathIsNotNullOrUndefinedAndWillChange('mongo.docker', nextConfig) ||
+    _configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig)
+  ) {
+    const cmd = _.get(nextConfig, 'mongo.docker.cmd');
+
+    if (cmd) {
+      const dockerConfig = _getCombinedConfig('mongo.docker', nextConfig);
+
+      const { target: targetName } = validateDockerTarget(dockerConfig);
+
+      const { createNew, hostPath, containerPath } = dockerConfig;
+
+      const subCmd = createNew ? 'run' : 'exec';
+      const rmParam = subCmd === 'run' ? '--rm' : '';
+
+      _.set(nextConfig, 'mongo.versionCmd', `"${cmd}" ${subCmd} ${targetName} mongo --version`);
+
+      let mongoCmd = `${cmd} ${subCmd} -it ${rmParam}`;
+      let mongoSiblingCmd = `${cmd} ${subCmd} ${rmParam}`;
+
+      if (subCmd === 'run' && hostPath && containerPath) {
+        mongoCmd += ` -v ${hostPath}:${containerPath} ${targetName} mongo`;
+        mongoSiblingCmd += ` -v ${hostPath}:${containerPath} ${targetName}`;
+      } else {
+        mongoCmd += ` ${targetName} mongo`;
+        mongoSiblingCmd += ` ${targetName}`;
       }
+
+      _.set(nextConfig, 'mongo.cmd', mongoCmd);
+
+      // generate sibling mongo cmds
+      for (const sMC of SIBLING_MONGO_CMD) {
+        _.set(nextConfig, `mongo.${sMC}`, `${mongoSiblingCmd} ${sMC.slice(0, -3)}`);
+      }
+
+      needsToUpdateConfigYml = true;
     }
-  } catch (error) {
-    l.error(error.stack);
   }
-  return mongoCmd;
+
+  if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.versionCmd', nextConfig)) {
+    const mongoConfig = _getCombinedConfig('mongo', nextConfig);
+
+    try {
+      await validateMongoCmd(mongoConfig);
+    } catch (err) {
+      service.handleError(err);
+      service.emitError(err);
+    }
+  }
+
+  return needsToUpdateConfigYml;
 };
 
-const updateMongoCmd = mongoCmd => {
-  if (!mongoCmd) {
-    return;
+const _generateAndCheckMongoCmds = async (
+  nextConfig: typeof configDefaults,
+  service
+): Promise<boolean> => {
+  let needsToUpdateConfigYml = false;
+
+  if (
+    _configPathIsNotNullOrUndefinedAndWillChange('mongo.cmd', nextConfig) ||
+    _configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig)
+  ) {
+    const cmd = _.get(nextConfig, 'mongo.cmd');
+
+    if (cmd) {
+      _.set(nextConfig, 'mongo.versionCmd', `"${cmd}" --version`);
+      needsToUpdateConfigYml = true;
+    }
   }
 
-  global.config.mongoVersionCmd = `"${mongoCmd}" --version`;
-  const dir = path.dirname(mongoCmd);
-  const ext = os.platform() === 'win32' ? '.exe' : '';
-  for (const cmd of SIBLING_MONGO_CMD) {
-    global.config[cmd] = path.join(dir, `${cmd.slice(0, -3)}${ext}`);
+  if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.versionCmd', nextConfig)) {
+    const mongoConfig = _getCombinedConfig('mongo', nextConfig);
+
+    try {
+      await validateMongoCmd(mongoConfig);
+    } catch (err) {
+      service.handleError(err);
+      service.emitError(err);
+    }
+
+    const { cmd } = mongoConfig;
+
+    if (cmd) {
+      const dir = path.dirname(cmd);
+      const ext = os.platform() === 'win32' ? '.exe' : '';
+
+      // generate sibling mongo cmds
+      for (const sMC of SIBLING_MONGO_CMD) {
+        _.set(nextConfig, `mongo.${sMC}`, path.join(dir, `${sMC.slice(0, -3)}${ext}`));
+      }
+
+      needsToUpdateConfigYml = true;
+    }
   }
+
+  return needsToUpdateConfigYml;
 };
 
-export const getDumpableConfigView = (config: *) => _.pick(config, _.keys(configDefaults));
+const _generateUserId = () => {
+  return nanoid(USER_ID_LEN);
+};
 
 const HISTORY_SIZE_PATH = 'performancePanel.historySize';
 const HISTORY_BRUSH_SIZE_PATH = 'performancePanel.historyBrushSize';
 
-const checkHistoryConfig = (currentConfig, nextConfig) => {
+const _checkPerformancePanel = (nextConfig: typeof configDefaults) => {
   const errorsObj = {};
 
-  const currentHistorySize = _.get(currentConfig, HISTORY_SIZE_PATH);
-  const currentHistoryBrushSize = _.get(currentConfig, HISTORY_BRUSH_SIZE_PATH);
   const nextHistorySize = _.get(nextConfig, HISTORY_SIZE_PATH);
   const nextHistoryBrushSize = _.get(nextConfig, HISTORY_BRUSH_SIZE_PATH);
-  const minimumHistorySize = nextHistoryBrushSize || currentHistoryBrushSize;
-  const maximumHistoryBrushSize = nextHistorySize || currentHistorySize;
+  const minimumHistorySize = _getCombinedConfig(HISTORY_BRUSH_SIZE_PATH, nextConfig);
+  const maximumHistoryBrushSize = _getCombinedConfig(HISTORY_SIZE_PATH, nextConfig);
 
   if (nextHistorySize && nextHistorySize < minimumHistorySize) {
     errorsObj[`config.${HISTORY_SIZE_PATH}`] = `should be >= ${minimumHistorySize}`;
@@ -98,66 +212,132 @@ const checkHistoryConfig = (currentConfig, nextConfig) => {
   }
 
   if (!_.isEmpty(errorsObj)) {
-    throw new errors.BadRequest('Data does not match schema', { errors: errorsObj });
+    throw new PerformancePanelConfigError('Failed to patch performancePanel', {
+      errors: errorsObj
+    });
   }
 };
 
-const generateUserId = () => {
-  return nanoid();
+const _checkMongo = async (nextConfig: typeof configDefaults, service): Promise<boolean> => {
+  const dockerized = _getCombinedConfig('mongo.dockerized', nextConfig);
+
+  let needsToUpdateConfigYml = false;
+
+  if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig)) {
+    _resetMongoCmds(nextConfig);
+    needsToUpdateConfigYml = true;
+  }
+
+  if (dockerized) {
+    // using dockerized mongo binary
+    if (_.get(nextConfig, 'mongo.docker.cmd') === null) {
+      // figure out where it is
+      const cmdPath = await getCmdPath('docker');
+
+      if (cmdPath) {
+        _.set(nextConfig, 'mongo.docker.cmd', cmdPath);
+      } else {
+        const err = new MongoConfigError('Failed to patch mongo', {
+          errors: {
+            'mongo.docker.cmd':
+              'Docker is not detected in system paths. Please make sure it is installed or manually specify the path'
+          }
+        });
+        l.error(err);
+        service.emitError(err);
+
+        _resetMongoCmds(nextConfig);
+      }
+      needsToUpdateConfigYml = true;
+    }
+
+    needsToUpdateConfigYml =
+      (await _generateAndCheckDockerizedMongoCmds(nextConfig, service)) || needsToUpdateConfigYml;
+  } else {
+    // using normal mongo binary
+    if (_.get(nextConfig, 'mongo.cmd') === null) {
+      // figure out where it is
+      const cmdPath = await getCmdPath('mongo');
+
+      if (cmdPath) {
+        _.set(nextConfig, 'mongo.cmd', cmdPath);
+      } else {
+        const err = new MongoConfigError('Failed to patch mongo', {
+          errors: {
+            'mongo.cmd':
+              'Mongo shell binary is not detected in system paths. Please make sure a version >= 3.0 is installed or manually specify the path'
+          }
+        });
+        l.error(err);
+        service.emitError(err);
+
+        _resetMongoCmds(nextConfig);
+      }
+      needsToUpdateConfigYml = true;
+    }
+
+    needsToUpdateConfigYml =
+      (await _generateAndCheckMongoCmds(nextConfig, service)) || needsToUpdateConfigYml;
+  }
+
+  return needsToUpdateConfigYml;
+};
+
+const _checkUser = (nextConfig: typeof configDefaults): boolean => {
+  let needsToUpdateConfigYml = false;
+
+  const nextUserId = _.get(nextConfig, 'user.id');
+  if (nextUserId === null) {
+    _.set(nextConfig, 'user.id', _generateUserId());
+    needsToUpdateConfigYml = true;
+  } else if (nextUserId !== undefined && nextUserId.length !== USER_ID_LEN) {
+    throw new UserConfigError('Failed to patch user', {
+      errors: {
+        'config.user.id': `user id must be a string of ${USER_ID_LEN} length`
+      }
+    });
+  }
+
+  return needsToUpdateConfigYml;
 };
 
 export default () =>
-  processItems((context, item) => {
+  processItems(async (context, item) => {
     const { config: nextConfig, emitChangedEvent, forceSave, fromConfigYml } = item;
     const { service } = context;
 
-    // `ajv` should guard most of the correctness by now, but some post checkings
-    // are also necessary
-    checkHistoryConfig(global.config, nextConfig);
+    // `ajv` schema should guard most of the correctness by now, but some further checkings are also
+    // necessary before accepting and merging config changes
 
-    // check and get default `mongoCmd`
-    if (
-      (global.config.mongoCmd == null && nextConfig.mongoCmd === undefined) ||
-      nextConfig.mongoCmd === null
-    ) {
-      nextConfig.mongoCmd = getMongoCmd();
-    }
+    // checking and generation pipeline
+    _checkPerformancePanel(nextConfig);
+    let needsToUpdateConfigYml = await _checkMongo(nextConfig, service);
+    needsToUpdateConfigYml = _checkUser(nextConfig) || needsToUpdateConfigYml;
 
-    // check and get default `user.id`
-    const nextUserId = _.get(nextConfig, 'user.id');
-    if ((global.config.user.id == null && nextUserId === undefined) || nextUserId === null) {
-      _.set(nextConfig, 'user.id', generateUserId());
-    }
-
+    // calculate differences between nextConfig and current config
     const changed = {};
     const differences = diff(getDumpableConfigView(global.config), nextConfig) || [];
-    let hasDeletion = false;
 
-    for (const { kind, path, lhs, rhs } of differences) {
-      // TODO: handle array modification
+    for (const change of differences) {
+      const { kind, path, lhs, rhs } = change;
+
       if (kind === 'E' || kind === 'N') {
         changed[path.join('.')] = {
           old: lhs,
           new: rhs
         };
 
-        // apply change
-        _.set(global.config, path, rhs);
+        applyChange(global.config, nextConfig, change);
       } else if (kind === 'D') {
-        hasDeletion = true;
+        // config path doesn't present in nextConfig, so we need to update config yml if this config
+        // patching is from config yml
+        needsToUpdateConfigYml = true;
       }
     }
 
     const hasChanges = !_.isEmpty(changed);
 
     if (hasChanges) {
-      if (changed.mongoCmd || changed.dockerEnabled) {
-        const newCmd = changed.mongoCmd ? changed.mongoCmd.new : null;
-        updateMongoCmd(newCmd);
-      }
-
-      // updateDockerCmd(nextConfig);
-
       // emit changed event
       emitChangedEvent && service.emit('changed', changed);
 
@@ -166,10 +346,13 @@ export default () =>
 
     let p;
 
-    if (forceSave || ((fromConfigYml && hasDeletion) || (!fromConfigYml && hasChanges))) {
+    if (
+      forceSave ||
+      ((fromConfigYml && needsToUpdateConfigYml) || (!fromConfigYml && hasChanges))
+    ) {
+      // update config.yml
       l.debug(`Updating ${global.CONFIG_PATH}...`);
 
-      // update config.yml
       const { fileService, handleError } = service;
       p = fileService
         .create({

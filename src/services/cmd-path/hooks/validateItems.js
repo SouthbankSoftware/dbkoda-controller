@@ -1,11 +1,9 @@
 /**
- * @flow
- *
  * @Author: Guan Gui <guiguan>
- * @Date:   2018-03-05T15:35:16+11:00
+ * @Date:   2017-12-12T11:17:37+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-21T16:16:58+10:00
+ * @Last modified time: 2018-06-19T17:00:04+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,10 +24,36 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import processItems from '~/hooks/processItems';
-import getDumpableConfigView from '../getDumpableConfigView';
+import _ from 'lodash';
+import ajv from '~/helpers/ajv';
+import { validateSchema } from 'feathers-hooks-common';
 
-export default () =>
-  processItems((_context, _item) => {
-    return getDumpableConfigView(global.config);
-  });
+const getSchema = {
+  properties: {
+    cmd: {
+      type: 'string'
+    }
+  },
+  required: ['cmd'],
+  additionalProperties: false
+};
+
+const schema = {
+  find: {},
+  get: getSchema,
+  create: {},
+  update: {},
+  patch: {},
+  remove: {}
+};
+
+const validators = _.reduce(
+  schema,
+  (acc, v, k) => {
+    acc[k] = validateSchema(v, ajv);
+    return acc;
+  },
+  {}
+);
+
+export default _options => hook => validators[hook.method](hook);

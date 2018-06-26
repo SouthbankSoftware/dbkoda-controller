@@ -8,7 +8,7 @@
  * @Date:   2018-06-05T12:12:29+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-13T10:44:12+10:00
+ * @Last modified time: 2018-06-26T17:09:41+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -32,7 +32,6 @@
 import _ from 'lodash';
 // $FlowFixMe
 import { spawn } from 'node-pty';
-import { execSync } from 'child_process';
 // $FlowFixMe
 import { EventEmitter } from 'events';
 import os from 'os';
@@ -41,10 +40,12 @@ import fs from 'fs';
 import uuid from 'node-uuid';
 // $FlowFixMe
 import escapeRegExp from 'escape-string-regexp';
+// import { MongoConfigError } from '~/errors';
+import { UNKNOWN } from '~/services/config/getMongoShellVersion';
+// import validateMongoCmd from '~/services/config/validateMongoCmd';
 import Status from '../mongo-connection/status';
 import Parser from './pty-parser';
 import PtyOptions from './pty-options';
-import { isDockerCommand, getMongoCommands } from '../docker';
 import { toStrict } from './mongodbExtendedJsonUtils';
 
 export const mongoShellRequestResponseTypes = {
@@ -105,8 +106,7 @@ export class MongoShell extends EventEmitter {
   status: * = Status.CREATED;
   mongoScriptPath: string;
   parser: Parser;
-  shellVersion: string;
-  mongoCmd: string = '';
+  version: string = UNKNOWN;
 
   _cleanup: ?() => void = null;
 
@@ -116,47 +116,14 @@ export class MongoShell extends EventEmitter {
     this.connection = connection;
     this.mongoScriptPath = mongoScriptPath;
     this.parser = new Parser(MongoShell);
-    this.shellVersion = MongoShell.getShellVersion();
-    l.debug(`Shell version: ${this.shellVersion}`);
   }
 
   get isBusy() {
     return this.currentRequest != null;
   }
 
-  static getShellVersion() {
-    try {
-      const configObj = getMongoCommands(); // should be read-only
-      log.info('Mongo Version Cmd:', configObj);
-
-      if (!configObj.mongoVersionCmd) {
-        log.error('unkonwn version');
-        return 'UNKNOWN';
-      }
-
-      const output = execSync(configObj.mongoVersionCmd, { encoding: 'utf8' });
-      const mongoVStr = output.split('\n');
-      if (mongoVStr && mongoVStr.length > 0) {
-        if (mongoVStr[0].indexOf('MongoDB shell version v') >= 0) {
-          return mongoVStr[0].replace('MongoDB shell version v', '').trim();
-        }
-        if (mongoVStr[0].indexOf('MongoDB shell version:') >= 0) {
-          return mongoVStr[0].replace('MongoDB shell version:', '').trim();
-        }
-        return mongoVStr[0];
-      }
-      return output;
-    } catch (_) {
-      return 'UNKNOWN';
-    }
-  }
-
   _createMongoShellParameters() {
-    const ver = this.shellVersion
-      .trim()
-      .substring(0, 6)
-      .trim();
-    const mongo30 = ver.indexOf('3.0') >= 0;
+    const mongo30 = this.version.startsWith('3.0');
     const { connection } = this;
     let params = [];
     if (mongo30) {
@@ -452,9 +419,9 @@ export class MongoShell extends EventEmitter {
   };
 
   createShell() {
-    const configObj = getMongoCommands(); // should be read-only
+    const mongoConfig = global.config.mongo; // should be read-only
 
-    if (!configObj.mongoCmd) {
+    if (!mongoConfig.cmd) {
       const err = new Error('Mongo binary undetected');
       // $FlowFixMe
       err.responseCode = 'MONGO_BINARY_UNDETECTED';
@@ -480,14 +447,14 @@ export class MongoShell extends EventEmitter {
       throw err;
     }
 
-    const { mongoCmd } = configObj;
+    const { dockerized, cmd: mongoCmd } = mongoConfig;
 
     let mongoCmdArray;
 
-    if (isDockerCommand()) {
+    if (dockerized) {
       mongoCmdArray = mongoCmd.split(' ');
     } else if (mongoCmd.indexOf('"') === 0) {
-      mongoCmdArray = configObj.mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
+      mongoCmdArray = mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
       mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/, '$1');
     } else {
       mongoCmdArray = [mongoCmd];
@@ -505,7 +472,6 @@ export class MongoShell extends EventEmitter {
     const parameters = this._createMongoShellParameters();
 
     try {
-      this.mongoCmd = mongoCmdArray[0];
       this.shell = spawn(mongoCmdArray[0], [...mongoCmdArray.slice(1), ...parameters], PtyOptions);
     } catch (error) {
       l.error(error);
@@ -551,7 +517,7 @@ export class MongoShell extends EventEmitter {
     let p;
 
     // load mongo scripts
-    if (isDockerCommand()) {
+    if (dockerized) {
       p = this._readScriptsFileIntoShell();
     } else {
       p = this._loadScriptsIntoShell();
@@ -645,7 +611,7 @@ export class MongoShell extends EventEmitter {
   };
 
   killProcess() {
-    if (isDockerCommand()) {
+    if (global.config.mongo.dockerized) {
       this._writeToShell('exit\n');
     } else {
       this.shell.destroy();
