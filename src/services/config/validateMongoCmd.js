@@ -5,7 +5,7 @@
  * @Date:   2018-06-21T16:18:05+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-26T17:01:51+10:00
+ * @Last modified time: 2018-06-27T14:45:15+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -97,7 +97,7 @@ export default async (mongoConfig: typeof configDefaults.mongo): Promise<string>
   let version;
 
   try {
-    version = getMongoShellVersion(versionCmd);
+    version = await getMongoShellVersion(versionCmd);
   } catch (err) {
     l.error('Cannot detect Mongo shell version', err);
 

@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T15:35:16+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-26T14:01:30+10:00
+ * @Last modified time: 2018-06-27T18:06:19+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -81,12 +81,20 @@ const _resetMongoCmds = (nextConfig: typeof configDefaults) => {
   }
 };
 
-const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDefaults, service) => {
+const _validateMongoCmd = async (nextConfig: typeof configDefaults, service) => {
+  if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.versionCmd', nextConfig)) {
+    const mongoConfig = _getCombinedConfig('mongo', nextConfig);
+
+    try {
+      await validateMongoCmd(mongoConfig);
+    } catch (err) {
+      service.handleError(err);
+    }
+  }
+};
+
+const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDefaults) => {
   let needsToUpdateConfigYml = false;
-
-  const dockerConfig = _getCombinedConfig('mongo.docker', nextConfig);
-
-  validateDockerTarget(dockerConfig);
 
   if (
     _configPathIsNotNullOrUndefinedAndWillChange('mongo.docker', nextConfig) ||
@@ -97,24 +105,34 @@ const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDef
     if (cmd) {
       const dockerConfig = _getCombinedConfig('mongo.docker', nextConfig);
 
-      const { target: targetName } = validateDockerTarget(dockerConfig);
+      let target;
+
+      try {
+        ({ target } = validateDockerTarget(dockerConfig));
+      } catch (err) {
+        if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig)) {
+          _.set(err, ['errors', 'config.mongo.dockerized'], 'error exists in config.mongo.docker');
+        }
+
+        throw err;
+      }
 
       const { createNew, hostPath, containerPath } = dockerConfig;
 
       const subCmd = createNew ? 'run' : 'exec';
       const rmParam = subCmd === 'run' ? '--rm' : '';
 
-      _.set(nextConfig, 'mongo.versionCmd', `"${cmd}" ${subCmd} ${targetName} mongo --version`);
+      _.set(nextConfig, 'mongo.versionCmd', `"${cmd}" ${subCmd} ${target} mongo --version`);
 
       let mongoCmd = `${cmd} ${subCmd} -it ${rmParam}`;
       let mongoSiblingCmd = `${cmd} ${subCmd} ${rmParam}`;
 
       if (subCmd === 'run' && hostPath && containerPath) {
-        mongoCmd += ` -v ${hostPath}:${containerPath} ${targetName} mongo`;
-        mongoSiblingCmd += ` -v ${hostPath}:${containerPath} ${targetName}`;
+        mongoCmd += ` -v ${hostPath}:${containerPath} ${target} mongo`;
+        mongoSiblingCmd += ` -v ${hostPath}:${containerPath} ${target}`;
       } else {
-        mongoCmd += ` ${targetName} mongo`;
-        mongoSiblingCmd += ` ${targetName}`;
+        mongoCmd += ` ${target} mongo`;
+        mongoSiblingCmd += ` ${target}`;
       }
 
       _.set(nextConfig, 'mongo.cmd', mongoCmd);
@@ -128,51 +146,23 @@ const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDef
     }
   }
 
-  if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.versionCmd', nextConfig)) {
-    const mongoConfig = _getCombinedConfig('mongo', nextConfig);
-
-    try {
-      await validateMongoCmd(mongoConfig);
-    } catch (err) {
-      service.handleError(err);
-      service.emitError(err);
-    }
-  }
-
   return needsToUpdateConfigYml;
 };
 
-const _generateAndCheckMongoCmds = async (
-  nextConfig: typeof configDefaults,
-  service
-): Promise<boolean> => {
+const _generateAndCheckMongoCmds = async (nextConfig: typeof configDefaults): Promise<boolean> => {
   let needsToUpdateConfigYml = false;
 
   if (
     _configPathIsNotNullOrUndefinedAndWillChange('mongo.cmd', nextConfig) ||
-    _configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig)
+    _configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig) ||
+    (_getCombinedConfig('mongo.versionCmd', nextConfig) === null &&
+      _getCombinedConfig('mongo.cmd', nextConfig) !== null)
   ) {
     const cmd = _.get(nextConfig, 'mongo.cmd');
 
     if (cmd) {
       _.set(nextConfig, 'mongo.versionCmd', `"${cmd}" --version`);
-      needsToUpdateConfigYml = true;
-    }
-  }
 
-  if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.versionCmd', nextConfig)) {
-    const mongoConfig = _getCombinedConfig('mongo', nextConfig);
-
-    try {
-      await validateMongoCmd(mongoConfig);
-    } catch (err) {
-      service.handleError(err);
-      service.emitError(err);
-    }
-
-    const { cmd } = mongoConfig;
-
-    if (cmd) {
       const dir = path.dirname(cmd);
       const ext = os.platform() === 'win32' ? '.exe' : '';
 
@@ -243,8 +233,7 @@ const _checkMongo = async (nextConfig: typeof configDefaults, service): Promise<
               'Docker is not detected in system paths. Please make sure it is installed or manually specify the path'
           }
         });
-        l.error(err);
-        service.emitError(err);
+        service.handleError(err);
 
         _resetMongoCmds(nextConfig);
       }
@@ -252,7 +241,7 @@ const _checkMongo = async (nextConfig: typeof configDefaults, service): Promise<
     }
 
     needsToUpdateConfigYml =
-      (await _generateAndCheckDockerizedMongoCmds(nextConfig, service)) || needsToUpdateConfigYml;
+      (await _generateAndCheckDockerizedMongoCmds(nextConfig)) || needsToUpdateConfigYml;
   } else {
     // using normal mongo binary
     if (_.get(nextConfig, 'mongo.cmd') === null) {
@@ -268,8 +257,7 @@ const _checkMongo = async (nextConfig: typeof configDefaults, service): Promise<
               'Mongo shell binary is not detected in system paths. Please make sure a version >= 3.0 is installed or manually specify the path'
           }
         });
-        l.error(err);
-        service.emitError(err);
+        service.handleError(err);
 
         _resetMongoCmds(nextConfig);
       }
@@ -277,8 +265,10 @@ const _checkMongo = async (nextConfig: typeof configDefaults, service): Promise<
     }
 
     needsToUpdateConfigYml =
-      (await _generateAndCheckMongoCmds(nextConfig, service)) || needsToUpdateConfigYml;
+      (await _generateAndCheckMongoCmds(nextConfig)) || needsToUpdateConfigYml;
   }
+
+  await _validateMongoCmd(nextConfig, service);
 
   return needsToUpdateConfigYml;
 };

@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T14:09:35+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-25T19:45:22+10:00
+ * @Last modified time: 2018-06-27T18:31:46+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -65,18 +65,22 @@ class Config {
         .then(({ content }) => {
           l.debug(`Loading config from ${global.CONFIG_PATH}...`);
 
+          let nextConfigFromContent;
+
           return Promise.resolve()
             .then(() => yaml.safeLoad(content))
             .then(nextConfig => {
+              nextConfigFromContent = nextConfig;
+
               return this.patch('current', {
-                config: nextConfig,
+                config: _.cloneDeep(nextConfig),
                 fromConfigYml: true
               }).catch(err => {
                 const { errors } = err;
 
                 if (_.isPlainObject(errors)) {
                   const configErr = new ConfigError(
-                    'Corrupted entries %o detected in config.yml. Backing up and trying to recover them...',
+                    'Corrupted entries detected in config.yml. Backing up and trying to recover them...',
                     { errors }
                   );
                   l.warn(configErr.message, configErr.errors);
@@ -92,27 +96,43 @@ class Config {
 
                     // now we try it again one more time
                     return this.patch('current', {
-                      config: nextConfig,
+                      config: _.cloneDeep(nextConfig),
                       forceSave: true,
                       fromConfigYml: true
-                    }).catch(this.handleError);
+                    }).catch(_err => {
+                      throw new ConfigError("Couldn't recover faulty config entries", {
+                        errors
+                      });
+                    });
                   });
                 }
 
-                this.handleError(err);
+                throw err;
               });
             })
             .catch(err => {
               const configErr = new ConfigError(
-                'Corrupted config.yml detected. Backing up and recovering...',
+                `Corrupted config.yml detected: ${err.message}. Backing up and recovering...`,
                 { errors: err.errors || { config: err.message } }
               );
               this.handleError(configErr);
-              this.emitError(configErr, 'error');
+
+              let config;
+              // try to persist user id
+              const nextUserId = _.get(
+                nextConfigFromContent,
+                'user.id',
+                _.get(global.config, 'user.id')
+              );
+              if (nextUserId) {
+                config = _.merge({}, configDefaults, { user: { id: nextUserId } });
+              } else {
+                config = configDefaults;
+              }
 
               return this.backupConfigYml().then(() =>
                 this.patch('current', {
-                  config: configDefaults,
+                  config,
                   emitChangedEvent: false,
                   forceSave: true
                 }).catch(this.handleError)
@@ -176,20 +196,28 @@ class Config {
 
     return this.fileService.get(global.CONFIG_PATH, {
       query: {
-        copyTo: backupPath,
-        watching: 'false'
+        copyTo: backupPath
       }
     });
   }
 
+  /**
+   * Emit either an error or a warning
+   */
   emitError(error: FeathersError, level: 'warn' | 'error' = 'error') {
     // $FlowFixMe
     this.emit('error', { payload: { error, level } });
   }
 
-  handleError = err => {
-    l.error(err, err.errors || '');
-  };
+  /**
+   * Log and emit error
+   *
+   * NOTE: methods in Feathers service class should not be bound by us, and Feathers will bind it
+   */
+  handleError(err) {
+    l.error(err);
+    this.emitError(err, 'error');
+  }
 
   find(_params: *) {
     throw new errors.NotImplemented('Request should have been processed by hooks');
