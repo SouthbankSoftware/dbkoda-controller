@@ -7,7 +7,7 @@
  * @Date:   2018-06-19T13:51:17+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-19T17:28:03+10:00
+ * @Last modified time: 2018-06-27T22:20:49+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -31,12 +31,23 @@
 import _ from 'lodash';
 import { exec } from 'child_process';
 import os from 'os';
+// $FlowFixMe
+import find from 'find';
 
-export default (cmd: string): Promise<?string> =>
-  new Promise(resolve => {
+const WIN_MONGO_BINARY_FILENAME = 'mongo.exe';
+const WIN_MONGO_BINARY_SEARCH_PATH = 'C:\\Program Files\\MongoDB';
+
+export default (cmd: string): Promise<?string> => {
+  const isWin = os.platform() === 'win32';
+
+  if (isWin && !cmd.endsWith('.exe')) {
+    cmd += '.exe';
+  }
+
+  let p = new Promise(resolve => {
     let pathCmd;
 
-    if (os.platform() === 'win32') {
+    if (isWin) {
       pathCmd = `where.exe ${cmd}`;
     } else {
       pathCmd = `bash -lc 'which ${cmd}'`;
@@ -52,3 +63,26 @@ export default (cmd: string): Promise<?string> =>
       resolve(result || null);
     });
   });
+
+  if (isWin && cmd === WIN_MONGO_BINARY_FILENAME) {
+    p = p.then(cmdPath => {
+      if (!cmdPath) {
+        return new Promise(resolve => {
+          find
+            .file(WIN_MONGO_BINARY_FILENAME, WIN_MONGO_BINARY_SEARCH_PATH, files =>
+              resolve(_.first(files) || null)
+            )
+            .error(err => {
+              l.error(err);
+
+              resolve(null);
+            });
+        });
+      }
+
+      return cmdPath;
+    });
+  }
+
+  return p;
+};
