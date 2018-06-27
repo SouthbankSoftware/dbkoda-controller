@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T15:35:16+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-27T18:06:19+10:00
+ * @Last modified time: 2018-06-28T00:15:19+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -100,39 +100,43 @@ const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDef
     _configPathIsNotNullOrUndefinedAndWillChange('mongo.docker', nextConfig) ||
     _configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig)
   ) {
-    const cmd = _.get(nextConfig, 'mongo.docker.cmd');
+    const dockerConfig = _getCombinedConfig('mongo.docker', nextConfig);
 
-    if (cmd) {
-      const dockerConfig = _getCombinedConfig('mongo.docker', nextConfig);
+    let target;
 
-      let target;
-
-      try {
-        ({ target } = validateDockerTarget(dockerConfig));
-      } catch (err) {
-        if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig)) {
-          _.set(err, ['errors', 'config.mongo.dockerized'], 'error exists in config.mongo.docker');
-        }
-
-        throw err;
+    try {
+      ({ target } = validateDockerTarget(dockerConfig));
+    } catch (err) {
+      if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig)) {
+        _.set(err, ['errors', 'config.mongo.dockerized'], 'error exists in config.mongo.docker');
       }
 
+      throw err;
+    }
+
+    const cmd = _getCombinedConfig('mongo.docker.cmd', nextConfig);
+
+    if (cmd) {
       const { createNew, hostPath, containerPath } = dockerConfig;
 
       const subCmd = createNew ? 'run' : 'exec';
-      const rmParam = subCmd === 'run' ? '--rm' : '';
+      const rmParam = subCmd === 'run' ? '--rm ' : '';
 
-      _.set(nextConfig, 'mongo.versionCmd', `"${cmd}" ${subCmd} ${target} mongo --version`);
+      _.set(
+        nextConfig,
+        'mongo.versionCmd',
+        `"${cmd}" ${subCmd} ${rmParam}${target} mongo --version`
+      );
 
-      let mongoCmd = `${cmd} ${subCmd} -it ${rmParam}`;
-      let mongoSiblingCmd = `${cmd} ${subCmd} ${rmParam}`;
+      let mongoCmd = `"${cmd}" ${subCmd} -it ${rmParam}`;
+      let mongoSiblingCmd = `"${cmd}" ${subCmd} ${rmParam}`;
 
       if (subCmd === 'run' && hostPath && containerPath) {
-        mongoCmd += ` -v ${hostPath}:${containerPath} ${target} mongo`;
-        mongoSiblingCmd += ` -v ${hostPath}:${containerPath} ${target}`;
+        mongoCmd += `-v "${hostPath}:${containerPath}" ${target} mongo`;
+        mongoSiblingCmd += `-v "${hostPath}:${containerPath}" ${target}`;
       } else {
-        mongoCmd += ` ${target} mongo`;
-        mongoSiblingCmd += ` ${target}`;
+        mongoCmd += `${target} mongo`;
+        mongoSiblingCmd += `${target}`;
       }
 
       _.set(nextConfig, 'mongo.cmd', mongoCmd);
@@ -158,7 +162,7 @@ const _generateAndCheckMongoCmds = async (nextConfig: typeof configDefaults): Pr
     (_getCombinedConfig('mongo.versionCmd', nextConfig) === null &&
       _getCombinedConfig('mongo.cmd', nextConfig) !== null)
   ) {
-    const cmd = _.get(nextConfig, 'mongo.cmd');
+    const cmd = _getCombinedConfig('mongo.cmd', nextConfig);
 
     if (cmd) {
       _.set(nextConfig, 'mongo.versionCmd', `"${cmd}" --version`);
@@ -215,6 +219,11 @@ const _checkMongo = async (nextConfig: typeof configDefaults, service): Promise<
 
   if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig)) {
     _resetMongoCmds(nextConfig);
+
+    if (dockerized && _getCombinedConfig('mongo.docker.cmd', nextConfig) === null) {
+      _.set(nextConfig, 'mongo.docker.cmd', null);
+    }
+
     needsToUpdateConfigYml = true;
   }
 
@@ -229,7 +238,7 @@ const _checkMongo = async (nextConfig: typeof configDefaults, service): Promise<
       } else {
         const err = new MongoConfigError('Failed to patch mongo', {
           errors: {
-            'mongo.docker.cmd':
+            'config.mongo.docker.cmd':
               'Docker is not detected in system paths. Please make sure it is installed or manually specify the path'
           }
         });
@@ -253,7 +262,7 @@ const _checkMongo = async (nextConfig: typeof configDefaults, service): Promise<
       } else {
         const err = new MongoConfigError('Failed to patch mongo', {
           errors: {
-            'mongo.cmd':
+            'config.mongo.cmd':
               'Mongo shell binary is not detected in system paths. Please make sure a version >= 3.0 is installed or manually specify the path'
           }
         });

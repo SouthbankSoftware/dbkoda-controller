@@ -8,7 +8,7 @@
  * @Date:   2018-06-05T12:12:29+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-27T14:31:23+10:00
+ * @Last modified time: 2018-06-27T23:51:51+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -422,6 +422,7 @@ export class MongoShell extends EventEmitter {
     const mongoConfig = global.config.mongo; // should be read-only
 
     // TODO:
+    // - [ ] check space in path handling
     // - [ ] async validateMongoCmd and check shellVersion
     // - [ ] cleanup old errors
     // - [ ] emit shell output when shell fails to be ready
