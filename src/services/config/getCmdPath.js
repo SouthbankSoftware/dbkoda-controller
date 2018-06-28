@@ -7,7 +7,7 @@
  * @Date:   2018-06-19T13:51:17+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-27T22:20:49+10:00
+ * @Last modified time: 2018-06-28T10:37:42+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -70,7 +70,7 @@ export default (cmd: string): Promise<?string> => {
         return new Promise(resolve => {
           find
             .file(WIN_MONGO_BINARY_FILENAME, WIN_MONGO_BINARY_SEARCH_PATH, files =>
-              resolve(_.first(files) || null)
+              resolve(_.last(files) || null)
             )
             .error(err => {
               l.error(err);
