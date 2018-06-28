@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T15:35:16+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-16T12:20:02+11:00
+ * @Last modified time: 2018-06-28T11:31:17+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -36,30 +36,11 @@ import _ from 'lodash';
 import diff from 'deep-diff';
 import os from 'os';
 import path from 'path';
-import { execSync } from 'child_process';
 import nanoid from 'nanoid';
 import { configDefaults } from '../configSchema';
+import getCmdPath from '../getCmdPath';
 
 const SIBLING_MONGO_CMD = ['mongodumpCmd', 'mongorestoreCmd', 'mongoimportCmd', 'mongoexportCmd'];
-
-const getMongoCmd = () => {
-  let mongoCmd = null;
-
-  try {
-    if (os.platform() === 'win32') {
-      mongoCmd = 'mongo.exe';
-    } else {
-      mongoCmd = execSync("bash -lc 'which mongo'", { encoding: 'utf8' }).trim();
-      const tmp = mongoCmd.split('\n');
-      if (tmp.length > 0) {
-        mongoCmd = tmp[tmp.length - 1];
-      }
-    }
-  } catch (error) {
-    l.error(error.stack);
-  }
-  return mongoCmd;
-};
 
 const updateMongoCmd = mongoCmd => {
   if (!mongoCmd) {
@@ -107,7 +88,7 @@ const generateUserId = () => {
 };
 
 export default () =>
-  processItems((context, item) => {
+  processItems(async (context, item) => {
     const { config: nextConfig, emitChangedEvent, forceSave, fromConfigYml } = item;
     const { service } = context;
 
@@ -120,7 +101,7 @@ export default () =>
       (global.config.mongoCmd == null && nextConfig.mongoCmd === undefined) ||
       nextConfig.mongoCmd === null
     ) {
-      nextConfig.mongoCmd = getMongoCmd();
+      nextConfig.mongoCmd = await getCmdPath('mongo');
     }
 
     // check and get default `user.id`

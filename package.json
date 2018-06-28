@@ -95,6 +95,7 @@
     "feathers-primus": "^2.2.1",
     "feathers-rest": "^1.8.1",
     "feathers-swagger": "^0.6.0",
+    "find": "^0.2.9",
     "flat": "^4.0.0",
     "fs-extra": "^4.0.2",
     "generic-pool": "^3.2.0",
