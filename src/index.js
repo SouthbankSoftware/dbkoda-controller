@@ -3,7 +3,7 @@
  * @Date:   2017-10-31T09:22:47+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-07T18:03:51+10:00
+ * @Last modified time: 2018-07-02T14:56:43+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -77,11 +77,11 @@ app.once('ready', () => {
   toggleRaygun(_.get(global.config, 'telemetryEnabled'));
 
   app.service('config').on('changed', changed => {
-    if (_.has(changed, 'user.id')) {
+    if (_.has(changed, 'config.user.id')) {
       setUser(_.get(global.config, 'user'));
     }
 
-    if (_.has(changed, 'telemetryEnabled')) {
+    if (_.has(changed, 'config.telemetryEnabled')) {
       toggleRaygun(_.get(global.config, 'telemetryEnabled'));
     }
   });
