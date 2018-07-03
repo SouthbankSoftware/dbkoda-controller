@@ -78,7 +78,6 @@ export const configDefaults = {
     fontFamily: '"Courier New", "Courier", "monospace"',
     fontSize: '14px',
     fontWeight: 500,
-    fontColor: '#FFFFFF',
     lineHeight: 1.28581
   },
   maxOutputHistory: 1000
@@ -225,9 +224,6 @@ const configSchema = {
         fontWeight: {
           type: 'integer',
           minimum: 1
-        },
-        fontColor: {
-          type: ['string', 'null']
         },
         lineHeight: {
           type: 'number'
