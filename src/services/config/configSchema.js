@@ -5,7 +5,7 @@
  * @Date:   2018-03-12T15:46:20+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-27T14:37:37+10:00
+ * @Last modified time: 2018-07-03T11:43:07+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -109,7 +109,6 @@ export const configDefaults: {
 };
 
 const configSchema = {
-  $async: true,
   type: 'object',
   properties: {
     user: {
@@ -130,7 +129,8 @@ const configSchema = {
           type: 'object',
           properties: {
             cmd: {
-              type: ['string', 'null']
+              type: ['string', 'null'],
+              isFilePath: true
             },
             createNew: {
               type: 'boolean'
@@ -142,7 +142,8 @@ const configSchema = {
               type: ['string', 'null']
             },
             hostPath: {
-              type: ['string', 'null']
+              type: ['string', 'null'],
+              isFilePath: true
             },
             containerPath: {
               type: ['string', 'null']
@@ -150,7 +151,8 @@ const configSchema = {
           }
         },
         cmd: {
-          type: ['string', 'null']
+          type: ['string', 'null'],
+          isFilePath: true
         },
         versionCmd: {
           type: ['string', 'null']
@@ -170,7 +172,8 @@ const configSchema = {
       }
     },
     drillCmd: {
-      type: ['string', 'null']
+      type: ['string', 'null'],
+      isFilePath: true
     },
     drillControllerCmd: {
       type: ['string', 'null']

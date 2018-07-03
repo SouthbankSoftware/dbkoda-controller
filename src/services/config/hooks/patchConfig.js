@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T15:35:16+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-02T15:21:52+10:00
+ * @Last modified time: 2018-07-03T11:59:50+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -102,7 +102,10 @@ const _validateMongoCmd = async (nextConfig: typeof configDefaults, asyncErrors:
       await validateMongoCmd(mongoConfig);
     } catch (err) {
       _handleAsyncError(err, asyncErrors, service);
+      return;
     }
+
+    service.resetError(['config.mongo']);
   }
 };
 

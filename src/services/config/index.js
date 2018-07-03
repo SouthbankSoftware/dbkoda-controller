@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T14:09:35+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-27T18:31:46+10:00
+ * @Last modified time: 2018-07-03T11:35:11+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -49,7 +49,7 @@ class Config {
   _fileServiceDisposer: *;
 
   constructor() {
-    this.events = ['changed', 'error'];
+    this.events = ['changed', 'error', 'errorReset'];
   }
 
   setup(app: *) {
@@ -217,6 +217,11 @@ class Config {
   handleError(err) {
     l.error(err);
     this.emitError(err, 'error');
+  }
+
+  resetError(paths: string[]) {
+    // $FlowFixMe
+    this.emit('errorReset', { payload: { paths } });
   }
 
   find(_params: *) {
