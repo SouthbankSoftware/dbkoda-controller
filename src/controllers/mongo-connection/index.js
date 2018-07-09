@@ -1,6 +1,6 @@
 /**
- * @Last modified by:   guiguan
- * @Last modified time: 2018-06-12T01:11:25+10:00
+ * @Last modified by:   wahaj
+ * @Last modified time: 2018-07-04T09:19:46+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -545,6 +545,7 @@ class MongoConnectionController {
       // in connection object have higher priority than these defined in url
       parser = mongoUri.parse('mongodb://' + matches[3]);
       connectObject = {
+        ...connectObject,
         id: connection.id,
         url: 'mongodb://' + matches[3],
         username: connection.username || matches[1],
