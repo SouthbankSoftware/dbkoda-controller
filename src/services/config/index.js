@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T14:09:35+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-03T11:35:11+10:00
+ * @Last modified time: 2018-07-10T15:02:56+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -37,6 +37,7 @@ import yaml from 'js-yaml';
 import errors, { FeathersError } from 'feathers-errors';
 import path from 'path';
 import { ConfigError } from '~/errors';
+import util from 'util';
 import hooks from './hooks';
 import { configDefaults } from './configSchema';
 
@@ -80,10 +81,12 @@ class Config {
 
                 if (_.isPlainObject(errors)) {
                   const configErr = new ConfigError(
-                    'Corrupted entries detected in config.yml. Backing up and trying to recover them...',
-                    { errors }
+                    util.format(
+                      'Corrupted entries detected in config.yml. Backing up and trying to recover them...',
+                      errors
+                    )
                   );
-                  l.warn(configErr.message, configErr.errors);
+                  l.warn(configErr.message);
                   this.emitError(configErr, 'warn');
 
                   return this.backupConfigYml().then(() => {
@@ -100,9 +103,9 @@ class Config {
                       forceSave: true,
                       fromConfigYml: true
                     }).catch(_err => {
-                      throw new ConfigError("Couldn't recover faulty config entries", {
-                        errors
-                      });
+                      throw new ConfigError(
+                        util.format("Couldn't recover faulty config entries", errors)
+                      );
                     });
                   });
                 }
@@ -112,8 +115,10 @@ class Config {
             })
             .catch(err => {
               const configErr = new ConfigError(
-                `Corrupted config.yml detected: ${err.message}. Backing up and recovering...`,
-                { errors: err.errors || { config: err.message } }
+                util.format(
+                  `Corrupted config.yml detected: ${err.message}. Backing up and recovering...`,
+                  !_.isEmpty(err.errors) ? err.errors : ''
+                )
               );
               this.handleError(configErr);
 

@@ -5,7 +5,7 @@
  * @Date:   2018-03-12T15:46:20+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-05T10:37:31+10:00
+ * @Last modified time: 2018-07-13T10:24:12+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -135,36 +135,51 @@ const configSchema = {
       type: 'object',
       properties: {
         dockerized: {
-          type: 'boolean'
+          type: 'boolean',
+          title: 'Use Docker',
+          description: 'Use dockerized Mongo shell binary'
         },
         docker: {
           type: 'object',
           properties: {
             cmd: {
               type: ['string', 'null'],
-              isFilePath: true
+              title: 'Docker Binary Path',
+              description: 'Absolute path to Docker binary',
+              browsable: true,
+              fileOnly: true
             },
             createNew: {
-              type: 'boolean'
+              type: 'boolean',
+              title: 'Create New Container'
             },
             imageName: {
-              type: ['string', 'null']
+              type: ['string', 'null'],
+              title: 'Image Name'
             },
             containerId: {
-              type: ['string', 'null']
+              type: ['string', 'null'],
+              title: 'Container ID'
             },
             hostPath: {
               type: ['string', 'null'],
-              isFilePath: true
+              title: 'Host Mount Path',
+              description: 'Volume mount path on host',
+              browsable: true
             },
             containerPath: {
-              type: ['string', 'null']
+              type: ['string', 'null'],
+              title: 'Container Mount Path',
+              description: 'Volume mount path in container'
             }
           }
         },
         cmd: {
           type: ['string', 'null'],
-          isFilePath: true
+          title: 'Mongo Binary Path',
+          description: 'Absolute path to Mongo shell binary',
+          browsable: true,
+          fileOnly: true
         },
         versionCmd: {
           type: ['string', 'null']
@@ -185,7 +200,10 @@ const configSchema = {
     },
     drillCmd: {
       type: ['string', 'null'],
-      isFilePath: true
+      title: 'Apache Drill Path',
+      description: 'Absolute path to Apache Drill directory',
+      browsable: true,
+      dirOnly: true
     },
     drillControllerCmd: {
       type: ['string', 'null']
@@ -194,49 +212,65 @@ const configSchema = {
       type: 'boolean'
     },
     telemetryEnabled: {
-      type: 'boolean'
+      type: 'boolean',
+      title: 'Allow Telemetry Data',
+      description:
+        'Allow sending anonymous telemetry data to dbKoda so we can improve with your help'
     },
     showNewFeaturesDialogOnStart: {
-      type: 'boolean'
+      type: 'boolean',
+      title: 'Show New Features Dialog on Startup'
     },
     tableOutputDefault: {
-      type: 'boolean'
+      type: 'boolean',
+      title: 'Use Table Output as Default Output'
     },
     automaticAutoComplete: {
-      type: 'boolean'
+      type: 'boolean',
+      title: 'Enable auto-completion when typing',
+      description: 'Editor tabs need to be re-opened in order to take effect'
     },
     passwordStoreEnabled: {
-      type: 'boolean'
+      type: 'boolean',
+      title: 'Enable Password Store'
     },
     performancePanel: {
       type: 'object',
       properties: {
         preventDisplaySleep: {
-          type: 'boolean'
+          type: 'boolean',
+          title: 'Prevent Display Sleep when Lab is Visible',
+          description: 'Performance Lab needs to be restarted in order to take effect'
         },
         metricSmoothingWindow: {
           type: 'integer',
+          title: 'Metric Moving Average (number of samples)',
           minimum: 1
         },
         foregroundSamplingRate: {
           type: 'integer',
+          title: 'Foreground Sampling Rate (ms)',
           minimum: 1000
         },
         backgroundSamplingRate: {
           type: 'integer',
+          title: 'Background Sampling Rate (ms)',
           minimum: 1000
         },
         historySize: {
           type: 'integer',
+          title: 'History Size (number of samples)',
           minimum: { $data: '1/historyBrushSize' }
         },
         historyBrushSize: {
           type: 'integer',
+          title: 'History Default Brush Size (number of samples)',
           minimum: 1,
           maximum: { $data: '1/historySize' }
         },
         alarmDisplayingWindow: {
           type: 'integer',
+          title: 'Alarm Keepalive (ms)',
           minimum: 1000
         }
       }
@@ -245,22 +279,32 @@ const configSchema = {
       type: 'object',
       properties: {
         fontFamily: {
-          type: ['string', 'null']
+          type: ['string', 'null'],
+          title: 'Font Family',
+          // $FlowFixMe
+          description: `e.g. ${configDefaults.editor.fontFamily}`
         },
         fontSize: {
-          type: ['string', 'null']
+          type: ['string', 'null'],
+          title: 'Font Size',
+          // $FlowFixMe
+          description: `e.g. ${configDefaults.editor.fontSize}`
         },
         fontWeight: {
           type: 'integer',
+          title: 'Font Weight',
           minimum: 1
         },
         lineHeight: {
-          type: 'number'
+          type: 'number',
+          title: 'Line Height'
         }
       }
     },
     maxOutputHistory: {
       type: 'integer',
+      title: 'Max Output History Lines to Keep',
+      description: 'Maximum number of history lines should be kept for output panel',
       minimum: 1
     }
   },

@@ -5,7 +5,7 @@
  * @Date:   2018-06-25T16:41:27+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-27T16:39:48+10:00
+ * @Last modified time: 2018-07-10T21:45:57+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -38,9 +38,8 @@ export default (
     if (typeof imageName !== 'string' || imageName.length === 0) {
       throw new MongoConfigError('Failed to validate Docker target', {
         errors: {
-          'config.mongo.docker.createNew': 'config.mongo.docker.imageName must be provided',
-          'config.mongo.docker.imageName':
-            'must be provided when config.mongo.docker.createNew === true'
+          'config.mongo.docker.createNew': 'image name must be provided',
+          'config.mongo.docker.imageName': 'must be provided when creating new container'
         }
       });
     } else {
@@ -49,9 +48,8 @@ export default (
   } else if (typeof containerId !== 'string' || containerId.length === 0) {
     throw new MongoConfigError('Failed to validate Docker target', {
       errors: {
-        'config.mongo.docker.createNew': 'config.mongo.docker.containerId must be provided',
-        'config.mongo.docker.containerId':
-          'must be provided when config.mongo.docker.createNew === false'
+        'config.mongo.docker.createNew': 'container ID must be provided',
+        'config.mongo.docker.containerId': 'must be provided when using existing container'
       }
     });
   }

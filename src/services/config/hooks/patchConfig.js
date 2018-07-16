@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T15:35:16+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-03T11:59:50+10:00
+ * @Last modified time: 2018-07-10T21:42:04+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -51,12 +51,10 @@ const SIBLING_MONGO_CMD = ['importCmd', 'exportCmd', 'dumpCmd', 'restoreCmd'];
 const RESETTABLE_MONGO_CMD = ['cmd', 'versionCmd', ...SIBLING_MONGO_CMD];
 const USER_ID_LEN = 21;
 
-const _handleAsyncError = (err: ConfigError, asyncErrors: {}, service) => {
-  service.handleError(err);
+const _handleAsyncError = (err: ConfigError, service) => {
+  _.set(err, 'data.asyncError', true);
 
-  _.forEach(err.errors, (_v, k) => {
-    asyncErrors[k] = true;
-  });
+  service.handleError(err);
 };
 
 const _getCombinedConfig = (path: string, nextConfig: {}): any => {
@@ -94,14 +92,14 @@ const _resetMongoCmds = (nextConfig: typeof configDefaults) => {
   }
 };
 
-const _validateMongoCmd = async (nextConfig: typeof configDefaults, asyncErrors: {}, service) => {
+const _validateMongoCmd = async (nextConfig: typeof configDefaults, service) => {
   if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.versionCmd', nextConfig)) {
     const mongoConfig = _getCombinedConfig('mongo', nextConfig);
 
     try {
       await validateMongoCmd(mongoConfig);
     } catch (err) {
-      _handleAsyncError(err, asyncErrors, service);
+      _handleAsyncError(err, service);
       return;
     }
 
@@ -124,7 +122,7 @@ const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDef
       ({ target } = validateDockerTarget(dockerConfig));
     } catch (err) {
       if (_configPathIsNotNullOrUndefinedAndWillChange('mongo.dockerized', nextConfig)) {
-        _.set(err, ['errors', 'config.mongo.dockerized'], 'error exists in config.mongo.docker');
+        _.set(err, ['errors', 'config.mongo.dockerized'], 'error exists in Mongo Docker config');
       }
 
       throw err;
@@ -228,11 +226,7 @@ const _checkPerformancePanel = (nextConfig: typeof configDefaults) => {
   }
 };
 
-const _checkMongo = async (
-  nextConfig: typeof configDefaults,
-  asyncErrors: {},
-  service
-): Promise<boolean> => {
+const _checkMongo = async (nextConfig: typeof configDefaults, service): Promise<boolean> => {
   const dockerized = _getCombinedConfig('mongo.dockerized', nextConfig);
 
   let needsToUpdateConfigYml = false;
@@ -262,7 +256,7 @@ const _checkMongo = async (
               'Docker is not detected in system paths. Please make sure it is installed or manually specify the path'
           }
         });
-        _handleAsyncError(err, asyncErrors, service);
+        _handleAsyncError(err, service);
 
         _resetMongoCmds(nextConfig);
       }
@@ -286,7 +280,7 @@ const _checkMongo = async (
               'Mongo shell binary is not detected in system paths. Please make sure a version >= 3.0 is installed or manually specify the path'
           }
         });
-        _handleAsyncError(err, asyncErrors, service);
+        _handleAsyncError(err, service);
 
         _resetMongoCmds(nextConfig);
       }
@@ -297,7 +291,7 @@ const _checkMongo = async (
       (await _generateAndCheckMongoCmds(nextConfig)) || needsToUpdateConfigYml;
   }
 
-  await _validateMongoCmd(nextConfig, asyncErrors, service);
+  await _validateMongoCmd(nextConfig, service);
 
   return needsToUpdateConfigYml;
 };
@@ -324,14 +318,13 @@ export default () =>
   processItems(async (context, item) => {
     const { config: nextConfig, emitChangedEvent, forceSave, fromConfigYml } = item;
     const { service } = context;
-    const asyncErrors = {};
 
     // `ajv` schema should guard most of the correctness by now, but some further checkings are also
     // necessary before accepting and merging config changes
 
     // checking and generation pipeline
     _checkPerformancePanel(nextConfig);
-    let needsToUpdateConfigYml = await _checkMongo(nextConfig, asyncErrors, service);
+    let needsToUpdateConfigYml = await _checkMongo(nextConfig, service);
     needsToUpdateConfigYml = _checkUser(nextConfig) || needsToUpdateConfigYml;
 
     // calculate differences between nextConfig and current config
@@ -343,17 +336,11 @@ export default () =>
 
       if (kind === 'E' || kind === 'N') {
         const k = `config.${path.join('.')}`;
-        const changedEntry = {
+
+        changed[k] = {
           old: lhs,
           new: rhs
         };
-
-        if (k in asyncErrors) {
-          // $FlowFixMe
-          changedEntry.hasAsyncError = true;
-        }
-
-        changed[k] = changedEntry;
 
         applyChange(global.config, nextConfig, change);
       } else if (kind === 'D') {
