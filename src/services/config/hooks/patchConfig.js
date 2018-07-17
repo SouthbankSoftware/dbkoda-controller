@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T15:35:16+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-10T21:42:04+10:00
+ * @Last modified time: 2018-07-17T11:16:13+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -136,12 +136,6 @@ const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDef
       const subCmd = createNew ? 'run' : 'exec';
       const rmParam = subCmd === 'run' ? '--rm ' : '';
 
-      _.set(
-        nextConfig,
-        'mongo.versionCmd',
-        `"${cmd}" ${subCmd} ${rmParam}${target} mongo --version`
-      );
-
       let mongoCmd = `"${cmd}" ${subCmd} -it ${rmParam}`;
       let mongoSiblingCmd = `"${cmd}" ${subCmd} ${rmParam}`;
 
@@ -154,6 +148,7 @@ const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDef
       }
 
       _.set(nextConfig, 'mongo.cmd', mongoCmd);
+      _.set(nextConfig, 'mongo.versionCmd', `${mongoSiblingCmd} --version`);
 
       // generate sibling mongo cmds
       for (const sMC of SIBLING_MONGO_CMD) {

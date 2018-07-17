@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-26T16:49:52+10:00
+ * @Last modified time: 2018-07-17T13:50:53+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -36,6 +36,7 @@ const Status = require('./status');
 const ConnectionListener = require('./connection-listener');
 const uuid = require('node-uuid');
 const escapeRegExp = require('escape-string-regexp');
+const MongoConfigError = require('../../errors/MongoConfigError');
 const { Errors } = require('../../errors/Errors');
 
 const { Mongos, ReplSet, Server } = mongodb;
@@ -66,6 +67,7 @@ class MongoConnectionController {
     this.app = app;
     this.mongoShell = app.service('/mongo-shells');
     this.passwordService = app.service('/master-pass');
+    this.configService = app.service('/config');
   }
 
   getMongoScriptsPath() {
@@ -269,30 +271,17 @@ class MongoConnectionController {
             return { ...v, dbVersion };
           })
           .catch(err => {
-            log.error('create mongo shell failed:', err);
-            if (err.responseCode === 'MONGO_BINARY_UNDETECTED') {
+            if (err instanceof MongoConfigError) {
               throw new errors.GeneralError(
-                'Creation of shell connection failed. Unable to detect your mongo binary.<br/><br/>Please make sure the Mongo shell is in your path, or define path to mongo shell in the Preferences Panel.(Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)'
-              );
-            } else if (err.responseCode === 'MONGO_BINARY_CORRUPTED') {
-              log.error('Corrupted mongo binary');
-              throw new errors.GeneralError(
-                'Create shell connection failed. Mongo binary might be corrupted.<br/><br/>Please check your mongo binary path, or define your own mongoCmd in <b>~/.dbKoda/config.yml</b> (Refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details)'
-              );
-            } else if (err.responseCode === 'FAILED_LAUNCH_MONGO_SHELL') {
-              throw new errors.GeneralError(
-                `Failed to launch mongo shell.<br/> ${err.responseMessage} <br/>`
+                'Failed to create Mongo shell. Please check your Mongo shell settings in Config panel or refer to <a style="color: blue" onclick="window.require(\'electron\').shell.openExternal(\'https://dbkoda.useresponse.com/knowledge-base/article/dealing-with-create-shell-connection-failed-errors\')">this doc</a> for details'
               );
             } else {
+              l.error(err);
+
               const errStr = err instanceof Error ? err.stack : String(err);
-              log.error(errStr);
               throw new errors.GeneralError(errStr);
             }
           });
-      })
-      .catch(err => {
-        l.error('got error ', err);
-        throw err;
       });
   }
 
@@ -391,7 +380,7 @@ class MongoConnectionController {
             id,
             shellId,
             output: value.output,
-            shellVersion: value.shell.shellVersion
+            shellVersion: value.shell.version
           });
         })
         .catch(err => {
@@ -416,7 +405,7 @@ class MongoConnectionController {
             Status.OPEN,
             conn,
             dbVersion,
-            v.shell.shellVersion,
+            v.shell.version,
             that.options
           );
           that.connections[id].addShell(shellId, v.shell);
@@ -425,13 +414,11 @@ class MongoConnectionController {
             id,
             shellId,
             output: v.output,
-            shellVersion: v.shell.shellVersion,
+            shellVersion: v.shell.version,
             mongoType: conn.mongoType
           });
         })
-        .catch(e => {
-          reject(e);
-        });
+        .catch(reject);
     });
   }
 
@@ -443,7 +430,7 @@ class MongoConnectionController {
     // TODO
     // • chech old reject logic
     // • timeout on shell creation
-    return new Promise((resolve, _reject) => {
+    return new Promise((resolve, reject) => {
       let mongoScriptsPath;
       if (global.IS_PRODUCTION) {
         mongoScriptsPath = process.env.MONGO_SCRIPTS_PATH;
@@ -451,12 +438,23 @@ class MongoConnectionController {
         mongoScriptsPath = this.app.get('mongoScripts');
       }
       log.debug(mongoScriptsPath);
-      const shell = new MongoShell(connection, mongoScriptsPath);
-      shell.createShell();
-      const connectionMessage = [];
+      const shell = new MongoShell(connection, mongoScriptsPath, this.configService);
+      shell.id = shellId;
+      shell.createShell().catch(reject);
+      const bufferedOutputMessages = [];
       shell.on(MongoShell.eventExited, exit => {
-        // TODO: echo back error messages if not initialized
-        log.warn(`mongo shell(${id}-${shellId} exit ${exit} ${shell.id} ${shell.status}`);
+        log.warn(`mongo shell ${id} ${shellId} exit with code ${exit} and status ${shell.status}`);
+
+        if (!shell.initialized) {
+          return reject(
+            new Error(
+              `Failed to create Mongo shell, which exited with code ${exit} and output message ${bufferedOutputMessages.join(
+                ''
+              )}`
+            )
+          );
+        }
+
         // status is closing means it is closed by users
         if (shell.status !== Status.CLOSING && shell.status !== Status.CLOSED) {
           // the shell is killed by some reasons, need to reconnect
@@ -483,17 +481,17 @@ class MongoConnectionController {
         if (!data) {
           return;
         }
-        const emitData = {
+
+        if (!shell.initialized) {
+          bufferedOutputMessages.push(data.replace(REMOVE_CHANGE_PROMPT_CMD_REGEX, ''));
+          return;
+        }
+
+        that.mongoShell.emit('shell-output', {
           id,
           shellId,
           output: data
-        };
-        if (!shell.initialized) {
-          emitData.output = emitData.output.replace(REMOVE_CHANGE_PROMPT_CMD_REGEX, '');
-          connectionMessage.push(emitData);
-          return;
-        }
-        that.mongoShell.emit('shell-output', emitData);
+        });
       });
       shell.on(MongoShell.eventRequestResolved, request => {
         if (!request.realtime) return;
@@ -519,10 +517,10 @@ class MongoConnectionController {
       });
       shell.on(MongoShell.eventReady, () => {
         l.info('mongo shell initialized');
-        const outputMsg = [];
-        connectionMessage.map(msg => outputMsg.push(msg.output));
-        outputMsg.push('### shell ready\r');
-        resolve({ shell, output: outputMsg });
+
+        bufferedOutputMessages.push('### shell ready\r');
+
+        resolve({ shell, output: bufferedOutputMessages });
       });
     });
   }

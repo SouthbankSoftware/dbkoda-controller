@@ -7,7 +7,7 @@
  * @Date:   2018-06-19T13:51:17+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-19T16:05:31+10:00
+ * @Last modified time: 2018-07-17T13:39:58+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -85,7 +85,7 @@ build environment:
 
 import { exec } from 'child_process';
 
-const VERSION_REGEX = /MongoDB shell version:? v?(\d+\.\d+\.\d+(?:-\S+)?)/;
+const VERSION_REGEX = /(?:MongoDB shell|db) version:? v?(\d+\.\d+\.\d+(?:-\S+)?)/;
 
 export const UNKNOWN = 'UNKNOWN';
 

@@ -8,7 +8,7 @@
  * @Date:   2018-06-05T12:12:29+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-03T14:40:06+10:00
+ * @Last modified time: 2018-07-17T15:08:57+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -42,11 +42,14 @@ import uuid from 'node-uuid';
 import escapeRegExp from 'escape-string-regexp';
 // import { MongoConfigError } from '~/errors';
 import { UNKNOWN } from '~/services/config/getMongoShellVersion';
-// import validateMongoCmd from '~/services/config/validateMongoCmd';
+import validateMongoCmd from '~/services/config/validateMongoCmd';
 import Status from '../mongo-connection/status';
 import Parser from './pty-parser';
 import PtyOptions from './pty-options';
 import { toStrict } from './mongodbExtendedJsonUtils';
+
+const IS_WIN = os.platform() === 'win32';
+const ARG_REGEX = /([^\s"]+)|"([^"]*)"/g;
 
 export const mongoShellRequestResponseTypes = {
   JSON: 'JSON', // try to parse output into valid json
@@ -110,11 +113,12 @@ export class MongoShell extends EventEmitter {
 
   _cleanup: ?() => void = null;
 
-  constructor(connection: *, mongoScriptPath: string) {
+  constructor(connection: *, mongoScriptPath: string, configService: *) {
     super();
 
     this.connection = connection;
     this.mongoScriptPath = mongoScriptPath;
+    this.configService = configService;
     this.parser = new Parser(MongoShell);
   }
 
@@ -321,7 +325,7 @@ export class MongoShell extends EventEmitter {
   _loadScriptsIntoShell(): Promise<MongoShellRequest> {
     const scriptPath = path.join(this.mongoScriptPath + '/all-in-one.js');
     let command = `load("${scriptPath}");`;
-    if (os.platform() === 'win32') {
+    if (IS_WIN) {
       command = command.replace(/\\/g, '\\\\');
     }
     log.info('load pre defined scripts ' + scriptPath);
@@ -377,6 +381,7 @@ export class MongoShell extends EventEmitter {
 
   _decomposeCodeAndEnqueueCommands(code: string) {
     const decomposed = code.split('\n');
+    let combinedCmds = '';
 
     decomposed.forEach(cmd => {
       cmd = cmd.replace(INPUT_FILTER_REGEX, '$1');
@@ -388,9 +393,19 @@ export class MongoShell extends EventEmitter {
 
       // for every non-empty cmd
       if (cmd.length > 1) {
-        this.commandQueue.push(cmd);
+        if (IS_WIN) {
+          // we don't do flow control on Windows, because winpty is already doing that and our own
+          // flow control is way too slow on Windows
+          combinedCmds += cmd;
+        } else {
+          this.commandQueue.push(cmd);
+        }
       }
     });
+
+    if (IS_WIN) {
+      this.commandQueue.push(combinedCmds);
+    }
 
     // add our own end signal
     this.commandQueue.push(MongoShell.PRINT_CUSTOM_EXEC_ENDING_CMD + MongoShell.ENTER);
@@ -418,54 +433,30 @@ export class MongoShell extends EventEmitter {
     this._writeToShell('\x03');
   };
 
-  createShell() {
+  async createShell() {
     const mongoConfig = global.config.mongo; // should be read-only
 
-    // TODO:
-    // - [ ] check space in path handling
-    // - [ ] async validateMongoCmd and check shellVersion
-    // - [ ] cleanup old errors
-    // - [ ] emit shell output when shell fails to be ready
-    if (!mongoConfig.cmd) {
-      const err = new Error('Mongo binary undetected');
-      // $FlowFixMe
-      err.responseCode = 'MONGO_BINARY_UNDETECTED';
+    try {
+      this.version = await validateMongoCmd(mongoConfig);
+    } catch (err) {
+      _.set(err, 'data.asyncError', true);
+
+      this.configService.handleError(err);
+
       throw err;
     }
 
-    // if (this.shellVersion === 'UNKNOWN') {
-    //   const err = new Error('Mongo binary corrupted');
-    //   // $FlowFixMe
-    //   err.responseCode = 'MONGO_BINARY_CORRUPTED';
-    //   throw err;
-    // }
-    //
-    // if (this.shellVersion.match(/^([012]).*/gim)) {
-    //   log.error('Invalid Mongo binary version detected.');
-    //   const err = new Error(
-    //     'Mongo binary version (' +
-    //       this.shellVersion +
-    //       ') is not supported, please upgrade to a Mongo binary version of at least 3.0'
-    //   );
-    //   // $FlowFixMe
-    //   err.responseCode = 'MONGO_BINARY_INVALID_VERSION';
-    //   throw err;
-    // }
+    this.configService.resetError(['config.mongo']);
 
     const { dockerized, cmd: mongoCmd } = mongoConfig;
+    const mongoCmdArray = [];
+    let m;
 
-    let mongoCmdArray;
-
-    if (dockerized) {
-      mongoCmdArray = mongoCmd.split(' ');
-    } else if (mongoCmd.indexOf('"') === 0) {
-      mongoCmdArray = mongoCmd.match(/(?:[^\s"]+|"[^"]*")+/g);
-      mongoCmdArray[0] = mongoCmdArray[0].replace(/^"(.+)"$/, '$1');
-    } else {
-      mongoCmdArray = [mongoCmd];
+    while ((m = ARG_REGEX.exec(mongoCmd))) {
+      mongoCmdArray.push(m[1] || m[2]);
     }
 
-    if (os.platform() !== 'win32') {
+    if (!IS_WIN) {
       _.assign(PtyOptions, {
         // $FlowFixMe
         uid: process.getuid(),
@@ -489,6 +480,7 @@ export class MongoShell extends EventEmitter {
 
     this.shell.on('exit', this._onShellExit);
     this.shell.on('data', parserOnRead);
+    this.shell.on('error', l.error);
     this.parser.on('parsedLine', this._onParsedLine);
     this.parser.on('executionEnded', this._onExecutionEnded);
     this.parser.on('availableForMoreInput', this._onAvailableForMoreInput);
