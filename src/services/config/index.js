@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T14:09:35+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-14T10:17:39+11:00
+ * @Last modified time: 2018-07-10T15:02:56+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -34,8 +34,10 @@ import moment from 'moment';
 // $FlowFixMe
 import yaml from 'js-yaml';
 // $FlowFixMe
-import errors from 'feathers-errors';
+import errors, { FeathersError } from 'feathers-errors';
 import path from 'path';
+import { ConfigError } from '~/errors';
+import util from 'util';
 import hooks from './hooks';
 import { configDefaults } from './configSchema';
 
@@ -48,7 +50,7 @@ class Config {
   _fileServiceDisposer: *;
 
   constructor() {
-    this.events = ['changed'];
+    this.events = ['changed', 'error', 'errorReset'];
   }
 
   setup(app: *) {
@@ -64,20 +66,29 @@ class Config {
         .then(({ content }) => {
           l.debug(`Loading config from ${global.CONFIG_PATH}...`);
 
+          let nextConfigFromContent;
+
           return Promise.resolve()
             .then(() => yaml.safeLoad(content))
             .then(nextConfig => {
+              nextConfigFromContent = nextConfig;
+
               return this.patch('current', {
-                config: nextConfig,
+                config: _.cloneDeep(nextConfig),
                 fromConfigYml: true
               }).catch(err => {
                 const { errors } = err;
 
                 if (_.isPlainObject(errors)) {
-                  l.warn(
-                    'Corrupted entries %o detected in config.yml. Backing up and trying to recover them...',
-                    errors
+                  const configErr = new ConfigError(
+                    util.format(
+                      'Corrupted entries detected in config.yml. Backing up and trying to recover them...',
+                      errors
+                    )
                   );
+                  l.warn(configErr.message);
+                  this.emitError(configErr, 'warn');
+
                   return this.backupConfigYml().then(() => {
                     for (const p of _.keys(errors)) {
                       const entryPath = p.replace(/^config\./, '');
@@ -88,23 +99,45 @@ class Config {
 
                     // now we try it again one more time
                     return this.patch('current', {
-                      config: nextConfig,
+                      config: _.cloneDeep(nextConfig),
                       forceSave: true,
                       fromConfigYml: true
-                    }).catch(this.handleError);
+                    }).catch(_err => {
+                      throw new ConfigError(
+                        util.format("Couldn't recover faulty config entries", errors)
+                      );
+                    });
                   });
                 }
 
-                this.handleError(err);
+                throw err;
               });
             })
             .catch(err => {
-              this.handleError(err);
+              const configErr = new ConfigError(
+                util.format(
+                  `Corrupted config.yml detected: ${err.message}. Backing up and recovering...`,
+                  !_.isEmpty(err.errors) ? err.errors : ''
+                )
+              );
+              this.handleError(configErr);
 
-              l.warn('Corrupted config.yml detected. Backing up and recovering...');
+              let config;
+              // try to persist user id
+              const nextUserId = _.get(
+                nextConfigFromContent,
+                'user.id',
+                _.get(global.config, 'user.id')
+              );
+              if (nextUserId) {
+                config = _.merge({}, configDefaults, { user: { id: nextUserId } });
+              } else {
+                config = configDefaults;
+              }
+
               return this.backupConfigYml().then(() =>
                 this.patch('current', {
-                  config: {},
+                  config,
                   emitChangedEvent: false,
                   forceSave: true
                 }).catch(this.handleError)
@@ -115,7 +148,7 @@ class Config {
           if (handle404 && err.code === 404) {
             // create config from defaults
             return this.patch('current', {
-              config: {},
+              config: configDefaults,
               emitChangedEvent: false,
               forceSave: true
             }).catch(this.handleError);
@@ -168,14 +201,32 @@ class Config {
 
     return this.fileService.get(global.CONFIG_PATH, {
       query: {
-        copyTo: backupPath,
-        watching: 'false'
+        copyTo: backupPath
       }
     });
   }
 
+  /**
+   * Emit either an error or a warning
+   */
+  emitError(error: FeathersError, level: 'warn' | 'error' = 'error') {
+    // $FlowFixMe
+    this.emit('error', { payload: { error, level } });
+  }
+
+  /**
+   * Log and emit error
+   *
+   * NOTE: methods in Feathers service class should not be bound by us, and Feathers will bind it
+   */
   handleError(err) {
-    l.error(err, err.errors);
+    l.error(err);
+    this.emitError(err, 'error');
+  }
+
+  resetError(paths: string[]) {
+    // $FlowFixMe
+    this.emit('errorReset', { payload: { paths } });
   }
 
   find(_params: *) {

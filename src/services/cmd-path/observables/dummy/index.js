@@ -1,8 +1,9 @@
 /**
- * @Author: guiguan
- * @Date:   2017-09-22T09:43:34+10:00
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2018-06-19T17:30:48+10:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-03T13:39:40+11:00
+ * @Last modified time: 2018-06-19T17:30:48+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -22,32 +23,3 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-import normaliseItems from '~/hooks/normaliseItems';
-import validateItems from './validateItems';
-import validateMongoCmd from './validateMongoCmd';
-
-const before = {
-  all: [normaliseItems(), validateItems()],
-  find: [],
-  get: [],
-  create: [validateMongoCmd()],
-  update: [],
-  patch: [],
-  remove: []
-};
-
-const after = {
-  all: [],
-  find: [],
-  get: [],
-  create: [],
-  update: [],
-  patch: [],
-  remove: []
-};
-
-export default {
-  before,
-  after
-};

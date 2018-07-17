@@ -2,10 +2,10 @@
  * @flow
  *
  * @Author: Guan Gui <guiguan>
- * @Date:   2018-03-05T15:35:16+11:00
+ * @Date:   2018-06-25T18:46:21+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-03T11:53:24+10:00
+ * @Last modified time: 2018-06-25T19:54:36+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,15 +26,11 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import processItems from '~/hooks/processItems';
-import getDumpableConfigView from '../getDumpableConfigView';
-import configSchema, { configDefaults } from '../configSchema';
+// $FlowFixMe
+import { FeathersError } from 'feathers-errors';
 
-export default () =>
-  processItems((_context, _item) => {
-    return {
-      config: getDumpableConfigView(global.config),
-      configDefaults,
-      configSchema
-    };
-  });
+export default class PerformancePanelConfigError extends FeathersError {
+  constructor(message: *, data: *) {
+    super(message, 'performance-panel-config-error', 400, 'PerformancePanelConfigError', data);
+  }
+}

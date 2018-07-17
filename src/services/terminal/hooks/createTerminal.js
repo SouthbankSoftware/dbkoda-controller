@@ -2,7 +2,7 @@
  * @Author: guiguan
  * @Date:   2017-09-22T11:09:38+10:00
  * @Last modified by:   guiguan
- * @Last modified time: 2017-11-17T17:07:49+11:00
+ * @Last modified time: 2018-07-17T14:36:21+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -28,7 +28,7 @@ import _ from 'lodash';
 import requireOperator from '../requireOperator';
 
 export default () =>
-  processItems((context, item) => {
+  processItems(async (context, item) => {
     const { _id, type, debug } = item;
     const { terminals } = context.service;
 
@@ -38,7 +38,7 @@ export default () =>
       return { new: false };
     }
 
-    const terminal = requireOperator(type, 'init')(context, item);
+    const terminal = await requireOperator(type, 'init')(context, item);
     terminals.set(_id, _.assign(terminal, { _id, type, debug }));
 
     return { new: true };

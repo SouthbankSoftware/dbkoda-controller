@@ -1,8 +1,11 @@
 /**
- * @Author: guiguan
- * @Date:   2017-09-22T09:43:34+10:00
+ * @flow
+ *
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2018-06-25T18:46:21+10:00
+ * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-12T21:30:18+11:00
+ * @Last modified time: 2018-06-25T18:48:15+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -23,35 +26,11 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import _ from 'lodash';
-import ajv from '~/helpers/ajv';
-import { validateSchema } from 'feathers-hooks-common';
+// $FlowFixMe
+import { FeathersError } from 'feathers-errors';
 
-const createSchema = {
-  properties: {
-    mongoCmdPath: {
-      type: 'string'
-    }
-  },
-  required: ['mongoCmdPath']
-};
-
-const schema = {
-  find: {},
-  get: {},
-  create: createSchema,
-  update: {},
-  patch: {},
-  remove: {}
-};
-
-const validators = _.reduce(
-  schema,
-  (acc, v, k) => {
-    acc[k] = validateSchema(v, ajv);
-    return acc;
-  },
-  {}
-);
-
-export default _options => hook => validators[hook.method](hook);
+export default class MongoConfigError extends FeathersError {
+  constructor(message: *, data: *) {
+    super(message, 'mongo-config-error', 400, 'MongoConfigError', data);
+  }
+}

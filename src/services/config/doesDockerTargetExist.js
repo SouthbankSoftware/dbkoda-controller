@@ -2,10 +2,10 @@
  * @flow
  *
  * @Author: Guan Gui <guiguan>
- * @Date:   2018-03-05T15:35:16+11:00
+ * @Date:   2018-06-19T16:10:22+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-03T11:53:24+10:00
+ * @Last modified time: 2018-06-21T10:44:36+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,15 +26,31 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import processItems from '~/hooks/processItems';
-import getDumpableConfigView from '../getDumpableConfigView';
-import configSchema, { configDefaults } from '../configSchema';
+import { exec } from 'child_process';
 
-export default () =>
-  processItems((_context, _item) => {
-    return {
-      config: getDumpableConfigView(global.config),
-      configDefaults,
-      configSchema
-    };
+/**
+ * Check whether the target image exists or the target container exists and is running
+ */
+export default (dockerCmd: string, type: 'image' | 'container', target: string): Promise<boolean> =>
+  new Promise((resolve, reject) => {
+    exec(
+      `${dockerCmd} inspect --type=${type}${
+        type === 'container' ? " -f '{{.State.Running}}'" : ''
+      } ${target}`,
+      (err, stdout) => {
+        if (err) {
+          if (err.message.includes(`No such ${type}`)) {
+            return resolve(false);
+          }
+
+          return reject(err);
+        }
+
+        if (type === 'container') {
+          return resolve(stdout.trim() === 'true');
+        }
+
+        resolve(true);
+      }
+    );
   });

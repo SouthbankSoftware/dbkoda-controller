@@ -1,6 +1,6 @@
 /**
  * @Last modified by:   guiguan
- * @Last modified time: 2018-03-26T11:47:24+11:00
+ * @Last modified time: 2018-06-19T17:36:13+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -32,6 +32,7 @@ import remoteExecutionController from '../controllers/remote-execution';
 import driverCommandsController from '../controllers/driver-commands';
 
 import config from './config';
+import cmdPath from './cmd-path';
 import mongoShell from './mongo-shell';
 import mongoConnection from './mongo-connection';
 import mongoInspector from './mongo-inspector';
@@ -49,7 +50,6 @@ import treeAction from './tree-actions';
 import osCommandsService from './os-commands';
 import supportBundleService from './support-bundle';
 import driverService from './driver';
-import mongoCmdValidator from './mongo-cmd-validator';
 import remoteExecService from './remote-execution';
 import drill from './drill';
 import masterPass from './master-pass';
@@ -71,8 +71,8 @@ module.exports = function() {
   app.configure(driverCommandsController);
 
   app.configure(file);
-  app.configure(mongoCmdValidator);
   app.configure(config);
+  app.configure(cmdPath);
   app.configure(mongoShell);
   app.configure(mongoConnection);
   app.configure(mongoInspector);

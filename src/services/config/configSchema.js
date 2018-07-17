@@ -5,7 +5,7 @@
  * @Date:   2018-03-12T15:46:20+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-05-20T16:35:26+10:00
+ * @Last modified time: 2018-07-13T10:24:12+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,45 +26,82 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// $FlowFixMe
-import Ajv from 'ajv';
-import ajv from '~/helpers/ajv';
-import app from '~/app';
-import { isDockerCommand } from '../../controllers/docker';
-
-// [IMPORTANT] please keep `configDefaults` and `configSchema` consistent
-export const configDefaults = {
+// [IMPORTANT] please keep `configDefaults` (both flow types and default values) and `configSchema`
+// consistent
+export const configDefaults: {
+  user: {
+    id: ?string
+  },
+  mongo: {
+    dockerized: boolean,
+    docker: {
+      cmd: ?string,
+      createNew: boolean,
+      imageName: ?string,
+      containerId: ?string,
+      hostPath: ?string,
+      containerPath: ?string
+    },
+    cmd: ?string,
+    versionCmd: ?string,
+    importCmd: ?string,
+    exportCmd: ?string,
+    dumpCmd: ?string,
+    restoreCmd: ?string
+  },
+  drillCmd: ?string,
+  drillControllerCmd: ?string,
+  telemetryEnabled: boolean,
+  showNewFeaturesDialogOnStart: boolean,
+  tableOutputDefault: boolean,
+  automaticAutoComplete: boolean,
+  showWelcomePageAtStart: boolean,
+  passwordStoreEnabled: boolean,
+  performancePanel: {
+    preventDisplaySleep: boolean,
+    metricSmoothingWindow: number,
+    foregroundSamplingRate: number,
+    backgroundSamplingRate: number,
+    historySize: number,
+    historyBrushSize: number,
+    alarmDisplayingWindow: number
+  },
+  editor: {
+    fontFamily: ?string,
+    fontSize: ?string,
+    fontWeight: number,
+    lineHeight: number
+  },
+  maxOutputHistory: number
+} = {
   user: {
     id: null // this should always be `null` by default, and controller will figure it out
   },
-  mongoCmd: null, // this should always be `null` by default, and controller will figure it out
+  mongo: {
+    dockerized: false,
+    docker: {
+      cmd: null, // this should always be `null` by default, and controller will figure it out
+      createNew: true,
+      imageName: 'mongo:3.6',
+      containerId: null,
+      hostPath: null,
+      containerPath: null
+    },
+    cmd: null, // this should always be `null` by default, and controller will figure it out
+    versionCmd: null,
+    importCmd: null,
+    exportCmd: null,
+    dumpCmd: null,
+    restoreCmd: null
+  },
   drillCmd: null, // ui will figure this out
   drillControllerCmd: null, // ui will figure this out
-  mongoVersionCmd: null,
-  mongoexportCmd: null,
-  mongoimportCmd: null,
-  mongodumpCmd: null,
-  mongorestoreCmd: null,
   telemetryEnabled: true,
   showNewFeaturesDialogOnStart: true,
   tableOutputDefault: true,
   automaticAutoComplete: true,
   showWelcomePageAtStart: true,
   passwordStoreEnabled: false,
-  dockerEnabled: false,
-  docker: {
-    createNew: true,
-    imageName: '',
-    containerID: '',
-    hostPath: '',
-    containerPath: '',
-    mongoCmd: '',
-    mongorestoreCmd: '',
-    mongodumpCmd: '',
-    mongoexportCmd: '',
-    mongoimportCmd: '',
-    mongoVersionCmd: ''
-  },
   performancePanel: {
     preventDisplaySleep: false,
     metricSmoothingWindow: 6,
@@ -84,7 +121,6 @@ export const configDefaults = {
 };
 
 const configSchema = {
-  $async: true,
   type: 'object',
   properties: {
     user: {
@@ -95,27 +131,79 @@ const configSchema = {
         }
       }
     },
-    mongoCmd: {
-      type: ['string', 'null'],
-      validMongoCmd: null
-    },
-    mongoVersionCmd: {
-      type: ['string', 'null']
-    },
-    mongoexportCmd: {
-      type: ['string', 'null']
-    },
-    mongoimportCmd: {
-      type: ['string', 'null']
-    },
-    mongodumpCmd: {
-      type: ['string', 'null']
-    },
-    mongorestoreCmd: {
-      type: ['string', 'null']
+    mongo: {
+      type: 'object',
+      properties: {
+        dockerized: {
+          type: 'boolean',
+          title: 'Use Docker',
+          description: 'Use dockerized Mongo shell binary'
+        },
+        docker: {
+          type: 'object',
+          properties: {
+            cmd: {
+              type: ['string', 'null'],
+              title: 'Docker Binary Path',
+              description: 'Absolute path to Docker binary',
+              browsable: true,
+              fileOnly: true
+            },
+            createNew: {
+              type: 'boolean',
+              title: 'Create New Container'
+            },
+            imageName: {
+              type: ['string', 'null'],
+              title: 'Image Name'
+            },
+            containerId: {
+              type: ['string', 'null'],
+              title: 'Container ID'
+            },
+            hostPath: {
+              type: ['string', 'null'],
+              title: 'Host Mount Path',
+              description: 'Volume mount path on host',
+              browsable: true
+            },
+            containerPath: {
+              type: ['string', 'null'],
+              title: 'Container Mount Path',
+              description: 'Volume mount path in container'
+            }
+          }
+        },
+        cmd: {
+          type: ['string', 'null'],
+          title: 'Mongo Binary Path',
+          description: 'Absolute path to Mongo shell binary',
+          browsable: true,
+          fileOnly: true
+        },
+        versionCmd: {
+          type: ['string', 'null']
+        },
+        importCmd: {
+          type: ['string', 'null']
+        },
+        exportCmd: {
+          type: ['string', 'null']
+        },
+        dumpCmd: {
+          type: ['string', 'null']
+        },
+        restoreCmd: {
+          type: ['string', 'null']
+        }
+      }
     },
     drillCmd: {
-      type: ['string', 'null']
+      type: ['string', 'null'],
+      title: 'Apache Drill Path',
+      description: 'Absolute path to Apache Drill directory',
+      browsable: true,
+      dirOnly: true
     },
     drillControllerCmd: {
       type: ['string', 'null']
@@ -124,90 +212,65 @@ const configSchema = {
       type: 'boolean'
     },
     telemetryEnabled: {
-      type: 'boolean'
+      type: 'boolean',
+      title: 'Allow Telemetry Data',
+      description:
+        'Allow sending anonymous telemetry data to dbKoda so we can improve with your help'
     },
     showNewFeaturesDialogOnStart: {
-      type: 'boolean'
+      type: 'boolean',
+      title: 'Show New Features Dialog on Startup'
     },
     tableOutputDefault: {
-      type: 'boolean'
+      type: 'boolean',
+      title: 'Use Table Output as Default Output'
     },
     automaticAutoComplete: {
-      type: 'boolean'
+      type: 'boolean',
+      title: 'Enable auto-completion when typing',
+      description: 'Editor tabs need to be re-opened in order to take effect'
     },
     passwordStoreEnabled: {
-      type: 'boolean'
-    },
-    dockerEnabled: {
-      type: 'boolean'
-    },
-    docker: {
-      type: 'object',
-      properties: {
-        createNew: {
-          type: 'boolean'
-        },
-        imageName: {
-          type: ['string', 'null']
-        },
-        containerID: {
-          type: ['string', 'null']
-        },
-        hostPath: {
-          type: ['string', 'null']
-        },
-        containerPath: {
-          type: ['string', 'null']
-        },
-        mongoCmd: {
-          type: ['string', 'null']
-        },
-        mongorestoreCmd: {
-          type: ['string', 'null']
-        },
-        mongoexportCmd: {
-          type: ['string', 'null']
-        },
-        mongodumpCmd: {
-          type: ['string', 'null']
-        },
-        mongoimportCmd: {
-          type: ['string', 'null']
-        },
-        mongoVersionCmd: {
-          type: ['string', 'null']
-        }
-      }
+      type: 'boolean',
+      title: 'Enable Password Store'
     },
     performancePanel: {
       type: 'object',
       properties: {
         preventDisplaySleep: {
-          type: 'boolean'
+          type: 'boolean',
+          title: 'Prevent Display Sleep when Lab is Visible',
+          description: 'Performance Lab needs to be restarted in order to take effect'
         },
         metricSmoothingWindow: {
           type: 'integer',
+          title: 'Metric Moving Average (number of samples)',
           minimum: 1
         },
         foregroundSamplingRate: {
           type: 'integer',
+          title: 'Foreground Sampling Rate (ms)',
           minimum: 1000
         },
         backgroundSamplingRate: {
           type: 'integer',
+          title: 'Background Sampling Rate (ms)',
           minimum: 1000
         },
         historySize: {
           type: 'integer',
+          title: 'History Size (number of samples)',
           minimum: { $data: '1/historyBrushSize' }
         },
         historyBrushSize: {
           type: 'integer',
+          title: 'History Default Brush Size (number of samples)',
           minimum: 1,
           maximum: { $data: '1/historySize' }
         },
         alarmDisplayingWindow: {
           type: 'integer',
+          title: 'Alarm Keepalive (ms)',
           minimum: 1000
         }
       }
@@ -216,49 +279,36 @@ const configSchema = {
       type: 'object',
       properties: {
         fontFamily: {
-          type: ['string', 'null']
+          type: ['string', 'null'],
+          title: 'Font Family',
+          // $FlowFixMe
+          description: `e.g. ${configDefaults.editor.fontFamily}`
         },
         fontSize: {
-          type: ['string', 'null']
+          type: ['string', 'null'],
+          title: 'Font Size',
+          // $FlowFixMe
+          description: `e.g. ${configDefaults.editor.fontSize}`
         },
         fontWeight: {
           type: 'integer',
+          title: 'Font Weight',
           minimum: 1
         },
         lineHeight: {
-          type: 'number'
+          type: 'number',
+          title: 'Line Height'
         }
       }
     },
     maxOutputHistory: {
       type: 'integer',
+      title: 'Max Output History Lines to Keep',
+      description: 'Maximum number of history lines should be kept for output panel',
       minimum: 1
     }
   },
   additionalProperties: false
 };
-
-ajv.addKeyword('validMongoCmd', {
-  async: true,
-  type: 'string',
-  validate: (schema, path) => {
-    if (path === null) return Promise.resolve(true);
-
-    if (isDockerCommand()) return Promise.resolve(true);
-
-    const mongoCmdValidatorService = app.service('mongo-cmd-validator');
-
-    return mongoCmdValidatorService
-      .create({
-        mongoCmdPath: path
-      })
-      .then(() => true)
-      .catch(err => {
-        l.error(err);
-
-        return Promise.reject(new Ajv.ValidationError([err]));
-      });
-  }
-});
 
 export default configSchema;

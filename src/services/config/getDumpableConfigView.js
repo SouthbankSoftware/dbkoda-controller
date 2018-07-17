@@ -2,10 +2,10 @@
  * @flow
  *
  * @Author: Guan Gui <guiguan>
- * @Date:   2018-03-05T15:35:16+11:00
+ * @Date:   2018-06-21T16:13:44+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-03T11:53:24+10:00
+ * @Last modified time: 2018-06-21T16:15:39+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -26,15 +26,24 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import processItems from '~/hooks/processItems';
-import getDumpableConfigView from '../getDumpableConfigView';
-import configSchema, { configDefaults } from '../configSchema';
+import _ from 'lodash';
+import { configDefaults } from './configSchema';
 
-export default () =>
-  processItems((_context, _item) => {
-    return {
-      config: getDumpableConfigView(global.config),
-      configDefaults,
-      configSchema
-    };
+const _filterConfigObj = (configObj, defaultConfigObj) => {
+  if (!configObj || !defaultConfigObj) return null;
+
+  const result = _.isArray(defaultConfigObj) ? [] : {};
+
+  _.forEach(defaultConfigObj, (v, k) => {
+    if (typeof v === 'object' && v !== null) {
+      result[k] = _filterConfigObj(configObj[k], v);
+    } else {
+      const cV = configObj[k];
+      result[k] = cV === undefined ? null : cV;
+    }
   });
+
+  return result;
+};
+
+export default (config: *) => _filterConfigObj(config, configDefaults);

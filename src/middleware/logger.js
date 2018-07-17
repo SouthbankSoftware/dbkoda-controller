@@ -1,4 +1,7 @@
-/*
+/**
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-06-27T22:43:14+10:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -18,25 +21,13 @@
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @Last modified by:   guiguan
- * @Last modified time: 2017-06-08T18:00:20+10:00
- */
-
 module.exports = function(app) {
   // Add a logger to our app object for convenience
   app.logger = l;
 
   return function(error, req, res, next) {
-    if (error) {
-      const message = `${error.code ? `(${error.code}) ` : ''}Route: ${req.url} - ${error.message}`;
-
-      if (error.code === 404) {
-        l.info(message);
-      } else {
-        l.error(message);
-        l.info(error.stack);
-      }
+    if (!IS_PRODUCTION && error) {
+      l.debug(`${error.code ? `(${error.code}) ` : ''}Route: ${req.url} - ${error.message}`);
     }
 
     next(error);

@@ -1,4 +1,10 @@
 /**
+ * @Author: Guan Gui <guiguan>
+ * @Date:   2017-12-12T11:17:37+11:00
+ * @Email:  root@guiguan.net
+ * @Last modified by:   guiguan
+ * @Last modified time: 2018-06-19T17:31:50+10:00
+ *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
  *
@@ -17,14 +23,32 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with dbKoda.  If not, see <http://www.gnu.org/licenses/>.
  */
-const isDockerCommand = () => global.config.dockerEnabled;
 
-const getMongoCommands = () => {
-  const { config } = global;
-  if (config.dockerEnabled) {
-    return config.docker;
-  }
-  return config;
+import normaliseItems from '~/hooks/normaliseItems';
+import validateItems from './validateItems';
+import getCmdPath from './getCmdPath';
+
+const before = {
+  all: [normaliseItems({ idAlias: 'cmd' }), validateItems()],
+  find: [],
+  get: [getCmdPath()],
+  create: [],
+  update: [],
+  patch: [],
+  remove: []
 };
 
-module.exports = { isDockerCommand, getMongoCommands };
+const after = {
+  all: [],
+  find: [],
+  get: [],
+  create: [],
+  update: [],
+  patch: [],
+  remove: []
+};
+
+export default {
+  before,
+  after
+};
