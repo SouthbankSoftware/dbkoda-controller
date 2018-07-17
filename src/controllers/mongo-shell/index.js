@@ -8,7 +8,7 @@
  * @Date:   2018-06-05T12:12:29+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-17T15:08:57+10:00
+ * @Last modified time: 2018-07-17T17:14:37+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -450,10 +450,15 @@ export class MongoShell extends EventEmitter {
 
     const { dockerized, cmd: mongoCmd } = mongoConfig;
     const mongoCmdArray = [];
-    let m;
 
-    while ((m = ARG_REGEX.exec(mongoCmd))) {
-      mongoCmdArray.push(m[1] || m[2]);
+    if (dockerized || mongoCmd.startsWith('"')) {
+      let m;
+
+      while ((m = ARG_REGEX.exec(mongoCmd))) {
+        mongoCmdArray.push(m[1] || m[2]);
+      }
+    } else {
+      mongoCmdArray.push(mongoCmd);
     }
 
     if (!IS_WIN) {
