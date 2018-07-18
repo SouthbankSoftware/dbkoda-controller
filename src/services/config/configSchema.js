@@ -5,7 +5,7 @@
  * @Date:   2018-03-12T15:46:20+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-13T10:24:12+10:00
+ * @Last modified time: 2018-07-18T11:28:11+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -260,13 +260,12 @@ const configSchema = {
         historySize: {
           type: 'integer',
           title: 'History Size (number of samples)',
-          minimum: { $data: '1/historyBrushSize' }
+          minimum: 1
         },
         historyBrushSize: {
           type: 'integer',
           title: 'History Default Brush Size (number of samples)',
-          minimum: 1,
-          maximum: { $data: '1/historySize' }
+          minimum: 1
         },
         alarmDisplayingWindow: {
           type: 'integer',
