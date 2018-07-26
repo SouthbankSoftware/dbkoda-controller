@@ -5,7 +5,7 @@
  * @Date:   2018-03-05T15:35:16+11:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-17T11:16:13+10:00
+ * @Last modified time: 2018-07-27T07:44:39+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -152,7 +152,7 @@ const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDef
 
       // generate sibling mongo cmds
       for (const sMC of SIBLING_MONGO_CMD) {
-        _.set(nextConfig, `mongo.${sMC}`, `${mongoSiblingCmd} ${sMC.slice(0, -3)}`);
+        _.set(nextConfig, `mongo.${sMC}`, `${mongoSiblingCmd} mongo${sMC.slice(0, -3)}`);
       }
 
       needsToUpdateConfigYml = true;
@@ -181,7 +181,7 @@ const _generateAndCheckMongoCmds = async (nextConfig: typeof configDefaults): Pr
 
       // generate sibling mongo cmds
       for (const sMC of SIBLING_MONGO_CMD) {
-        _.set(nextConfig, `mongo.${sMC}`, path.join(dir, `${sMC.slice(0, -3)}${ext}`));
+        _.set(nextConfig, `mongo.${sMC}`, path.join(dir, `mongo${sMC.slice(0, -3)}${ext}`));
       }
 
       needsToUpdateConfigYml = true;
