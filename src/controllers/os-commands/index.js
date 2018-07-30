@@ -1,7 +1,7 @@
 /**
  * Created by joey on 21/7/17.
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-26T15:30:18+10:00
+ * @Last modified time: 2018-07-30T12:13:24+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -63,7 +63,7 @@ class OSCommandsController extends EventEmitter {
       cmd = cmd.replace('-p ******', `-p "${escapeDoubleQuotes(password)}"`);
     }
     let params = tokeniseCmdString(cmd);
-    let mongoCmd = mongoConfig[`mongo${params[0]}Cmd`] || params[0];
+    let mongoCmd = mongoConfig[`${params[0].slice(5)}Cmd`] || params[0];
     params.splice(0, 1);
 
     if (mongoConfig.dockerized) {
