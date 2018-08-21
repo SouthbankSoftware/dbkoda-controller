@@ -30,7 +30,7 @@
     "dev:chrome":
       "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222 --no-first-run --user-data-dir=/tmp/chrome-dev-profile",
     "start": "node lib/",
-    "debug": "node --inspect-brk .",
+    "debug": "node --inspect-brk=0.0.0.0:9222 .",
     "clean": "rimraf lib controller-dev.log",
     "build":
       "babel --copy-files --ignore mongoScripts -d lib/ src/ && node bin/combineJavascripts.js",
