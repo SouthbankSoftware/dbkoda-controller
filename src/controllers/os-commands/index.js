@@ -27,6 +27,7 @@ import { EventEmitter } from 'events';
 import { escapeDoubleQuotes } from './processDoubleQuotes';
 import tokeniseCmdString from './tokeniseCmdString';
 
+const ARG_REGEX = /([^\s"]+)|"([^"]*)"/g;
 class OSCommandsController extends EventEmitter {
   constructor() {
     super();
@@ -62,15 +63,20 @@ class OSCommandsController extends EventEmitter {
     if (username && password) {
       cmd = cmd.replace('-p ******', `-p "${escapeDoubleQuotes(password)}"`);
     }
-    let params = tokeniseCmdString(cmd);
+    const params = tokeniseCmdString(cmd);
     let mongoCmd = mongoConfig[`${params[0].slice(5)}Cmd`] || params[0];
     params.splice(0, 1);
 
-    if (mongoConfig.dockerized) {
-      const tmp = mongoCmd.split(' ');
-      mongoCmd = tmp[0];
-      tmp.splice(0, 1);
-      params = tmp.concat(params);
+    if (mongoConfig.dockerized || mongoCmd.startsWith('"')) {
+      const mongoCmdArray = [];
+      let m;
+
+      while ((m = ARG_REGEX.exec(mongoCmd))) {
+        mongoCmdArray.push(m[1] || m[2]);
+      }
+
+      mongoCmd = mongoCmdArray[0];
+      params.splice(0, 0, ...mongoCmdArray.slice(1));
     }
 
     try {
