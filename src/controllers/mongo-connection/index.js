@@ -557,9 +557,15 @@ class MongoConnectionController {
     temp.database = connection.database || parser.database || 'test';
     temp.hosts = parser.hosts;
     temp.options = parser.options;
+    temp.scheme = parser.scheme;
+    if (parser.scheme === 'mongodb+srv') {
+      temp.username = connection.username || connectObject.username || parser.username;
+      temp.password = connection.password || connectObject.password || parser.password;
+    } else {
+      connectObject.username = connection.username || connectObject.username || parser.username;
+      connectObject.password = connection.password || connectObject.password || parser.password;
+    }
     connectObject.url = mongoUri.format(temp);
-    connectObject.username = connection.username || connectObject.username || parser.username;
-    connectObject.password = connection.password || connectObject.password || parser.password;
     connectObject.database = temp.database;
     connectObject.hosts = temp.hosts
       .map(host => {
