@@ -148,7 +148,7 @@ const _generateAndCheckDockerizedMongoCmds = async (nextConfig: typeof configDef
       }
 
       _.set(nextConfig, 'mongo.cmd', mongoCmd);
-      _.set(nextConfig, 'mongo.versionCmd', `${mongoSiblingCmd} --version`);
+      _.set(nextConfig, 'mongo.versionCmd', `${mongoSiblingCmd} mongo --version`);
 
       // generate sibling mongo cmds
       for (const sMC of SIBLING_MONGO_CMD) {
