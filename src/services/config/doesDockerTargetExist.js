@@ -47,7 +47,8 @@ export default (dockerCmd: string, type: 'image' | 'container', target: string):
         }
 
         if (type === 'container') {
-          return resolve(stdout.trim() === 'true');
+          const result = stdout.trim();
+          return resolve(result === 'true' || result === "'true'");
         }
 
         resolve(true);
