@@ -54,7 +54,8 @@ const ARG_REGEX = /([^\s"]+)|"([^"]*)"/g;
 export const mongoShellRequestResponseTypes = {
   JSON: 'JSON', // try to parse output into valid json
   RAW: 'RAW', // just return output as it is
-  NULL: 'NULL' // return nothing
+  NULL: 'NULL', // return nothing
+  STRING: 'STRING' // return complete output string as it is
 };
 
 export const mongoShellRequestStates = {
@@ -91,8 +92,8 @@ export class MongoShell extends EventEmitter {
   static ENTER = '\r';
   static CHANGE_PROMPT_CMD = `var prompt="${MongoShell.PROMPT}";`;
   static PRINT_CUSTOM_EXEC_ENDING_CMD = `print("${MongoShell.CUSTOM_EXEC_ENDING}");`;
-  static OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.PROMPT)}.*|[\r\n]`, 'g');
-
+  static OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.PROMPT)}.*|[\r\n\t]`, 'g');
+  static OUTPUT_FILTER_PROMPT = new RegExp(`${escapeRegExp(MongoShell.PROMPT)}.*`, 'g');
   // events
   static eventOutputAvailable = 'outputAvailable';
   static eventRequestResolved = 'requestResolved';
@@ -255,6 +256,14 @@ export class MongoShell extends EventEmitter {
         } finally {
           request.response = response;
         }
+      } else if (responseType === mongoShellRequestResponseTypes.STRING) {
+        let response = this.outputBuffer.join('');
+        response = response.replace(MongoShell.OUTPUT_FILTER_PROMPT, '');
+        // response = toStrict(response);
+
+        request.state = mongoShellRequestStates.SUCCEEDED;
+        request.response = response;
+        l.debug('String Output:', JSON.stringify(response));
       } else if (responseType === mongoShellRequestResponseTypes.NULL) {
         request.state = mongoShellRequestStates.SUCCEEDED;
       } else {
