@@ -26,6 +26,8 @@ function toStrictSimple(str) {
       // .replace(/MinKey/g, '{ "$minKey": 1 }')
       // .replace(/MaxKey/g, '{ "$maxKey": 1 }')
 
+      // UUID
+      .replace(/UUID\("[0-9abcdefg-]+"\)/g, '{ "$uuid": "$1" }')
       // ObjectIds
       .replace(/ObjectId\("([0-9abcdef]{24})"\)/g, '{ "$oid": "$1" }')
       // NumberLong
@@ -87,6 +89,9 @@ module.exports.toStrict = function(str) {
  * is not yet supported. We leave them here for future reference though.
  */
 module.exports.serialize = {
+  UUID: function(v) {
+    return format('UUID("%s")', v.toString());
+  },
   ObjectID: function(v) {
     return format('ObjectId("%s")', v.toString());
   },

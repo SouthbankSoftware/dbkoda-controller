@@ -8,7 +8,7 @@
  * @Date:   2018-06-05T12:12:29+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-07-17T15:08:57+10:00
+ * @Last modified time: 2018-07-17T17:14:37+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -54,7 +54,8 @@ const ARG_REGEX = /([^\s"]+)|"([^"]*)"/g;
 export const mongoShellRequestResponseTypes = {
   JSON: 'JSON', // try to parse output into valid json
   RAW: 'RAW', // just return output as it is
-  NULL: 'NULL' // return nothing
+  NULL: 'NULL', // return nothing
+  STRING: 'STRING' // return complete output string as it is
 };
 
 export const mongoShellRequestStates = {
@@ -91,8 +92,8 @@ export class MongoShell extends EventEmitter {
   static ENTER = '\r';
   static CHANGE_PROMPT_CMD = `var prompt="${MongoShell.PROMPT}";`;
   static PRINT_CUSTOM_EXEC_ENDING_CMD = `print("${MongoShell.CUSTOM_EXEC_ENDING}");`;
-  static OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.PROMPT)}.*|[\r\n]`, 'g');
-
+  static OUTPUT_FILTER_REGEX = new RegExp(`${escapeRegExp(MongoShell.PROMPT)}.*|[\r\n\t]`, 'g');
+  static OUTPUT_FILTER_PROMPT = new RegExp(`${escapeRegExp(MongoShell.PROMPT)}.*`, 'g');
   // events
   static eventOutputAvailable = 'outputAvailable';
   static eventRequestResolved = 'requestResolved';
@@ -255,6 +256,14 @@ export class MongoShell extends EventEmitter {
         } finally {
           request.response = response;
         }
+      } else if (responseType === mongoShellRequestResponseTypes.STRING) {
+        let response = this.outputBuffer.join('');
+        response = response.replace(MongoShell.OUTPUT_FILTER_PROMPT, '');
+        // response = toStrict(response);
+
+        request.state = mongoShellRequestStates.SUCCEEDED;
+        request.response = response;
+        l.debug('String Output:', JSON.stringify(response));
       } else if (responseType === mongoShellRequestResponseTypes.NULL) {
         request.state = mongoShellRequestStates.SUCCEEDED;
       } else {
@@ -450,10 +459,15 @@ export class MongoShell extends EventEmitter {
 
     const { dockerized, cmd: mongoCmd } = mongoConfig;
     const mongoCmdArray = [];
-    let m;
 
-    while ((m = ARG_REGEX.exec(mongoCmd))) {
-      mongoCmdArray.push(m[1] || m[2]);
+    if (dockerized || mongoCmd.startsWith('"')) {
+      let m;
+
+      while ((m = ARG_REGEX.exec(mongoCmd))) {
+        mongoCmdArray.push(m[1] || m[2]);
+      }
+    } else {
+      mongoCmdArray.push(mongoCmd);
     }
 
     if (!IS_WIN) {

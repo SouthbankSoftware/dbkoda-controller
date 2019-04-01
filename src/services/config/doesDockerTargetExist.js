@@ -5,7 +5,7 @@
  * @Date:   2018-06-19T16:10:22+10:00
  * @Email:  root@guiguan.net
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-21T10:44:36+10:00
+ * @Last modified time: 2018-07-17T17:34:26+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -34,7 +34,7 @@ import { exec } from 'child_process';
 export default (dockerCmd: string, type: 'image' | 'container', target: string): Promise<boolean> =>
   new Promise((resolve, reject) => {
     exec(
-      `${dockerCmd} inspect --type=${type}${
+      `"${dockerCmd}" inspect --type=${type}${
         type === 'container' ? " -f '{{.State.Running}}'" : ''
       } ${target}`,
       (err, stdout) => {
@@ -47,7 +47,8 @@ export default (dockerCmd: string, type: 'image' | 'container', target: string):
         }
 
         if (type === 'container') {
-          return resolve(stdout.trim() === 'true');
+          const result = stdout.trim();
+          return resolve(result === 'true' || result === "'true'");
         }
 
         resolve(true);

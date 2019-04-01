@@ -1,7 +1,7 @@
 /**
  * Created by joey on 21/7/17.
  * @Last modified by:   guiguan
- * @Last modified time: 2018-06-26T15:30:18+10:00
+ * @Last modified time: 2018-07-30T12:13:24+10:00
  *
  * dbKoda - a modern, open source code editor, for MongoDB.
  * Copyright (C) 2017-2018 Southbank Software
@@ -27,6 +27,7 @@ import { EventEmitter } from 'events';
 import { escapeDoubleQuotes } from './processDoubleQuotes';
 import tokeniseCmdString from './tokeniseCmdString';
 
+const ARG_REGEX = /([^\s"]+)|"([^"]*)"/g;
 class OSCommandsController extends EventEmitter {
   constructor() {
     super();
@@ -62,15 +63,20 @@ class OSCommandsController extends EventEmitter {
     if (username && password) {
       cmd = cmd.replace('-p ******', `-p "${escapeDoubleQuotes(password)}"`);
     }
-    let params = tokeniseCmdString(cmd);
-    let mongoCmd = mongoConfig[`mongo${params[0]}Cmd`] || params[0];
+    const params = tokeniseCmdString(cmd);
+    let mongoCmd = mongoConfig[`${params[0].slice(5)}Cmd`] || params[0];
     params.splice(0, 1);
 
-    if (mongoConfig.dockerized) {
-      const tmp = mongoCmd.split(' ');
-      mongoCmd = tmp[0];
-      tmp.splice(0, 1);
-      params = tmp.concat(params);
+    if (mongoConfig.dockerized || mongoCmd.startsWith('"')) {
+      const mongoCmdArray = [];
+      let m;
+
+      while ((m = ARG_REGEX.exec(mongoCmd))) {
+        mongoCmdArray.push(m[1] || m[2]);
+      }
+
+      mongoCmd = mongoCmdArray[0];
+      params.splice(0, 0, ...mongoCmdArray.slice(1));
     }
 
     try {

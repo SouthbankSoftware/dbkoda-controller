@@ -1,6 +1,5 @@
 export default {
   statisticDefinitions: [
-    // Remove the next one when its "demo" function is over
     {
       name: 'activeReadSample',
       type: 'final',
@@ -276,6 +275,13 @@ export default {
       defaultSource: 'wiredTiger.cache.bytes currently in the cache'
     },
     {
+      name: 'wtCache_dirtyBytes',
+      type: 'final',
+      description: 'Modified bytes in the wiredTiger cache',
+      unit: 'bytes',
+      defaultSource: 'wiredTiger.cache.tracked dirty bytes in the cache'
+    },
+    {
       name: 'wtCache_evictionsPs',
       type: 'rate',
       description: 'Pages evicted from the wiredTiger cache per second',
@@ -403,6 +409,13 @@ export default {
     }
   ],
   calculations: [
+    {
+      name: 'wtCache_cleanBytes',
+      expression: 'wtCache_currentBytes-wtCache_dirtyBytes',
+      description: 'Unmodified bytes in the wiredTiger cache',
+      unit: 'milliseconds',
+      ifZeroDivide: 0
+    },
     {
       name: 'latency_writeAvgLatencyMs',
       expression: '(latency_writeWaitUsPs/1000)/latency_writeOpsPs',
