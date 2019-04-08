@@ -14,12 +14,6 @@
 
 const provendb = {};
 
-var prompt = () => {
-  const cv = db.getCollection('_provendb_currentVersion').findOne();
-  const myPrompt = 'ProvenDB v' + cv.version + ' (' + cv.status + ')> ';
-  return myPrompt;
-};
-
 provendb.help = () => {
   print('Look around and think!');
 };
