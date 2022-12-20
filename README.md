@@ -1,4 +1,7 @@
-# dbKoda Controller
+# dbKoda Controller [No Longer Maintained]
+
+**Note:** Unfortunately this project is no longer being maintained.
+
 *dbKoda Controller built with state of the art Feathers stack*
 
 [![CQUTesting](https://img.shields.io/travis/SouthbankSoftware/dbkoda-controller.svg?style=flat-square&label=CQUTesting)](https://travis-ci.org/SouthbankSoftware/dbkoda-controller)
